@@ -117,9 +117,7 @@ if (isset($_SESSION['sys_msg'])) {
 if (isset($_POST['add_task'])) {
     $stmt = $pdo->prepare("INSERT INTO tasks (student_id, task_content) VALUES (?, ?)");
     $stmt->execute([$_SESSION['user_id'], $_POST['task_text']]);
-    $_SESSION['sys_msg'] = "<div class='alert alert-success'>Task added!</div>";
-    // Redirect back to wherever they added the task from
-    $redirect_page = $_GET['page'] ?? 'home';
+    $redirect_page = $_POST['page'] ?? 'home';
     header("Location: ?page=" . $redirect_page); exit();
 }
 if (isset($_GET['del_task'])) {
@@ -289,17 +287,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             $photo_query = ", photo='$photo_name'";
         }
 
-        // Properly handle password change if filled
+        // Handle Password Update explicitly
         if (!empty($_POST['new_password'])) {
             $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
             $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $hash, $_SESSION['user_id']]);
+            $msg = "<div class='alert alert-success text-dark'>Your profile and password have been updated!</div>";
         } else {
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
             $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $_SESSION['user_id']]);
+            $msg = "<div class='alert alert-success text-dark'>Your profile has been updated!</div>";
         }
-
-        $msg = "<div class='alert alert-success text-dark'>Your profile has been updated!</div>";
         
         // Refresh User Data Post-Update
         $uStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
@@ -344,8 +342,9 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 
         /* 2. GLASS PANELS - LIGHT BLACK */
         .glass-panel, .card {
-            background: rgba(35, 35, 40, 0.8) !important; 
-            backdrop-filter: blur(10px);
+            background: rgba(35, 35, 40, 0.7) !important; 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ffffff !important;
             border-radius: 8px;
@@ -377,7 +376,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             text-align: center;
         }
         .glass-sidebar .profile-section img {
-            border: 3px solid #d97736;
+            border: 2px solid #d97736;
             width: 90px;
             height: 90px;
             object-fit: cover;
@@ -409,8 +408,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 
         /* 6. INPUTS - LIGHT BLACK */
         .form-control, .form-select {
-            background: #2a2a30 !important;
-            border: 1px solid #444 !important;
+            background: #2b2b30 !important;
+            border: none !important;
             color: #ffffff !important;
         }
         .form-control::placeholder { color: #aaaaaa !important; }
@@ -422,26 +421,19 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important;
         }
 
-        /* 8. MODAL SPECIFIC OVERRIDES (White Theme as requested) */
+        /* 8. MODAL SPECIFIC OVERRIDES (White Theme & Dark Inputs) */
         .modal-content {
             background-color: #ffffff !important;
             color: #333333 !important;
             border: none;
             border-radius: 8px;
         }
-        .modal-header {
-            border-bottom: 1px solid #eaeaea;
-        }
-        .modal-header h5 {
-            color: #333333 !important;
-            font-weight: 600;
-        }
         .modal-body {
             padding: 30px;
         }
         /* Specific input styling inside the white modal */
         .modal-body .form-control {
-            background-color: #2a2a30 !important;
+            background-color: #2b2b30 !important;
             color: #ffffff !important;
             border: none !important;
             border-radius: 6px;
@@ -449,6 +441,22 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         }
         .modal-body .form-control::placeholder {
             color: rgba(255,255,255,0.7) !important;
+        }
+        /* Style the file input button inside modal */
+        .modal-body .form-control[type="file"] {
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+        .modal-body .form-control::file-selector-button {
+            background-color: #ffffff;
+            color: #333333;
+            border: none;
+            padding: 12px 20px;
+            margin-right: 15px;
+            border-radius: 6px 0 0 6px;
+            cursor: pointer;
+            height: 100%;
         }
         .modal-footer {
             border-top: 1px solid #eaeaea;
@@ -461,10 +469,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             background-color: #6c757d !important;
             border: none !important;
             color: #ffffff !important;
-            padding: 8px 20px;
+            padding: 10px 24px;
         }
         .modal-footer .btn-orange {
-            padding: 8px 20px;
+            padding: 10px 24px;
         }
 
         /* UTILS */
@@ -607,7 +615,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <a href="?page=my_subjects"><i class="bi bi-book"></i> My Subjects / Enroll</a>
                         <a href="?page=my_grades"><i class="bi bi-award"></i> My Grades</a>
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
-                        <a href="?page=my_tasks"><i class="bi bi-card-checklist"></i> My Tasks</a>
+                        <a href="?page=home"><i class="bi bi-list-task"></i> My Tasks</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
                     <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
@@ -619,39 +627,39 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 <?php
                 $page = $_GET['page'] ?? 'home';
                 
-               // --- HOME DASHBOARD ---
-                if ($page == 'home' || $page == 'my_tasks') {
+               // --- HOME DASHBOARD (Including Tasks) ---
+                if ($page == 'home') {
                     if ($_SESSION['role'] == 'student') {
                         ?>
                         <h3 class="mb-4">Student Dashboard</h3>
                         <div class="row">
                             <div class="col-md-4 mb-4">
-                                <!-- Profile Card matching Screenshot 2 layout -->
+                                <!-- Profile Card matching layout -->
                                 <div class="glass-panel p-4 h-100">
                                     <div class="text-center mb-4">
                                         <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm" style="width:130px; height:130px; object-fit:cover; border: 2px solid #d97736;">
-                                        <h5 class="mt-3 mb-0"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
+                                        <h5 class="mt-3 mb-0 fw-semibold"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
                                         <small class="text-muted">Student ID: STU-00<?= $currentUser['id'] ?></small>
                                         <div class="mt-3">
-                                            <button class="btn btn-sm btn-orange px-3 py-1" data-bs-toggle="modal" data-bs-target="#editMyProfile">
+                                            <button class="btn btn-sm btn-orange px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#editMyProfile">
                                                 <i class="bi bi-pencil me-1"></i> Edit Profile
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="text-start" style="font-size: 0.9rem;">
-                                        <p class="mb-2"><strong style="color: #ccc;">Email:</strong> <?= $currentUser['email'] ?></p>
-                                        <p class="mb-2"><strong style="color: #ccc;">Course:</strong> <?= $currentUser['course'] ?></p>
-                                        <p class="mb-0"><strong style="color: #ccc;">Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
+                                    <div class="text-start mt-4" style="font-size: 0.9rem;">
+                                        <p class="mb-2"><strong style="color: #e0e0e0;">Email:</strong> <?= $currentUser['email'] ?></p>
+                                        <p class="mb-2"><strong style="color: #e0e0e0;">Course:</strong> <?= $currentUser['course'] ?></p>
+                                        <p class="mb-0"><strong style="color: #e0e0e0;">Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- EDIT PROFILE MODAL (Styled to match Image 1 exactly) -->
+                            <!-- EDIT PROFILE MODAL (Borderless Dark Inputs, No Title) -->
                             <div class="modal fade" id="editMyProfile" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <form method="POST" enctype="multipart/form-data" class="modal-content">
                                         <div class="modal-body">
-                                            <div class="row g-2 mb-3">
+                                            <div class="row g-3 mb-3">
                                                 <div class="col-6">
                                                     <input type="text" name="fname" value="<?= $currentUser['firstname'] ?>" class="form-control" placeholder="First Name" required>
                                                 </div>
@@ -671,39 +679,39 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                             <input type="file" name="photo" class="form-control" accept="image/*">
                                         </div>
                                         <div class="modal-footer justify-content-end">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button name="student_update_profile" class="btn btn-orange">Save Changes</button>
+                                            <button type="button" class="btn btn-secondary rounded" data-bs-dismiss="modal">Cancel</button>
+                                            <button name="student_update_profile" class="btn btn-orange rounded">Save Changes</button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
 
                             <div class="col-md-8">
-                                <div class="mb-4">
-                                    <h5>Welcome back, <?= $currentUser['firstname'] ?>!</h5>
-                                    <p class="text-muted small">You can manage your subjects and view your grades using the menu on the left.</p>
+                                <div class="mb-3">
+                                    <h4 class="fw-semibold">Welcome back, <?= $currentUser['firstname'] ?>!</h4>
+                                    <p class="text-white opacity-75 small">You can manage your subjects and view your grades using the menu on the left.</p>
                                 </div>
 
-								<!-- MY TASKS SECTION -->
-                                <div class="glass-panel p-4" id="tasks">
-    								<h5 class="mb-3">My Tasks</h5>
+								<!-- MY TASKS SECTION (Glassified matching Dashboard style) -->
+                                <div class="glass-panel p-4 mt-3" id="tasks">
+    								<h5 class="mb-3 fw-semibold">My Tasks</h5>
     								<form method="POST" class="d-flex mb-4">
                                         <input type="hidden" name="page" value="<?= $page ?>">
         				                <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
-       			                        <button name="add_task" class="btn btn-orange px-4">Add</button>
+       			                        <button name="add_task" class="btn btn-orange px-4 rounded">Add</button>
    					                </form>
                                     <ul class="list-group">
                                         <?php
                                         $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
                                         $tasks->execute([$_SESSION['user_id']]);
                                         foreach($tasks as $t): ?>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border-0" style="background: rgba(255,255,255,0.08); color: white;">
                                                 <?= htmlspecialchars($t['task_content']) ?>
-                                                <a href="?page=<?= $page ?>&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                                <a href="?page=<?= $page ?>&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger text-white"><i class="bi bi-trash"></i></a>
                                             </li>
                                         <?php endforeach; ?>
                                         <?php if($tasks->rowCount() == 0): ?>
-                                            <li class="list-group-item text-muted text-center" style="background: transparent; border: none;">No current tasks.</li>
+                                            <li class="list-group-item text-white opacity-75 text-center py-4" style="background: transparent; border: none;">No current tasks.</li>
                                         <?php endif; ?>
                                     </ul>
                                 </div>
@@ -733,14 +741,14 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <button class="btn btn-sm btn-orange" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
                                     <div class="modal fade" id="editS<?= $s['id'] ?>" tabindex="-1">
                                         <div class="modal-dialog"><form method="POST" enctype="multipart/form-data" class="modal-content">
-                                            <div class="modal-header"><h5>Edit Student</h5></div>
+                                            <div class="modal-header border-0"><h5>Edit Student</h5></div>
                                             <div class="modal-body text-start">
                                                 <input type="hidden" name="sid" value="<?= $s['id'] ?>">
-                                                <label>First Name</label><input name="fname" value="<?= $s['firstname'] ?>" class="form-control mb-2">
-                                                <label>Last Name</label><input name="lname" value="<?= $s['lastname'] ?>" class="form-control mb-2">
-                                                <label>Birthdate</label><input type="date" name="bdate" value="<?= $s['birthdate'] ?>" class="form-control mb-2">
-                                                <label>Address</label><textarea name="addr" class="form-control mb-2"><?= $s['address'] ?></textarea>
-                                                <label>Picture</label><input type="file" name="photo" class="form-control">
+                                                <label class="text-dark">First Name</label><input name="fname" value="<?= $s['firstname'] ?>" class="form-control mb-2">
+                                                <label class="text-dark">Last Name</label><input name="lname" value="<?= $s['lastname'] ?>" class="form-control mb-2">
+                                                <label class="text-dark">Birthdate</label><input type="date" name="bdate" value="<?= $s['birthdate'] ?>" class="form-control mb-2">
+                                                <label class="text-dark">Address</label><textarea name="addr" class="form-control mb-2"><?= $s['address'] ?></textarea>
+                                                <label class="text-dark">Picture</label><input type="file" name="photo" class="form-control">
                                             </div>
                                             <div class="modal-footer"><button name="update_student_profile" class="btn btn-success">Save</button></div>
                                         </form></div>
@@ -802,15 +810,15 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                         <td class="no-print"><button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modG<?= $g['id'] ?>"><i class="bi bi-pencil"></i></button>
                                             <div class="modal fade" id="modG<?= $g['id'] ?>" tabindex="-1">
                                                 <div class="modal-dialog"><form method="POST" class="modal-content text-start">
-                                                    <div class="modal-header"><h6>Edit Grade</h6></div>
+                                                    <div class="modal-header border-0"><h6 class="text-dark">Edit Grade</h6></div>
                                                     <div class="modal-body">
                                                         <input type="hidden" name="eid" value="<?= $g['id'] ?>">
                                                         <div class="row g-2 mb-2">
-                                                            <div class="col-4"><label>P</label><input name="p" value="<?= $g['prelim'] ?>" class="form-control"></div>
-                                                            <div class="col-4"><label>M</label><input name="m" value="<?= $g['midterm'] ?>" class="form-control"></div>
-                                                            <div class="col-4"><label>F</label><input name="f" value="<?= $g['final'] ?>" class="form-control"></div>
+                                                            <div class="col-4"><label class="text-dark">P</label><input name="p" value="<?= $g['prelim'] ?>" class="form-control"></div>
+                                                            <div class="col-4"><label class="text-dark">M</label><input name="m" value="<?= $g['midterm'] ?>" class="form-control"></div>
+                                                            <div class="col-4"><label class="text-dark">F</label><input name="f" value="<?= $g['final'] ?>" class="form-control"></div>
                                                         </div>
-                                                        <label>Remarks</label><input name="r" value="<?= $g['remarks'] ?>" class="form-control">
+                                                        <label class="text-dark">Remarks</label><input name="r" value="<?= $g['remarks'] ?>" class="form-control">
                                                     </div>
                                                     <div class="modal-footer"><button name="records_update_grade" class="btn btn-orange btn-sm">Update</button></div>
                                                 </form></div>
