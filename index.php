@@ -117,13 +117,13 @@ if (isset($_SESSION['sys_msg'])) {
 if (isset($_POST['add_task'])) {
     $stmt = $pdo->prepare("INSERT INTO tasks (student_id, task_content) VALUES (?, ?)");
     $stmt->execute([$_SESSION['user_id'], $_POST['task_text']]);
-    $redirect_page = $_POST['page'] ?? 'home';
+    $redirect_page = $_POST['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
 }
 if (isset($_GET['del_task'])) {
     $pdo->prepare("DELETE FROM tasks WHERE id = ? AND student_id = ?")
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
-    $redirect_page = $_GET['page'] ?? 'home';
+    $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
 }
 
@@ -264,7 +264,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     }
     if (isset($_GET['reject_id'])) {
         $pdo->prepare("UPDATE users SET status='rejected' WHERE id=?")->execute([$_GET['reject_id']]);
-        $msg = "<div class='alert alert-success text-dark'>User Rejected.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>User Rejected.</div>";
     }
     if (isset($_POST['create_staff'])) {
         $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -337,7 +337,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff;
         }
 
-        /* 2. GLASS PANELS - TRANSPARENT LIGHT BLACK (As per Photo 3/Home style) */
+        /* 2. GLASS PANELS - TRANSPARENT LIGHT BLACK */
         .glass-panel, .card {
             background: rgba(45, 45, 50, 0.35) !important; 
             backdrop-filter: blur(15px);
@@ -418,7 +418,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important;
         }
 
-        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS (Pure White Modal, Dark Input Elements) */
+        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS */
         .modal-content {
             background-color: #ffffff !important;
             border: none !important;
@@ -440,12 +440,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important;
             opacity: 0.9 !important;
         }
-        /* Addresses Textarea styling explicitly */
         .modal-body textarea.form-control {
             min-height: 100px;
             resize: none;
         }
-        /* Custom file input look to copy layout */
         .modal-body input[type="file"].form-control {
             padding: 0 !important;
             display: flex;
@@ -624,7 +622,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <a href="?page=my_subjects"><i class="bi bi-book"></i> My Subjects / Enroll</a>
                         <a href="?page=my_grades"><i class="bi bi-award"></i> My Grades</a>
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
-                        <a href="?page=home#tasks"><i class="bi bi-list-check"></i> My Tasks</a>
+                        <a href="?page=my_tasks"><i class="bi bi-list-check"></i> My Tasks</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
                     <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
@@ -636,7 +634,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 <?php
                 $page = $_GET['page'] ?? 'home';
                 
-               // --- HOME DASHBOARD (Including Glassy Tasks) ---
+               // --- HOME DASHBOARD ---
                 if ($page == 'home') {
                     if ($_SESSION['role'] == 'student') {
                         ?>
@@ -700,36 +698,44 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <h4 class="fw-semibold">Welcome back, <?= $currentUser['firstname'] ?>!</h4>
                                     <p class="text-white opacity-75 small">You can manage your subjects and view your grades using the menu on the left.</p>
                                 </div>
-
-								<!-- MY TASKS SECTION (Glass panel layout explicitly updated) -->
-                                <div class="glass-panel p-4 mt-3" id="tasks">
-    								<h5 class="mb-3 fw-semibold">My Tasks</h5>
-    								<form method="POST" class="d-flex mb-4">
-                                        <input type="hidden" name="page" value="<?= $page ?>">
-        				                <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
-       			                        <button name="add_task" class="btn btn-orange px-4 rounded">Add</button>
-   					                </form>
-                                    <ul class="list-group">
-                                        <?php
-                                        $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
-                                        $tasks->execute([$_SESSION['user_id']]);
-                                        foreach($tasks as $t): ?>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border-0" style="background: rgba(255,255,255,0.08); color: white;">
-                                                <?= htmlspecialchars($t['task_content']) ?>
-                                                <a href="?page=<?= $page ?>&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger text-white"><i class="bi bi-trash"></i></a>
-                                            </li>
-                                        <?php endforeach; ?>
-                                        <?php if($tasks->rowCount() == 0): ?>
-                                            <li class="list-group-item text-white opacity-75 text-center py-4" style="background: transparent; border: none;">No current tasks.</li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </div>
                             </div>
                         </div>
                         <?php
                     } else {
                         echo "<h3>Dashboard</h3><p class='text-muted'>Welcome back, " . $_SESSION['name'] . ".</p>";
                     }
+                }
+                // --- DEDICATED MY TASKS PAGE ---
+                elseif ($page == 'my_tasks' && $_SESSION['role'] == 'student') {
+                    ?>
+                    <h3 class="mb-4">My Tasks</h3>
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="glass-panel p-4" id="tasks">
+                                <h5 class="mb-3 fw-semibold">Task List Manager</h5>
+                                <form method="POST" class="d-flex mb-4">
+                                    <input type="hidden" name="page" value="my_tasks">
+                                    <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
+                                    <button name="add_task" class="btn btn-orange px-4 rounded">Add</button>
+                                </form>
+                                <ul class="list-group">
+                                    <?php
+                                    $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
+                                    $tasks->execute([$_SESSION['user_id']]);
+                                    foreach($tasks as $t): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border-0" style="background: rgba(255,255,255,0.08); color: white;">
+                                            <?= htmlspecialchars($t['task_content']) ?>
+                                            <a href="?page=my_tasks&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger text-white"><i class="bi bi-trash"></i></a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                    <?php if($tasks->rowCount() == 0): ?>
+                                        <li class="list-group-item text-white opacity-75 text-center py-4" style="background: transparent; border: none;">No current tasks.</li>
+                                    <?php endif; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
                 }
                 // --- RECORDS PAGES ---
                 elseif ($page == 'rec_students' && $_SESSION['role'] == 'records') {
@@ -1153,8 +1159,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             </div>
                             <div class="col-md-7"><input name="schedule" placeholder="Schedule" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
                             <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
-                        </form>
-                    </div>
+                        </form></div>
                     <div class="glass-panel p-2 table-responsive">
                         <table class="table mb-0">
                             <thead class="table-dark"><tr><th>SY/Sem</th><th>Course</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>
