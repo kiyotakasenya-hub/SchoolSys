@@ -600,6 +600,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                         <optgroup label="Education">
                             <option value="Bachelor in Elementary Education">Bachelor in Elementary Education (BEED)</option>
                             <option value="Bachelor in Secondary Education">Bachelor in Secondary Education (BSEd)</option>
+							<option value="Bachelor of Early Childhood Education">Bachelor of Early Childhood Education (BECED)</option>
                         </optgroup>
                     </select>
 
