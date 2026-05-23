@@ -76,17 +76,11 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         firstname VARCHAR(50),
-        lastname VARCHAR(50),
-        email VARCHAR(100)
-    )");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS subjects (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100)
+        lastname VARCHAR(50)
     )");
 
 } catch (PDOException $e) {
-    echo "System Error: " . $e->getMessage();
+    echo "Error: " . $e->getMessage();
 }
     ");
 
