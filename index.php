@@ -84,12 +84,12 @@ try {
         );
 
 		CREATE TABLE IF NOT EXISTS tasks (
-    id SERIAL PRIMARY KEY,
-    student_id INT,
-    task_content TEXT,
-    status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+            id SERIAL PRIMARY KEY,
+            student_id INT,
+            task_content TEXT,
+            status VARCHAR(20) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -326,7 +326,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     <title>Campus Core Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
        /* GLOBAL THEME */
@@ -337,9 +337,9 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff;
         }
 
-        //* 2. GLASS PANELS - LIGHT BLACK */
+        /* 2. GLASS PANELS - LIGHT BLACK */
         .glass-panel, .card {
-            background: rgba(35, 35, 40, 0.8) !important; /* Soft dark panel */
+            background: rgba(35, 35, 40, 0.8) !important; 
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ffffff !important;
@@ -362,13 +362,52 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             background-color: rgba(255, 255, 255, 0.05) !important; 
         }
 
-        /* 5. SIDEBAR - LIGHT BLACK */
+        /* 5. SIDEBAR - GLASSMORPHISM (Matched to Photo 1) */
         .glass-sidebar {
-            background: #1e1e24 !important;
-            border-right: 1px solid #333;
+            background: rgba(45, 55, 75, 0.35) !important; /* Soft semi-transparent */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .glass-sidebar a { color: #ffffff !important; }
-        .glass-sidebar a:hover { background: #d97736 !important; }
+        .glass-sidebar .offcanvas-body {
+            padding: 0;
+        }
+        .glass-sidebar .profile-section {
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+        .glass-sidebar .profile-section img {
+            border: 3px solid #d97736;
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+        }
+        .glass-sidebar a { 
+            color: #e0e0e0 !important; 
+            text-decoration: none !important; /* Forces no underline */
+            padding: 16px 24px;
+            display: block;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Soft divider */
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .glass-sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            vertical-align: text-bottom;
+        }
+        .glass-sidebar a:hover { 
+            background: rgba(255, 255, 255, 0.08) !important; 
+            color: #ffffff !important;
+        }
+        .glass-sidebar .logout-link {
+            color: #ff6b6b !important;
+            border-bottom: none;
+            margin-top: 20px;
+        }
+        .glass-sidebar .logout-link:hover {
+            background: rgba(255, 107, 107, 0.1) !important;
+        }
 
         /* 6. INPUTS - LIGHT BLACK */
         .form-control, .form-select {
@@ -403,7 +442,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 <body>
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center p-3">
-        <div class="glass-panel login-box">
+        <div class="glass-panel login-box" style="padding: 40px; border-radius: 15px;">
             <?= $msg ?>
             <?php if ($view == 'login'): ?>
                 <h3 class="text-center fw-semibold mb-4" style="letter-spacing: 1px;">LOGIN</h3>
@@ -414,11 +453,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     <div class="mb-4">
                         <input type="password" name="password" class="form-control glass-input-login" placeholder="Password" required>
                     </div>
-                    <div class="terms-wrapper">
+                    <div class="terms-wrapper mb-3">
                         <input type="checkbox" id="terms" required>
                         <label for="terms">I agree to the terms and conditions</label>
                     </div>
-                    <button name="login" class="btn btn-orange w-100">Login</button>
+                    <button name="login" class="btn btn-orange w-100 py-2">Login</button>
                 </form>
                 <div class="text-center mt-4">
                     <a href="?view=register" class="small text-decoration-none text-white text-decoration-underline">Apply for a Student Account</a>
@@ -462,7 +501,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 
                     <input name="user" placeholder="Desired Username" class="form-control mb-3" required autocomplete="off">
                     <input name="password" type="password" placeholder="Password" class="form-control mb-4" required autocomplete="new-password">
-                    <button name="register_user" class="btn btn-orange w-100">Submit Application</button>
+                    <button name="register_user" class="btn btn-orange w-100 py-2">Submit Application</button>
                 </form>
                 <div class="text-center mt-3">
                     <a href="?view=login" class="small text-decoration-none text-white text-decoration-underline">Back to Login</a>
@@ -488,17 +527,20 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
                 </div>
                 <div class="offcanvas-body d-flex flex-column p-0">
-                    <div class="p-4 text-center" style="background: rgba(0,0,0,0.3);">
+                    <div class="profile-section">
                         <?php if($_SESSION['role'] == 'student'): ?>
-                            <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle profile-img-nav mb-2 shadow">
+                            <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle mb-2 shadow">
+                        <?php else: ?>
+                            <img src="uploads/default.png" class="rounded-circle mb-2 shadow">
                         <?php endif; ?>
-                        <h6><?= $_SESSION['name'] ?></h6>
-                        <small style="color: #d97736;"><?= strtoupper($_SESSION['role']) ?></small>
+                        <h6 class="mb-1"><?= $_SESSION['name'] ?></h6>
+                        <small style="color: #d97736; font-weight: 500; letter-spacing: 1px;"><?= strtoupper($_SESSION['role']) ?></small>
                     </div>
+                    
                     <a href="?"><i class="bi bi-house"></i> Home</a>
                     <?php if($_SESSION['role'] == 'admin'): ?>
-                        <a href="?page=approvals">User Approvals</a>
-                        <a href="?page=create_staff">Create Staff</a>
+                        <a href="?page=approvals"><i class="bi bi-person-check"></i> User Approvals</a>
+                        <a href="?page=create_staff"><i class="bi bi-person-plus"></i> Create Staff</a>
                     <?php elseif($_SESSION['role'] == 'records'): ?>
                         <a href="?page=rec_students"><i class="bi bi-people"></i> Manage Students</a>
                         <a href="?page=rec_tor"><i class="bi bi-file-earmark-text"></i> TOR Dashboard</a>
@@ -524,7 +566,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
-                    <a href="?action=logout" class="mt-5" style="color: #ff6b6b;"><i class="bi bi-power"></i> Logout</a>
+                    <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
                 </div>
             </div>
 
@@ -590,7 +632,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <h5>Welcome back, <?= $currentUser['firstname'] ?>!</h5>
                                     <p class="text-muted">You can manage your subjects and view your grades using the menu on the left.</p>
 
-								<div class="glass-panel p-4 mt-4">
+								<div class="glass-panel p-4 mt-4" style="background: rgba(0,0,0,0.2) !important;">
     								<h5>My Tasks</h5>
     								<form method="POST" class="d-flex mb-3">
         				<input type="text" name="task_text" class="form-control me-2" placeholder="Enter a new task..." required>
