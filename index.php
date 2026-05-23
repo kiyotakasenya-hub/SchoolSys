@@ -173,7 +173,7 @@ if (isset($_POST['register_user'])) {
     }
 }
 
-// UNIFIED PERSONAL PROFILE & PASSWORD UPDATE ACTION HANDLER (Applies to Admin, Teachers, and all Staff roles)
+// UNIFIED PERSONAL PROFILE & PASSWORD UPDATE ACTION HANDLER
 if (isset($_POST['user_update_own_profile'])) {
     $photo_query = "";
     if(!empty($_FILES['photo']['name'])) {
@@ -202,7 +202,7 @@ if (isset($_POST['user_update_own_profile'])) {
 
 // RECORDS ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
-    if (isset($_POST['update_student_profile'])) {
+    if (issetPOST['update_student_profile']) {
         $photo_query = "";
         if(!empty($_FILES['photo']['name'])) {
             $photo_name = time() . "_" . $_FILES['photo']['name'];
@@ -264,7 +264,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'dean') {
     }
     if (isset($_GET['del_sub'])) {
         $pdo->prepare("DELETE FROM subjects WHERE id=?")->execute([$_GET['del_sub']]);
-        $msg = "<div class='alert alert-danger text-dark'>Subject deleted.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>Subject deleted successfully.</div>";
     }
 }
 
@@ -303,24 +303,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
     }
 }
-
-// --- STUDENT DASH ACTIONS ---
-if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
-    if (isset($_GET['enroll_id'])) {
-        $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id = ? AND subject_id = ?");
-        $check->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
-        if (!$check->fetch()) {
-            $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?, ?)")
-                ->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
-            $msg = "<div class='alert alert-success text-dark'>Subject added to your load.</div>";
-        }
-    }
-    if (isset($_GET['drop_id'])) {
-        $pdo->prepare("DELETE FROM enrollments WHERE id = ? AND student_id = ?")
-            ->execute([$_GET['drop_id'], $_SESSION['user_id']]);
-        $msg = "<div class='alert alert-warning text-dark'>Subject dropped.</div>";
-    }
-} 
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -648,7 +630,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 <?php
                 $page = $_GET['page'] ?? 'home';
                 
-               // --- HOME DASHBOARD (Now shared dynamically across all platform roles) ---
+               // --- HOME DASHBOARD ---
                 if ($page == 'home') {
                     ?>
                     <h3 class="mb-4"><?= ucfirst($_SESSION['role']) ?> Dashboard</h3>
@@ -673,7 +655,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             </div>
                         </div>
 
-                        <!-- DYNAMIC PROFILE GLASS MODAL (Accessible by Admin, Teachers, and all Staff roles) -->
+                        <!-- DYNAMIC PROFILE GLASS MODAL -->
                         <div class="modal fade" id="editMyOwnProfile" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <form method="POST" enctype="multipart/form-data" class="modal-content">
@@ -1173,7 +1155,18 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             <thead class="table-dark"><tr><th>SY/Sem</th><th>Course</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>
                             <?php
                             $subs = $pdo->query("SELECT s.*, u.lastname FROM subjects s LEFT JOIN users u ON s.teacher_id = u.id ORDER BY s.sy DESC, s.course ASC")->fetchAll();
-                            foreach($subs as $s) echo "<tr><td>{$s['sy']} - {$s['sem']}</td><td>{$s['course']}</td><td>{$s['subject_code']} - {$s['subject_title']}</td><td>{$s['units']}</td><td><a href='?page=dean_courses&edit_id={$s['id']}' class='btn btn-sm btn-info text-white'>Edit</a></td></tr>";
+                            foreach($subs as $s) {
+                                echo "<tr>
+                                        <td>{$s['sy']} - {$s['sem']}</td>
+                                        <td>{$s['course']}</td>
+                                        <td>{$s['subject_code']} - {$s['subject_title']}</td>
+                                        <td>{$s['units']}</td>
+                                        <td>
+                                            <a href='?page=dean_courses&edit_id={$s['id']}' class='btn btn-sm btn-info text-white px-2 py-1 me-1'>Edit</a>
+                                            <a href='?page=dean_courses&del_sub={$s['id']}' class='btn btn-sm btn-danger text-white px-2 py-1' onclick='return confirm(\"Are you sure you want to permanently delete this subject offering?\")'>Delete</a>
+                                        </td>
+                                      </tr>";
+                            }
                             ?>
                         </table>
                     </div>
@@ -1256,7 +1249,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                         <?php foreach($my_grades as $g): ?>
                                         <tr>
                                             <td><?= $g['sy'] ?> - <?= $g['sem'] ?></td>
-                                            <td>return<strong><?= $g['subject_code'] ?></strong><br><small class="text-muted"><?= $g['subject_title'] ?></small></td>
+                                            <td><strong><?= $g['subject_code'] ?></strong><br><small class="text-muted"><?= $g['subject_title'] ?></small></td>
                                             <td><?= $g['units'] ?></td>
                                             <td><?= $g['prelim'] > 0 ? $g['prelim'] : '-' ?></td>
                                             <td><?= $g['midterm'] > 0 ? $g['midterm'] : '-' ?></td>
