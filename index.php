@@ -1,12 +1,3 @@
-Here is the complete, fixed `index.php` file. I have integrated all three updates for you:
-
-1. **The Database Fix:** Corrected the broken string and missing `CREATE TABLE` commands so the page stops crashing.
-2. **The `COALESCE` Fix:** Replaced MySQL's `IFNULL` with PostgreSQL's `COALESCE` so your financial calculations work without fatal errors.
-3. **The Mobile Responsive UI:** Added the Bootstrap mobile hamburger menu, offcanvas sidebar, and wrapped all your data tables so they can be swiped left and right on small phone screens without breaking the layout.
-
-You can safely copy all of this and overwrite your entire `index.php` file:
-
-```php
 <?php
 // --- 1. DATABASE SETUP & AUTO-PATCHER ---
 $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? null;
@@ -1149,5 +1140,3 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-```
