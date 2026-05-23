@@ -24,54 +24,66 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // CREATE TABLES
+    // CREATE TABLES
     $pdo->exec("
-        DROP TABLE IF EXISTS users CASCADE;
-			id SERIAL PRIMARY KEY,
-			firstname VARCHAR(50),
-			lastname VARCHAR(50),
-			email VARCHAR(100) UNIQUE,
-			username VARCHAR(50) UNIQUE,
-			password VARCHAR(255),
-			role VARCHAR(20) DEFAULT 'student',
-			status VARCHAR(20) DEFAULT 'pending',
-			course VARCHAR(150),
-			address TEXT,
-			birthdate DATE,
-			photo VARCHAR(255) DEFAULT 'default.png'
-		);
-        DROP TABLE IF EXISTS subjects CASCADE;
+        CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
-            subject_code VARCHAR(20), subject_title VARCHAR(100),
-            units INT, teacher_id INT, sy VARCHAR(20), sem VARCHAR(20),
-            course VARCHAR(150), schedule VARCHAR(100)
+            firstname VARCHAR(50),
+            lastname VARCHAR(50),
+            email VARCHAR(100) UNIQUE,
+            username VARCHAR(50) UNIQUE,
+            password VARCHAR(255),
+            role VARCHAR(20) DEFAULT 'student',
+            status VARCHAR(20) DEFAULT 'pending',
+            course VARCHAR(150),
+            address TEXT,
+            birthdate DATE,
+            photo VARCHAR(255) DEFAULT 'default.png'
         );
-        DROP TABLE IF EXISTS enrollments CASCADE;
+
+        CREATE TABLE IF NOT EXISTS subjects (
             id SERIAL PRIMARY KEY,
-            student_id INT, subject_id INT,
-            prelim FLOAT DEFAULT 0, midterm FLOAT DEFAULT 0, final FLOAT DEFAULT 0,
+            subject_code VARCHAR(20), 
+            subject_title VARCHAR(100),
+            units INT, 
+            teacher_id INT, 
+            sy VARCHAR(20), 
+            sem VARCHAR(20),
+            course VARCHAR(150), 
+            schedule VARCHAR(100)
+        );
+
+        CREATE TABLE IF NOT EXISTS enrollments (
+            id SERIAL PRIMARY KEY,
+            student_id INT, 
+            subject_id INT,
+            prelim FLOAT DEFAULT 0, 
+            midterm FLOAT DEFAULT 0, 
+            final FLOAT DEFAULT 0,
             remarks VARCHAR(50) DEFAULT 'No Grade'
         );
-        DROP TABLE IF EXISTS payments CASCADE;
-			id SERIAL PRIMARY KEY,
-			student_id INT, 
-			amount DECIMAL(10,2), 
-			receipt_no VARCHAR(50),
-			sy VARCHAR(20), 
-			sem VARCHAR(20), 
-			pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			received_by INT
+
+        CREATE TABLE IF NOT EXISTS payments (
+            id SERIAL PRIMARY KEY,
+            student_id INT, 
+            amount DECIMAL(10,2), 
+            receipt_no VARCHAR(50),
+            sy VARCHAR(20), 
+            sem VARCHAR(20), 
+            pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            received_by INT
         );
-        $pdo->exec("
-CREATE TABLE IF NOT EXISTS fee_schedules (
-    id SERIAL PRIMARY KEY,
-    fee_name VARCHAR(100),
-    fee_type VARCHAR(20) DEFAULT 'Tuition',
-    amount DECIMAL(10,2),
-    sy VARCHAR(20),
-    sem VARCHAR(20),
-    student_id INT
-);
-");
+
+        CREATE TABLE IF NOT EXISTS fee_schedules (
+            id SERIAL PRIMARY KEY,
+            fee_name VARCHAR(100),
+            fee_type VARCHAR(20) DEFAULT 'Tuition',
+            amount DECIMAL(10,2),
+            sy VARCHAR(20),
+            sem VARCHAR(20),
+            student_id INT
+        );
+    ");
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
