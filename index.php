@@ -82,6 +82,14 @@ try {
             sem VARCHAR(20),
             student_id INT
         );
+
+		CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    student_id INT,
+    task_content TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -103,6 +111,19 @@ $view = $_GET['view'] ?? 'login';
 if (isset($_SESSION['sys_msg'])) {
     $msg = $_SESSION['sys_msg'];
     unset($_SESSION['sys_msg']);
+}
+
+// --- TASK LOGIC ---
+if (isset($_POST['add_task'])) {
+    $stmt = $pdo->prepare("INSERT INTO tasks (student_id, task_content) VALUES (?, ?)");
+    $stmt->execute([$_SESSION['user_id'], $_POST['task_text']]);
+    $_SESSION['sys_msg'] = "<div class='alert alert-success'>Task added!</div>";
+    header("Location: ?page=home"); exit();
+}
+if (isset($_GET['del_task'])) {
+    $pdo->prepare("DELETE FROM tasks WHERE id = ? AND student_id = ?")
+        ->execute([$_GET['del_task'], $_SESSION['user_id']]);
+    header("Location: ?page=home"); exit();
 }
 
 // Fetch current user data if logged in
@@ -309,65 +330,59 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     
     <style>
        /* GLOBAL THEME */
-        body { 
+       body { 
             font-family: 'Poppins', sans-serif; 
-            /* Updated path to look for the file in the current directory */
             background: url('https://images.unsplash.com/photo-1759434236990-3ce36b930edf?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center fixed;
             background-size: cover;
-            color: #fff;
-            overflow-x: hidden;
-            /* Added fallback background color in case the image fails to load */
-            background-color: #2c3e50; 
-        }
-        /* SMOOTH TRANSITIONS */
-        a, button, input, select, textarea, .glass-panel { transition: all 0.3s ease-in-out; }
-
-        /* SOFT DARK GLASSMORPHISM */
-        .glass-panel {
-            background: rgba(30, 30, 38, 0.7); /* Light Dark background */
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
             color: #ffffff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
-        
-        /* SIDEBAR LIGHT DARK */
+
+        //* 2. GLASS PANELS - LIGHT BLACK */
+        .glass-panel, .card {
+            background: rgba(35, 35, 40, 0.8) !important; /* Soft dark panel */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff !important;
+        }
+
+        /* 3. ENSURE ALL TEXT IS WHITE */
+        h1, h2, h3, h4, h5, h6, p, label, span, div, td, th {
+            color: #ffffff !important;
+        }
+
+        /* 4. TABLES - LIGHT BLACK WITH WHITE TEXT */
+        .table { 
+            color: #ffffff !important; 
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .table-dark { 
+            background: rgba(0, 0, 0, 0.3) !important; 
+        }
+        .table-hover tbody tr:hover { 
+            background-color: rgba(255, 255, 255, 0.05) !important; 
+        }
+
+        /* 5. SIDEBAR - LIGHT BLACK */
         .glass-sidebar {
-            background: rgba(25, 25, 32, 0.85);
-            backdrop-filter: blur(15px);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            background: #1e1e24 !important;
+            border-right: 1px solid #333;
         }
-        .glass-sidebar a { color: #b0b0b0; text-decoration: none; padding: 12px 20px; display: block; }
-        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.2); color: #d97736; }
+        .glass-sidebar a { color: #ffffff !important; }
+        .glass-sidebar a:hover { background: #d97736 !important; }
 
-        /* BUTTONS */
-        .btn-orange {
-            background: #d97736 !important;
-            color: #fff !important;
-            border-radius: 8px;
-        }
-        .btn-orange:hover { background: #b8622b !important; }
-
-        /* INPUTS - LIGHT DARK */
+        /* 6. INPUTS - LIGHT BLACK */
         .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: #fff !important;
+            background: #2a2a30 !important;
+            border: 1px solid #444 !important;
+            color: #ffffff !important;
         }
-        .form-control:focus { background: rgba(255, 255, 255, 0.1) !important; border-color: #d97736 !important; }
+        .form-control::placeholder { color: #aaaaaa !important; }
 
-        /* TABLES - LIGHT DARK */
-        .table { color: #e0e0e0 !important; }
-        .table-dark { background: rgba(0, 0, 0, 0.2) !important; }
-        .table-hover tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
-
-        /* MODALS */
-        .modal-content {
-            background: rgba(30, 30, 38, 0.95);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
+        /* 7. BUTTONS - KEEP THE TEACHER GOLD/ORANGE ACCENT */
+        .btn-orange, .btn-primary, .btn-success {
+            background: #d97736 !important;
+            border: none !important;
+            color: #ffffff !important;
         }
 
         /* UTILS */
@@ -574,6 +589,25 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 <div class="glass-panel p-4">
                                     <h5>Welcome back, <?= $currentUser['firstname'] ?>!</h5>
                                     <p class="text-muted">You can manage your subjects and view your grades using the menu on the left.</p>
+
+								<div class="glass-panel p-4 mt-4">
+    								<h5>My Tasks</h5>
+    								<form method="POST" class="d-flex mb-3">
+        				<input type="text" name="task_text" class="form-control me-2" placeholder="Enter a new task..." required>
+       			 <button name="add_task" class="btn btn-orange">Add</button>
+   					 </form>
+   				 <ul class="list-group">
+        <?php
+        $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
+        $tasks->execute([$_SESSION['user_id']]);
+        foreach($tasks as $t): ?>
+            <li class="list-group-item d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: white;">
+                <?= htmlspecialchars($t['task_content']) ?>
+                <a href="?page=home&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+</div>
                                 </div>
                             </div>
                         </div>
