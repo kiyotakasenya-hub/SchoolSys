@@ -184,7 +184,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
             $photo_query = ", photo='$photo_name'";
         }
         
-        // Convert blank date string to null for Postgres compliance
         $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
         
         $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, birthdate=?, address=? $photo_query WHERE id=?");
@@ -291,10 +290,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             $photo_query = ", photo='$photo_name'";
         }
 
-        // FIX: Evaluates empty string inputs into valid database NULL targets for PostgreSQL compliance
         $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
 
-        // Handle Password Update explicitly
         if (!empty($_POST['new_password'])) {
             $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
@@ -425,12 +422,14 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important;
         }
 
-        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS */
+        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS (Now Glassmorphic with fully visible White Text/Inputs) */
         .modal-content {
-            background-color: #ffffff !important;
-            border: none !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: rgba(45, 55, 75, 0.4) !important; 
+            backdrop-filter: blur(25px) saturate(120%);
+            -webkit-backdrop-filter: blur(25px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
         .modal-body {
             padding: 24px !important;
@@ -438,19 +437,20 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         .modal-body .form-control {
             background-color: #2e3035 !important;
             color: #ffffff !important;
-            border: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
             border-radius: 6px !important;
             padding: 12px 16px !important;
             font-size: 0.95rem !important;
         }
+        /* Ensures crisp high-contrast visibility for text typed and inside placeholders */
         .modal-body .form-control::placeholder {
-            color: #ffffff !important;
-            opacity: 0.9 !important;
+            color: rgba(255, 255, 255, 0.85) !important;
         }
         .modal-body textarea.form-control {
             min-height: 100px;
             resize: none;
         }
+        /* Custom file selector container updates */
         .modal-body input[type="file"].form-control {
             padding: 0 !important;
             display: flex;
@@ -458,30 +458,34 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             background-color: #2e3035 !important;
         }
         .modal-body input[type="file"].form-control::file-selector-button {
-            background-color: #ffffff !important;
-            color: #333333 !important;
-            border: 1px solid #2e3035 !important;
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
             padding: 12px 20px !important;
             margin-right: 15px !important;
             border-radius: 6px 0 0 6px !important;
             cursor: pointer;
             font-weight: 500;
         }
+        .modal-body input[type="file"].form-control::file-selector-button:hover {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+        }
         .modal-footer {
             border-top: none !important;
             padding: 0 24px 24px 24px !important;
-            background-color: #ffffff !important;
-            border-bottom-left-radius: 8px !important;
-            border-bottom-right-radius: 8px !important;
+            background: transparent !important;
         }
         .modal-footer .btn-secondary {
-            background-color: #6c757d !important;
+            background-color: #5a6268 !important;
             border: none !important;
             color: #ffffff !important;
             padding: 10px 24px !important;
             font-size: 0.95rem !important;
             border-radius: 6px !important;
+            opacity: 0.9;
         }
+        .modal-footer .btn-secondary:hover { opacity: 1; }
         .modal-footer .btn-orange {
             background-color: #d97736 !important;
             padding: 10px 24px !important;
@@ -653,7 +657,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <div class="text-center mb-4">
                                         <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm" style="width:130px; height:130px; object-fit:cover; border: 2px solid #d97736;">
                                         <h5 class="mt-3 mb-0 fw-semibold"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
-                                        <small class="text-muted">Student ID: STU-00<?= $currentUser['id'] ?></small>
+                                        <small class="text-white-50">Student ID: STU-00<?= $currentUser['id'] ?></small>
                                         <div class="mt-3">
                                             <button class="btn btn-sm btn-orange px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#editMyProfile">
                                                 <i class="bi bi-pencil me-1"></i> Edit Profile
@@ -668,7 +672,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 </div>
                             </div>
 
-                            <!-- EDIT PROFILE MODAL (Borderless Dark Inputs, Explicit Layout matching Photo 4) -->
+                            <!-- EDIT PROFILE MODAL (Fully Translucent Glass panel layout matching Image 4 setup) -->
                             <div class="modal fade" id="editMyProfile" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <form method="POST" enctype="multipart/form-data" class="modal-content">
@@ -763,7 +767,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <button class="btn btn-sm btn-orange" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
                                     <div class="modal fade" id="editS<?= $s['id'] ?>" tabindex="-1">
                                         <div class="modal-dialog"><form method="POST" enctype="multipart/form-data" class="modal-content">
-                                            <div class="modal-header border-0"><h5>Edit Student</h5></div>
+                                            <div class="modal-header border-0"><h5 class="text-dark">Edit Student</h5></div>
                                             <div class="modal-body text-start">
                                                 <input type="hidden" name="sid" value="<?= $s['id'] ?>">
                                                 <label class="text-dark">First Name</label><input name="fname" value="<?= $s['firstname'] ?>" class="form-control mb-2">
@@ -1185,7 +1189,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "</table></div>";
                 }
                 elseif ($page == 'dean_enrollment' && $_SESSION['role'] == 'dean') {
-                    echo "]./<h3>Enrolled Students List</h3>";
+                    echo "<h3>Enrolled Students List</h3>";
                     $enrolled = $pdo->query("SELECT DISTINCT u.firstname, u.lastname, u.email, u.id FROM users u JOIN enrollments e ON u.id = e.student_id WHERE u.role = 'student'")->fetchAll();
                     ?>
                     <div class="glass-panel p-2 mt-3 table-responsive">
