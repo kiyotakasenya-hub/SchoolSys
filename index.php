@@ -293,8 +293,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             ->execute([$_GET['drop_id'], $_SESSION['user_id']]);
         $msg = "<div class='alert alert-warning'>Subject dropped.</div>";
     }
-} 
-
+ } 
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
