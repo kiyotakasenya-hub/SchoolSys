@@ -62,6 +62,7 @@ try {
 			received_by INT
         );
         try {
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS fee_schedules (
         id SERIAL PRIMARY KEY,
         fee_name VARCHAR(100),
@@ -75,7 +76,13 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         firstname VARCHAR(50),
-        lastname VARCHAR(50)
+        lastname VARCHAR(50),
+        email VARCHAR(100)
+    )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS subjects (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100)
     )");
 
 } catch (PDOException $e) {
