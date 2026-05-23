@@ -308,15 +308,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* GLOBAL THEME */
+       /* GLOBAL THEME */
         body { 
             font-family: 'Poppins', sans-serif; 
+            /* Updated path to look for the file in the current directory */
             background: url('57be78a6-4e37-46bb-a7fd-232320886fa1-cover.jpg') no-repeat center center fixed;
             background-size: cover;
             color: #fff;
             overflow-x: hidden;
+            /* Added fallback background color in case the image fails to load */
+            background-color: #2c3e50; 
         }
-
         /* SMOOTH TRANSITIONS */
         a, button, input, select, textarea, .glass-panel { transition: all 0.3s ease-in-out; }
 
