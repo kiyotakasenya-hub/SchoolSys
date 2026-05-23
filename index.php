@@ -236,9 +236,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'finance') {
 
 // ADMIN ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
-	if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
-    // ... existing approve/reject/create logic ...
-
     // New Delete Logic
     if (isset($_GET['delete_user_id'])) {
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$_GET['delete_user_id']]);
