@@ -24,8 +24,8 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // CREATE TABLES
-    // CREATE TABLES
-    $pdo->exec("DROP TABLE IF EXISTS users CASCADE;
+   $pdo->exec("
+        DROP TABLE IF EXISTS users CASCADE;
         CREATE TABLE users (
             id SERIAL PRIMARY KEY,
             firstname VARCHAR(50),
@@ -40,20 +40,31 @@ try {
             birthdate DATE,
             photo VARCHAR(255) DEFAULT 'default.png'
         );
+
         DROP TABLE IF EXISTS subjects CASCADE;
         CREATE TABLE subjects (
             id SERIAL PRIMARY KEY,
-            subject_code VARCHAR(20), subject_title VARCHAR(100),
-            units INT, teacher_id INT, sy VARCHAR(20), sem VARCHAR(20),
-            course VARCHAR(150), schedule VARCHAR(100)
+            subject_code VARCHAR(20), 
+            subject_title VARCHAR(100),
+            units INT, 
+            teacher_id INT, 
+            sy VARCHAR(20), 
+            sem VARCHAR(20),
+            course VARCHAR(150), 
+            schedule VARCHAR(100)
         );
+
         DROP TABLE IF EXISTS enrollments CASCADE;
         CREATE TABLE enrollments (
             id SERIAL PRIMARY KEY,
-            student_id INT, subject_id INT,
-            prelim FLOAT DEFAULT 0, midterm FLOAT DEFAULT 0, final FLOAT DEFAULT 0,
+            student_id INT, 
+            subject_id INT,
+            prelim FLOAT DEFAULT 0, 
+            midterm FLOAT DEFAULT 0, 
+            final FLOAT DEFAULT 0,
             remarks VARCHAR(50) DEFAULT 'No Grade'
         );
+
         DROP TABLE IF EXISTS payments CASCADE;
         CREATE TABLE payments (
             id SERIAL PRIMARY KEY,
@@ -65,6 +76,7 @@ try {
             pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             received_by INT
         );
+
         CREATE TABLE IF NOT EXISTS fee_schedules (
             id SERIAL PRIMARY KEY,
             fee_name VARCHAR(100),
@@ -74,7 +86,6 @@ try {
             sem VARCHAR(20),
             student_id INT
         );
-    );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
