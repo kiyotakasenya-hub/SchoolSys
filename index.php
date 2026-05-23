@@ -420,7 +420,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     <a href="?"><i class="bi bi-house"></i> Home</a>
                     
                     <?php if($_SESSION['role'] == 'admin'): ?>
-                        <a href="?page=approvals">User Approvals</a>
+                        <a href="?page=approvals">User Management</a>
                         <a href="?page=create_staff">Create Staff</a>
                     <?php elseif($_SESSION['role'] == 'records'): ?>
                         <a href="?page=rec_students"><i class="bi bi-people"></i> Manage Students</a>
