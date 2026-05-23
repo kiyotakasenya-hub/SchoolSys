@@ -302,40 +302,43 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Core Portal</title>
-	<meta charset="UTF-8">
     <title>Campus Core Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
     <style>
-		<style>
-    body { background: #f4f7f6; font-family: 'Poppins', sans-serif; }
-    h1, h2, h3, h4, h5, h6 { font-family: 'Cinzel', serif; }
-    
-    /* Optional: Make your login card text look cleaner */
-    .card { font-family: 'Poppins', sans-serif; }
-    
-    .sidebar { min-height: 100vh; background: #2c3e50; color: white; }
-    /* ... your existing styles ... */
-        body { background: #f4f7f6; overflow-x: hidden; }
-        .sidebar { background: #2c3e50; color: white; height: 100%; }
+        /* 3. UNIFIED THEME */
+        body { background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Cinzel', serif; }
+        
+        .sidebar { min-height: 100vh; background: #2c3e50; color: white; }
         .sidebar a { color: #bdc3c7; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #34495e; }
         .sidebar a:hover, .sidebar a.active { background: #3498db; color: white; }
+        
+        /* Particles styling */
+        #particles-js { position: fixed; width: 100%; height: 100%; z-index: -1; top: 0; left: 0; background: #2c3e50; }
+        .card { background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(5px); }
+        
         .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #3498db; }
-        
-        /* Force minimum height on desktop */
-        @media (min-width: 768px) {
-            .sidebar-wrapper { min-height: 100vh; }
-        }
-        
-        @media print { 
-            .no-print, .mobile-nav { display: none !important; } 
-            .col-md-10 { width: 100% !important; } 
-        }
+        @media print { .no-print { display: none !important; } .sidebar { display: none !important; } .col-md-10 { width: 100% !important; } }
     </style>
+	<body>
+    <div id="particles-js"></div>
+    <script>
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" },
+                "line_linked": { "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1 },
+                "move": { "enable": true, "speed": 2 }
+            },
+            "retina_detect": true
+        });
+    </script>
 </head>
 <body>
 <?php if (!isset($_SESSION['user_id'])): ?>
