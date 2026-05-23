@@ -250,6 +250,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             ->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $_POST['role']]);
         $msg = "<div class='alert alert-success'>Staff account created successfully.</div>";
     }
+	if (isset($_GET['delete_user_id'])) {
+        $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$_GET['delete_user_id']]);
+        $msg = "<div class='alert alert-danger'>User account has been permanently removed.</div>";
+    }
 }
 
 // --- STUDENT DASH ACTIONS ---
@@ -742,18 +746,36 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     }
                 }
                 // --- ADMIN PAGES ---
-                elseif ($page == 'approvals' && $_SESSION['role'] == 'admin') {
-                    echo "<h3>Pending Approvals</h3>";
-                    $pending = $pdo->query("SELECT * FROM users WHERE status='pending'")->fetchAll();
-                    echo "<div class='table-responsive'><table class='table bg-white'><tr><th>Name</th><th>Role</th><th>Action</th></tr>";
-                    foreach($pending as $p) {
-                        echo "<tr><td>{$p['firstname']} {$p['lastname']}</td><td>{$p['role']}</td><td>
-                            <a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve</a>
-                            <a href='?page=approvals&reject_id={$p['id']}' class='btn btn-sm btn-danger'>Reject</a>
-                        </td></tr>";
-                    }
-                    echo "</table></div>";
-                }
+                // --- ADMIN PAGES ---
+			elseif ($page == 'approvals' && $_SESSION['role'] == 'admin') {
+  				  echo "<h3>User Management</h3>";
+    // We update the query to show all non-admin users
+    			$users = $pdo->query("SELECT * FROM users WHERE role != 'admin'")->fetchAll();
+    
+  					  echo "<table class='table bg-white shadow-sm'>
+            <thead class='table-dark'><tr><th>Name</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>";
+    			foreach($users as $p) {
+        echo "<tr>
+                <td>{$p['firstname']} {$p['lastname']}</td>
+                <td>".ucfirst($p['role'])."</td>
+                <td>".strtoupper($p['status'])."</td>
+                <td>";
+        
+        if($p['status'] == 'pending') {
+            echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success me-1'>Approve</a>
+                  <a href='?page=approvals&reject_id={$p['id']}' class='btn btn-sm btn-warning me-1'>Reject</a>";
+        }
+        
+        echo "<a href='?page=approvals&delete_user_id={$p['id']}' 
+                 class='btn btn-sm btn-danger' 
+                 onclick='return confirm(\"Are you sure? This will permanently delete this user.\")'>
+                 Delete
+              </a>
+              </td>
+              </tr>";
+    }
+    echo "</table>";
+}
                 elseif ($page == 'create_staff' && $_SESSION['role'] == 'admin') {
                     echo "<h3>Create Staff Account</h3>";
                     ?>
