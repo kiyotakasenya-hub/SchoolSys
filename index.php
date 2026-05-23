@@ -173,6 +173,33 @@ if (isset($_POST['register_user'])) {
     }
 }
 
+// UNIFIED PERSONAL PROFILE & PASSWORD UPDATE ACTION HANDLER (Applies to Admin, Teachers, and all Staff roles)
+if (isset($_POST['user_update_own_profile'])) {
+    $photo_query = "";
+    if(!empty($_FILES['photo']['name'])) {
+        $photo_name = time() . "_" . $_FILES['photo']['name'];
+        if (!is_dir('uploads')) { mkdir('uploads', 0777, true); }
+        move_uploaded_file($_FILES['photo']['tmp_name'], "uploads/" . $photo_name);
+        $photo_query = ", photo='$photo_name'";
+    }
+
+    $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
+
+    if (!empty($_POST['new_password'])) {
+        $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
+        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $hash, $_SESSION['user_id']]);
+    } else {
+        $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
+        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $_SESSION['user_id']]);
+    }
+
+    $_SESSION['name'] = $_POST['fname'] . " " . $_POST['lname'];
+    $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Your dashboard profile information has been successfully updated!</div>";
+    header("Location: ?page=home");
+    exit();
+}
+
 // RECORDS ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
     if (isset($_POST['update_student_profile'])) {
@@ -279,33 +306,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 
 // --- STUDENT DASH ACTIONS ---
 if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
-    
-    // Handle Profile & Password Update
-    if (isset($_POST['student_update_profile'])) {
-        $photo_query = "";
-        if(!empty($_FILES['photo']['name'])) {
-            $photo_name = time() . "_" . $_FILES['photo']['name'];
-            if (!is_dir('uploads')) { mkdir('uploads', 0777, true); }
-            move_uploaded_file($_FILES['photo']['tmp_name'], "uploads/" . $photo_name);
-            $photo_query = ", photo='$photo_name'";
-        }
-
-        $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
-
-        if (!empty($_POST['new_password'])) {
-            $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
-            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $hash, $_SESSION['user_id']]);
-        } else {
-            $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
-            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $_SESSION['user_id']]);
-        }
-
-        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Your profile information has been successfully saved!</div>";
-        header("Location: ?page=home");
-        exit();
-    }
-
     if (isset($_GET['enroll_id'])) {
         $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id = ? AND subject_id = ?");
         $check->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
@@ -356,13 +356,22 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff;
         }
 
-        /* 4. TABLES */
+        /* 4. TABLES - GLASS THROUGH TRANS TRANSPARENCY FIX */
         .table { 
             color: #ffffff !important; 
             border-color: rgba(255, 255, 255, 0.1) !important;
+            background: transparent !important;
         }
-        .table-dark { background: rgba(0, 0, 0, 0.3) !important; }
-        .table-hover tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+        .table :not(caption) > * > * {
+            background-color: transparent !important;
+            color: #ffffff !important;
+        }
+        .table-dark { 
+            background: rgba(0, 0, 0, 0.2) !important; 
+        }
+        .table-hover tbody tr:hover { 
+            background-color: rgba(255, 255, 255, 0.05) !important; 
+        }
 
         /* 5. SIDEBAR - GLASSMORPHISM */
         .glass-sidebar {
@@ -422,7 +431,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important;
         }
 
-        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS (Now Glassmorphic with fully visible White Text/Inputs) */
+        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS */
         .modal-content {
             background: rgba(45, 55, 75, 0.4) !important; 
             backdrop-filter: blur(25px) saturate(120%);
@@ -442,7 +451,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             padding: 12px 16px !important;
             font-size: 0.95rem !important;
         }
-        /* Ensures crisp high-contrast visibility for text typed and inside placeholders */
         .modal-body .form-control::placeholder {
             color: rgba(255, 255, 255, 0.85) !important;
         }
@@ -450,7 +458,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             min-height: 100px;
             resize: none;
         }
-        /* Custom file selector container updates */
         .modal-body input[type="file"].form-control {
             padding: 0 !important;
             display: flex;
@@ -597,11 +604,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 </div>
                 <div class="offcanvas-body d-flex flex-column p-0">
                     <div class="profile-section">
-                        <?php if($_SESSION['role'] == 'student'): ?>
-                            <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle mb-2 shadow">
-                        <?php else: ?>
-                            <img src="uploads/default.png" class="rounded-circle mb-2 shadow">
-                        <?php endif; ?>
+                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle mb-2 shadow">
                         <h6 class="mb-1"><?= $_SESSION['name'] ?></h6>
                         <small style="color: #d97736; font-weight: 500; letter-spacing: 1px;"><?= strtoupper($_SESSION['role']) ?></small>
                     </div>
@@ -645,76 +648,71 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 <?php
                 $page = $_GET['page'] ?? 'home';
                 
-               // --- HOME DASHBOARD ---
+               // --- HOME DASHBOARD (Now shared dynamically across all platform roles) ---
                 if ($page == 'home') {
-                    if ($_SESSION['role'] == 'student') {
-                        ?>
-                        <h3 class="mb-4">Student Dashboard</h3>
-                        <div class="row">
-                            <div class="col-md-4 mb-4">
-                                <!-- Profile Card component wrapper -->
-                                <div class="glass-panel p-4 h-100">
-                                    <div class="text-center mb-4">
-                                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm" style="width:130px; height:130px; object-fit:cover; border: 2px solid #d97736;">
-                                        <h5 class="mt-3 mb-0 fw-semibold"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
-                                        <small class="text-white-50">Student ID: STU-00<?= $currentUser['id'] ?></small>
-                                        <div class="mt-3">
-                                            <button class="btn btn-sm btn-orange px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#editMyProfile">
-                                                <i class="bi bi-pencil me-1"></i> Edit Profile
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="text-start mt-4" style="font-size: 0.9rem;">
-                                        <p class="mb-2"><strong style="color: #e0e0e0;">Email:</strong> <?= $currentUser['email'] ?></p>
-                                        <p class="mb-2"><strong style="color: #e0e0e0;">Course:</strong> <?= $currentUser['course'] ?></p>
-                                        <p class="mb-0"><strong style="color: #e0e0e0;">Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
+                    ?>
+                    <h3 class="mb-4"><?= ucfirst($_SESSION['role']) ?> Dashboard</h3>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="glass-panel p-4 h-100">
+                                <div class="text-center mb-4">
+                                    <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm" style="width:130px; height:130px; object-fit:cover; border: 2px solid #d97736;">
+                                    <h5 class="mt-3 mb-0 fw-semibold"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
+                                    <small class="text-white-50">Account Reference ID: REF-00<?= $currentUser['id'] ?></small>
+                                    <div class="mt-3">
+                                        <button class="btn btn-sm btn-orange px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#editMyOwnProfile">
+                                            <i class="bi bi-pencil me-1"></i> Edit Profile
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- EDIT PROFILE MODAL (Fully Translucent Glass panel layout matching Image 4 setup) -->
-                            <div class="modal fade" id="editMyProfile" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <form method="POST" enctype="multipart/form-data" class="modal-content">
-                                        <div class="modal-body">
-                                            <div class="row g-3 mb-3">
-                                                <div class="col-6">
-                                                    <input type="text" name="fname" value="<?= htmlspecialchars($currentUser['firstname']) ?>" class="form-control" placeholder="First Name" required>
-                                                </div>
-                                                <div class="col-6">
-                                                    <input type="text" name="lname" value="<?= htmlspecialchars($currentUser['lastname']) ?>" class="form-control" placeholder="Last Name" required>
-                                                </div>
-                                            </div>
-                                            
-                                            <input type="email" name="email" value="<?= htmlspecialchars($currentUser['email']) ?>" class="form-control mb-3" placeholder="Email Address" required>
-                                            
-                                            <input type="password" name="new_password" class="form-control mb-3" placeholder="New Password">
-                                            
-                                            <input type="date" name="bdate" value="<?= $currentUser['birthdate'] ?>" class="form-control mb-3" placeholder="dd/mm/yyyy">
-                                            
-                                            <textarea name="addr" class="form-control mb-3" placeholder="Address"><?= htmlspecialchars($currentUser['address']) ?></textarea>
-                                            
-                                            <input type="file" name="photo" class="form-control" accept="image/*">
-                                        </div>
-                                        <div class="modal-footer justify-content-end">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button name="student_update_profile" class="btn btn-orange">Save Changes</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div class="col-md-8">
-                                <div class="mb-3">
-                                    <h4 class="fw-semibold">Welcome back, <?= $currentUser['firstname'] ?>!</h4>
-                                    <p class="text-white opacity-75 small">You can manage your subjects and view your grades using the menu on the left.</p>
+                                <div class="text-start mt-4" style="font-size: 0.9rem;">
+                                    <p class="mb-2"><strong style="color: #e0e0e0;">Email:</strong> <?= $currentUser['email'] ?: 'Not set' ?></p>
+                                    <p class="mb-2"><strong style="color: #e0e0e0;">Role Privileges:</strong> <?= strtoupper($currentUser['role']) ?></p>
+                                    <p class="mb-0"><strong style="color: #e0e0e0;">Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
                                 </div>
                             </div>
                         </div>
-                        <?php
-                    } else {
-                        echo "<h3>Dashboard</h3><p class='text-muted'>Welcome back, " . $_SESSION['name'] . ".</p>";
-                    }
+
+                        <!-- DYNAMIC PROFILE GLASS MODAL (Accessible by Admin, Teachers, and all Staff roles) -->
+                        <div class="modal fade" id="editMyOwnProfile" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <form method="POST" enctype="multipart/form-data" class="modal-content">
+                                    <div class="modal-body">
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-6">
+                                                <input type="text" name="fname" value="<?= htmlspecialchars($currentUser['firstname']) ?>" class="form-control" placeholder="First Name" required>
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="text" name="lname" value="<?= htmlspecialchars($currentUser['lastname']) ?>" class="form-control" placeholder="Last Name" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <input type="email" name="email" value="<?= htmlspecialchars($currentUser['email'] ?? '') ?>" class="form-control mb-3" placeholder="Email Address" required>
+                                        
+                                        <input type="password" name="new_password" class="form-control mb-3" placeholder="New Password">
+                                        
+                                        <input type="date" name="bdate" value="<?= $currentUser['birthdate'] ?>" class="form-control mb-3" placeholder="dd/mm/yyyy">
+                                        
+                                        <textarea name="addr" class="form-control mb-3" placeholder="Address"><?= htmlspecialchars($currentUser['address'] ?? '') ?></textarea>
+                                        
+                                        <input type="file" name="photo" class="form-control" accept="image/*">
+                                    </div>
+                                    <div class="modal-footer justify-content-end">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button name="user_update_own_profile" class="btn btn-orange">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <h4 class="fw-semibold">Welcome back, <?= $currentUser['firstname'] ?>!</h4>
+                                <p class="text-white opacity-75 small">Use the dashboard sidebar matrix panel on the left to navigate your operations infrastructure tools.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
                 }
                 // --- DEDICATED MY TASKS PAGE ---
                 elseif ($page == 'my_tasks' && $_SESSION['role'] == 'student') {
@@ -767,7 +765,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <button class="btn btn-sm btn-orange" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
                                     <div class="modal fade" id="editS<?= $s['id'] ?>" tabindex="-1">
                                         <div class="modal-dialog"><form method="POST" enctype="multipart/form-data" class="modal-content">
-                                            <div class="modal-header border-0"><h5 class="text-dark">Edit Student</h5></div>
+                                            <div class="modal-header border-0"><h5>Edit Student</h5></div>
                                             <div class="modal-body text-start">
                                                 <input type="hidden" name="sid" value="<?= $s['id'] ?>">
                                                 <label class="text-dark">First Name</label><input name="fname" value="<?= $s['firstname'] ?>" class="form-control mb-2">
@@ -1258,7 +1256,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                         <?php foreach($my_grades as $g): ?>
                                         <tr>
                                             <td><?= $g['sy'] ?> - <?= $g['sem'] ?></td>
-                                            <td><strong><?= $g['subject_code'] ?></strong><br><small class="text-muted"><?= $g['subject_title'] ?></small></td>
+                                            <td>return<strong><?= $g['subject_code'] ?></strong><br><small class="text-muted"><?= $g['subject_title'] ?></small></td>
                                             <td><?= $g['units'] ?></td>
                                             <td><?= $g['prelim'] > 0 ? $g['prelim'] : '-' ?></td>
                                             <td><?= $g['midterm'] > 0 ? $g['midterm'] : '-' ?></td>
