@@ -701,7 +701,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             </div>
                         </div>
 
-                        <!-- DYNAMIC PROFILE GLASS MODAL -->
                         <div class="modal fade" id="editMyOwnProfile" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <form method="POST" enctype="multipart/form-data" class="modal-content">
@@ -747,7 +746,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     ?>
                     <h3 class="mb-4">Workspace Hub</h3>
                     <div class="row">
-                        <!-- Left Column: Task Component Panel -->
                         <div class="col-lg-6 mb-4">
                             <div class="glass-panel p-4 mb-4" id="tasks">
                                 <h5 class="mb-3 fw-semibold"><i class="bi bi-list-check me-2"></i>Task Manager</h5>
@@ -772,13 +770,16 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </ul>
                             </div>
 
-                            <!-- STUDY POMODORO TIMER MATRIX COMPONENT -->
                             <div class="glass-panel p-4">
                                 <h5 class="mb-3 fw-semibold"><i class="bi bi-hourglass-split me-2"></i>Study Timer Mode</h5>
-                                <div class="d-flex justify-content-center gap-2 mb-3">
+                                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3 align-items-center">
                                     <button onclick="setTimerPreset(25)" class="timer-preset-btn active" id="btnPresetStudy">25m Study</button>
                                     <button onclick="setTimerPreset(5)" class="timer-preset-btn" id="btnPresetShort">5m Break</button>
                                     <button onclick="setTimerPreset(15)" class="timer-preset-btn" id="btnPresetLong">15m Break</button>
+                                    <div class="input-group" style="width: 140px;">
+                                        <input type="number" id="customTimerInput" class="form-control" placeholder="Mins" min="1">
+                                        <button onclick="setCustomTimer()" class="btn btn-outline-light timer-preset-btn border-start-0" style="border-radius: 0 20px 20px 0;">Set</button>
+                                    </div>
                                 </div>
                                 <div class="text-center my-4">
                                     <div id="countdownClockDisplay" class="fw-semibold display-3" style="font-family: monospace; letter-spacing: 2px;">25:00</div>
@@ -790,13 +791,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             </div>
                         </div>
 
-                        <!-- Right Column: Audio Deck System -->
                         <div class="col-lg-6 mb-4">
-                            <!-- Custom Deck System Clone from image_486b26.png -->
                             <div class="deck-wrapper mb-4">
                                 <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
                                 
-                                <!-- Timeline Seek Deck Interface Container -->
                                 <div class="d-flex align-items-center justify-content-between px-1 mb-2">
                                     <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
                                     <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
@@ -805,7 +803,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                     <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
                                 </div>
 
-                                <!-- Action Buttons Node Row Alignment cloning image_486b26.png layout layout -->
                                 <div class="d-flex align-items-center justify-content-between px-3">
                                     <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
                                         <i class="bi bi-shuffle"></i>
@@ -826,7 +823,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                     </button>
                                 </div>
 
-                                <!-- Hidden context engine node volume element container slider popover -->
                                 <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
                                     <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
                                         <i class="bi bi-volume-up-fill text-white-50 small"></i>
@@ -835,7 +831,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
                             </div>
 
-                            <!-- Playlist Track Vault Manager Interface Container -->
                             <div class="glass-panel p-4">
                                 <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
                                 <div class="mb-4">
@@ -844,14 +839,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 
                                 <div class="playlist-vault-box overflow-auto" style="max-height: 200px;">
                                     <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
-                                        <!-- Tracks array loaded dynamically -->
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Core Logic Processing Scripts -->
                     <script>
                         // AUDIO INFRASTRUCTURE ENGINE DECK MATRIX
                         const coreAudioNode = new Audio();
@@ -1052,20 +1045,31 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                         // STUDY WORKSPACE POMODORO COUNTER SYSTEM ENGINE LOGIC
                         let timerEngineRunning = false;
                         let timerLoopHandle = null;
+                        let currentBaseSeconds = 1500; // Store the chosen base time so we can reset to it
                         let targetDurationSeconds = 1500; // Default 25m
 
                         const clockDisplay = document.getElementById('countdownClockDisplay');
                         const timerControlBtn = document.getElementById('btnTimerControl');
 
                         function setTimerPreset(mins) {
-                            resetTimerCore();
-                            targetDurationSeconds = mins * 60;
-                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":00";
-
+                            currentBaseSeconds = mins * 60;
                             document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
+                            
                             if(mins === 25) document.getElementById('btnPresetStudy').classList.add('active');
                             if(mins === 5) document.getElementById('btnPresetShort').classList.add('active');
                             if(mins === 15) document.getElementById('btnPresetLong').classList.add('active');
+                            
+                            resetTimerCore();
+                        }
+
+                        function setCustomTimer() {
+                            const mins = parseInt(document.getElementById('customTimerInput').value);
+                            if (mins && mins > 0) {
+                                currentBaseSeconds = mins * 60;
+                                document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
+                                resetTimerCore();
+                                document.getElementById('customTimerInput').value = ''; // clear input after setting
+                            }
                         }
 
                         function toggleTimerCore() {
@@ -1084,6 +1088,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                         timerEngineRunning = false;
                                         timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
                                         alert("Study timer session complete! Resetting block intervals.");
+                                        resetTimerCore();
                                         return;
                                     }
                                     targetDurationSeconds--;
@@ -1100,14 +1105,11 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             timerEngineRunning = false;
                             timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
                             
-                            // Revert back tracking defaults safely
-                            const currentActivePreset = document.querySelector('.timer-preset-btn.active');
-                            if(currentActivePreset === document.getElementById('btnPresetShort')) targetDurationSeconds = 300;
-                            else if(currentActivePreset === document.getElementById('btnPresetLong')) targetDurationSeconds = 900;
-                            else targetDurationSeconds = 1500;
+                            targetDurationSeconds = currentBaseSeconds;
 
                             let mins = Math.floor(targetDurationSeconds / 60);
-                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":00";
+                            let secs = Math.floor(targetDurationSeconds % 60);
+                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
                         }
                     </script>
                     <?php
