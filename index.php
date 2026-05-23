@@ -25,7 +25,7 @@ try {
 
     // CREATE TABLES
     $pdo->exec("
-        DROP TABLE IF NOT EXISTS users CASCADE(
+        DROP TABLE IF NOT EXISTS users CASCADE;
 			id SERIAL PRIMARY KEY,
 			firstname VARCHAR(50),
 			lastname VARCHAR(50),
@@ -39,19 +39,19 @@ try {
 			birthdate DATE,
 			photo VARCHAR(255) DEFAULT 'default.png'
 		);
-        DROP TABLE IF NOT EXISTS subjects CASCADE(
+        DROP TABLE IF NOT EXISTS subjects CASCADE;
             id SERIAL PRIMARY KEY,
             subject_code VARCHAR(20), subject_title VARCHAR(100),
             units INT, teacher_id INT, sy VARCHAR(20), sem VARCHAR(20),
             course VARCHAR(150), schedule VARCHAR(100)
         );
-        DROP TABLE IF NOT EXISTS enrollments CASCADE(
+        DROP TABLE IF NOT EXISTS enrollments CASCADE;
             id SERIAL PRIMARY KEY,
             student_id INT, subject_id INT,
             prelim FLOAT DEFAULT 0, midterm FLOAT DEFAULT 0, final FLOAT DEFAULT 0,
             remarks VARCHAR(50) DEFAULT 'No Grade'
         );
-        DROP TABLE IF NOT EXISTS payments CASCADE(
+        DROP TABLE IF NOT EXISTS payments CASCADE;
 			id SERIAL PRIMARY KEY,
 			student_id INT, 
 			amount DECIMAL(10,2), 
@@ -61,7 +61,7 @@ try {
 			pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			received_by INT
         );
-        DROP TABLE fee_schedules CASCADE(
+        DROP TABLE fee_schedules CASCADE;
    			id SERIAL PRIMARY KEY,
     		fee_name VARCHAR(100),
     		fee_type VARCHAR(20) DEFAULT 'Tuition',
