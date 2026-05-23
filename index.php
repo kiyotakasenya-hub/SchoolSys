@@ -61,7 +61,8 @@ try {
 			pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			received_by INT
         );
-        CREATE TABLE fee_schedules (
+        $pdo->exec("
+CREATE TABLE IF NOT EXISTS fee_schedules (
     id SERIAL PRIMARY KEY,
     fee_name VARCHAR(100),
     fee_type VARCHAR(20) DEFAULT 'Tuition',
@@ -70,6 +71,7 @@ try {
     sem VARCHAR(20),
     student_id INT
 );
+");
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
