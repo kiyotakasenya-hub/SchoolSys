@@ -296,7 +296,77 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'finance') {
     }
 }
 
-// ADMIN ACTIONS
+// ADMIN ACTIONS (Including Global Curriculum Engine for Teachers)
+$curriculumData = [
+    "Universal Standard Subjects" => [
+        ["c"=>"GE-MMW", "t"=>"Mathematics in the Modern World", "u"=>3], ["c"=>"GE-PC", "t"=>"Purposive Communication", "u"=>3], ["c"=>"GE-STS", "t"=>"Science, Technology, and Society", "u"=>3], ["c"=>"GE-CW", "t"=>"Contemporary World", "u"=>3], ["c"=>"GE-AA", "t"=>"Art Appreciation", "u"=>3], ["c"=>"GE-UTS", "t"=>"Understanding the Self", "u"=>3], ["c"=>"GE-RPH", "t"=>"Readings in Philippine History", "u"=>3], ["c"=>"GE-ETH", "t"=>"Ethics", "u"=>3], ["c"=>"RIZAL", "t"=>"Life and Works of Rizal", "u"=>3], ["c"=>"NSTP1", "t"=>"National Service Training Program 1", "u"=>3], ["c"=>"NSTP2", "t"=>"National Service Training Program 2", "u"=>3], ["c"=>"PE1", "t"=>"PE 1 (Fitness/Wellness)", "u"=>2], ["c"=>"PE2", "t"=>"PE 2 (Rhythmic Activities)", "u"=>2], ["c"=>"PE3", "t"=>"PE 3 (Individual/Dual Sports)", "u"=>2], ["c"=>"PE4", "t"=>"PE 4 (Team Sports)", "u"=>2]
+    ],
+    "BS Accountancy" => [
+        ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
+        ["c"=>"FAR", "t"=>"Financial Accounting and Reporting", "u"=>3], ["c"=>"CAC", "t"=>"Cost Accounting and Control", "u"=>3], ["c"=>"IA1", "t"=>"Intermediate Accounting 1", "u"=>3], ["c"=>"IA2", "t"=>"Intermediate Accounting 2", "u"=>3], ["c"=>"IA3", "t"=>"Intermediate Accounting 3", "u"=>3], ["c"=>"CFAS", "t"=>"Conceptual Framework and Accounting Standards", "u"=>3], ["c"=>"AFAR1", "t"=>"Advanced Financial Accounting and Reporting 1", "u"=>3], ["c"=>"AFAR2", "t"=>"Advanced Financial Accounting and Reporting 2", "u"=>3], ["c"=>"MAC", "t"=>"Management Accounting", "u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"MAS", "t"=>"Management Advisory Services", "u"=>3], ["c"=>"AAP", "t"=>"Auditing and Assurance Principles", "u"=>3], ["c"=>"AASI", "t"=>"Auditing and Assurance: Specialized Industries", "u"=>3], ["c"=>"ACIS", "t"=>"Audit in a CIS/IT Environment", "u"=>3], ["c"=>"BTAX", "t"=>"Business Tax", "u"=>3], ["c"=>"TBT", "t"=>"Transfer and Business Taxation", "u"=>3], ["c"=>"RFBT", "t"=>"Regulatory Framework for Business Transactions", "u"=>3], ["c"=>"ARM", "t"=>"Accounting Research Methods", "u"=>3], ["c"=>"AINT", "t"=>"Accounting Internship", "u"=>6]
+    ],
+    "BS Business Administration" => [
+        ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
+        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", "u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
+    ],
+    "BS Entrepreneurship" => [
+        ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
+        ["c"=>"EM", "t"=>"Entrepreneurial Mindset", "u"=>3], ["c"=>"OSE", "t"=>"Opportunity Spotting and Evaluation", "u"=>3], ["c"=>"MRCB", "t"=>"Market Research and Consumer Behavior", "u"=>3], ["c"=>"BPP", "t"=>"Business Plan Preparation", "u"=>3], ["c"=>"PDI", "t"=>"Product Development and Innovation", "u"=>3], ["c"=>"BPI1", "t"=>"Business Plan Implementation 1", "u"=>3], ["c"=>"BPI2", "t"=>"Business Plan Implementation 2", "u"=>3], ["c"=>"VCD", "t"=>"Venture Capital and Development", "u"=>3], ["c"=>"SBM", "t"=>"Small Business Management", "u"=>3], ["c"=>"EMKT", "t"=>"Entrepreneurial Marketing", "u"=>3]
+    ],
+    "BS Legal Management" => [
+        ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
+        ["c"=>"CLAW", "t"=>"Constitutional Law", "u"=>3], ["c"=>"LBO", "t"=>"Law on Business Organizations", "u"=>3], ["c"=>"LLL", "t"=>"Labor Law and Legislation", "u"=>3], ["c"=>"SACT", "t"=>"Sales, Agency, and Credit Transactions", "u"=>3], ["c"=>"NIL", "t"=>"Negotiable Instruments Law", "u"=>3], ["c"=>"ALAW", "t"=>"Administrative Law", "u"=>3], ["c"=>"IPL", "t"=>"Intellectual Property Law", "u"=>3], ["c"=>"SCON", "t"=>"Statutory Construction", "u"=>3], ["c"=>"LRW", "t"=>"Legal Research and Writing", "u"=>3], ["c"=>"TLAW", "t"=>"Taxation Law", "u"=>3]
+    ],
+    "BS Tourism/Hospitality Management" => [
+        ["c"=>"MMPT", "t"=>"Macro/Micro Perspective of Tourism & Hospitality", "u"=>3], ["c"=>"TPG", "t"=>"Tourism Policy and Governance", "u"=>3], ["c"=>"TTO", "t"=>"Tour and Travel Operations", "u"=>3], ["c"=>"GCG", "t"=>"Global Culture and Geography", "u"=>3], ["c"=>"TMGT", "t"=>"Transportation Management", "u"=>3], ["c"=>"FOO", "t"=>"Front Office Operations", "u"=>3], ["c"=>"KE", "t"=>"Kitchen Essentials", "u"=>3], ["c"=>"FBSO", "t"=>"Food & Beverage Service Operations", "u"=>3], ["c"=>"AO", "t"=>"Accommodation Operations", "u"=>3], ["c"=>"BCM", "t"=>"Banquet and Catering Management", "u"=>3], ["c"=>"EVM", "t"=>"Event Management", "u"=>3], ["c"=>"THP", "t"=>"Tourism/Hospitality Practicum", "u"=>6]
+    ],
+    "BS Computer Science" => [
+        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures and Algorithms", "u"=>3], ["c"=>"DM", "t"=>"Discrete Mathematics", "u"=>3], ["c"=>"CCS", "t"=>"Calculus for Computer Science", "u"=>3], ["c"=>"LA", "t"=>"Linear Algebra", "u"=>3], ["c"=>"PSCS", "t"=>"Probability and Statistics for CS", "u"=>3], ["c"=>"ARCO", "t"=>"Architecture and Organization", "u"=>3], ["c"=>"OS", "t"=>"Operating Systems", "u"=>3], ["c"=>"ATFL", "t"=>"Automata Theory and Formal Languages", "u"=>3], ["c"=>"SE1", "t"=>"Software Engineering 1", "u"=>3], ["c"=>"SE2", "t"=>"Software Engineering 2", "u"=>3], ["c"=>"DAA", "t"=>"Design and Analysis of Algorithms", "u"=>3], ["c"=>"PL", "t"=>"Programming Languages", "u"=>3], ["c"=>"NC", "t"=>"Networks and Communications", "u"=>3], ["c"=>"CST1", "t"=>"CS Thesis 1", "u"=>3], ["c"=>"CST2", "t"=>"CS Thesis 2", "u"=>3]
+    ],
+    "BS Information Technology" => [
+        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", "t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
+    ],
+    "BS Engineering" => [
+        ["c"=>"CA", "t"=>"College Algebra", "u"=>3], ["c"=>"AG", "t"=>"Analytic Geometry", "u"=>3], ["c"=>"SM", "t"=>"Solid Mensuration", "u"=>3], ["c"=>"DC", "t"=>"Differential Calculus", "u"=>3], ["c"=>"IC", "t"=>"Integral Calculus", "u"=>3], ["c"=>"DE", "t"=>"Differential Equations", "u"=>3], ["c"=>"EDA", "t"=>"Engineering Data Analysis", "u"=>3], ["c"=>"GC", "t"=>"General Chemistry", "u"=>3], ["c"=>"UP1", "t"=>"University Physics 1", "u"=>3], ["c"=>"UP2", "t"=>"University Physics 2", "u"=>3], ["c"=>"ED", "t"=>"Engineering Drawings / CAD", "u"=>3], ["c"=>"CF", "t"=>"Computer Fundamentals", "u"=>3], ["c"=>"SRB", "t"=>"Statics of Rigid Bodies", "u"=>3], ["c"=>"DRB", "t"=>"Dynamics of Rigid Bodies", "u"=>3], ["c"=>"MDB", "t"=>"Mechanics of Deformable Bodies", "u"=>3], ["c"=>"EE", "t"=>"Engineering Economics", "u"=>3], ["c"=>"EMGT", "t"=>"Engineering Management", "u"=>3], ["c"=>"TECH", "t"=>"Technopreneurship", "u"=>3],
+        ["c"=>"SURV", "t"=>"Surveying (Civil Track)", "u"=>3], ["c"=>"ST", "t"=>"Structural Theory (Civil Track)", "u"=>3], ["c"=>"ME", "t"=>"Materials Engineer (Civil Track)", "u"=>3], ["c"=>"FM", "t"=>"Fluid Mechanics (Civil Track)", "u"=>3], ["c"=>"HYD", "t"=>"Hydraulics (Civil Track)", "u"=>3], ["c"=>"GTE", "t"=>"Geotechnical Engineering (Civil Track)", "u"=>3], ["c"=>"CSD", "t"=>"Concrete and Steel Design (Civil Track)", "u"=>3],
+        ["c"=>"TH1", "t"=>"Thermodynamics 1 (Mech Track)", "u"=>3], ["c"=>"TH2", "t"=>"Thermodynamics 2 (Mech Track)", "u"=>3], ["c"=>"FMA", "t"=>"Fluid Machinery (Mech Track)", "u"=>3], ["c"=>"HT", "t"=>"Heat Transfer (Mech Track)", "u"=>3], ["c"=>"MD1", "t"=>"Machine Design 1 (Mech Track)", "u"=>3], ["c"=>"MD2", "t"=>"Machine Design 2 (Mech Track)", "u"=>3], ["c"=>"RAC", "t"=>"Refrigeration and Air Conditioning (Mech Track)", "u"=>3], ["c"=>"PPE", "t"=>"Power Plant Engineering (Mech Track)", "u"=>3],
+        ["c"=>"EC1", "t"=>"Electrical Circuits 1 (Elec Track)", "u"=>3], ["c"=>"EC2", "t"=>"Electrical Circuits 2 (Elec Track)", "u"=>3], ["c"=>"ELM", "t"=>"Electromagnetics (Elec Track)", "u"=>3], ["c"=>"EMA1", "t"=>"Electrical Machines 1 (Elec Track)", "u"=>3], ["c"=>"EMA2", "t"=>"Electrical Machines 2 (Elec Track)", "u"=>3], ["c"=>"PSA", "t"=>"Power System Analysis (Elec Track)", "u"=>3], ["c"=>"ELC", "t"=>"Electronic Circuits (Elec Track)", "u"=>3], ["c"=>"CSDE", "t"=>"Control Systems Design (Elec Track)", "u"=>3]
+    ],
+    "BS Architecture" => [
+        ["c"=>"AD1", "t"=>"Architectural Design 1", "u"=>3], ["c"=>"AD2", "t"=>"Architectural Design 2", "u"=>3], ["c"=>"AD3", "t"=>"Architectural Design 3", "u"=>3], ["c"=>"AD4", "t"=>"Architectural Design 4", "u"=>3], ["c"=>"AD5", "t"=>"Architectural Design 5", "u"=>3], ["c"=>"AD6", "t"=>"Architectural Design 6", "u"=>3], ["c"=>"AD7", "t"=>"Architectural Design 7", "u"=>3], ["c"=>"AD8", "t"=>"Architectural Design 8", "u"=>3], ["c"=>"AD9", "t"=>"Architectural Design 9", "u"=>3], ["c"=>"AD10", "t"=>"Architectural Design 10", "u"=>3], ["c"=>"GRA1", "t"=>"Graphics 1", "u"=>3], ["c"=>"GRA2", "t"=>"Graphics 2", "u"=>3], ["c"=>"VT1", "t"=>"Visual Techniques 1", "u"=>3], ["c"=>"VT2", "t"=>"Visual Techniques 2", "u"=>3], ["c"=>"VT3", "t"=>"Visual Techniques 3", "u"=>3], ["c"=>"HOA1", "t"=>"History of Architecture 1", "u"=>3], ["c"=>"HOA2", "t"=>"History of Architecture 2", "u"=>3], ["c"=>"HOA3", "t"=>"History of Architecture 3", "u"=>3], ["c"=>"TOA1", "t"=>"Theory of Architecture 1", "u"=>3], ["c"=>"TOA2", "t"=>"Theory of Architecture 2", "u"=>3], ["c"=>"BT1", "t"=>"Building Technology 1", "u"=>3], ["c"=>"BT2", "t"=>"Building Technology 2", "u"=>3], ["c"=>"BT3", "t"=>"Building Technology 3", "u"=>3], ["c"=>"BT4", "t"=>"Building Technology 4", "u"=>3], ["c"=>"BT5", "t"=>"Building Technology 5", "u"=>3], ["c"=>"BU1", "t"=>"Building Utilities 1", "u"=>3], ["c"=>"BU2", "t"=>"Building Utilities 2", "u"=>3], ["c"=>"BU3", "t"=>"Building Utilities 3", "u"=>3], ["c"=>"AST", "t"=>"Architectural Structures", "u"=>3], ["c"=>"PP", "t"=>"Professional Practice", "u"=>3], ["c"=>"ATH1", "t"=>"Architectural Thesis 1", "u"=>3], ["c"=>"ATH2", "t"=>"Architectural Thesis 2", "u"=>3]
+    ],
+    "BS Nursing" => [
+        ["c"=>"ANP", "t"=>"Anatomy and Physiology", "u"=>3], ["c"=>"MB", "t"=>"Microchemistry and Biochemistry", "u"=>3], ["c"=>"MP", "t"=>"Microbiology and Parasitology", "u"=>3], ["c"=>"TFN", "t"=>"Theoretical Foundations of Nursing", "u"=>3], ["c"=>"HA", "t"=>"Health Assessment", "u"=>3], ["c"=>"CHN1", "t"=>"Community Health Nursing 1", "u"=>3], ["c"=>"CHN2", "t"=>"Community Health Nursing 2", "u"=>3], ["c"=>"PHM", "t"=>"Pharmacology", "u"=>3], ["c"=>"NDT", "t"=>"Nutrition and Diet Therapy", "u"=>3], ["c"=>"CMCF", "t"=>"Care of Mother, Child, and Family", "u"=>3], ["c"=>"CAAHS", "t"=>"Care of Adults with Altered Health States", "u"=>3], ["c"=>"MHPN", "t"=>"Mental Health and Psychiatric Nursing", "u"=>3], ["c"=>"NR1", "t"=>"Nursing Research 1", "u"=>3], ["c"=>"NR2", "t"=>"Nursing Research 2", "u"=>3], ["c"=>"EDN", "t"=>"Emergency and Disaster Nursing", "u"=>3], ["c"=>"RLE", "t"=>"Related Learning Experience (Hospital Duty)", "u"=>6]
+    ],
+    "BS Psychology" => [
+        ["c"=>"GP", "t"=>"General Psychology", "u"=>3], ["c"=>"PSTAT", "t"=>"Psychological Statistics", "u"=>3], ["c"=>"EP", "t"=>"Experimental Psychology", "u"=>3], ["c"=>"RMP1", "t"=>"Research Methods in Psychology 1", "u"=>3], ["c"=>"RMP2", "t"=>"Research Methods in Psychology 2", "u"=>3], ["c"=>"DP", "t"=>"Developmental Psychology", "u"=>3], ["c"=>"TOP", "t"=>"Theories of Personality", "u"=>3], ["c"=>"AP", "t"=>"Abnormal Psychology", "u"=>3], ["c"=>"SP", "t"=>"Social Psychology", "u"=>3], ["c"=>"CP", "t"=>"Cognitive Psychology", "u"=>3], ["c"=>"PBP", "t"=>"Physiological / Biological Psychology", "u"=>3], ["c"=>"PAP", "t"=>"Psychological Assessment / Psychometrics", "u"=>3], ["c"=>"IOP", "t"=>"Industrial/Organizational Psychology", "u"=>3], ["c"=>"CLP", "t"=>"Clinical Psychology", "u"=>3], ["c"=>"FMP", "t"=>"Field Methods / Practicum in Psychology", "u"=>6]
+    ],
+    "AB Communication/Journalism" => [
+        ["c"=>"ICM", "t"=>"Introduction to Communication Media", "u"=>3], ["c"=>"MCS", "t"=>"Media, Culture, and Society", "u"=>3], ["c"=>"CT", "t"=>"Communication Theory", "u"=>3], ["c"=>"CR", "t"=>"Communication Research", "u"=>3], ["c"=>"CMLE", "t"=>"Communication Media Laws and Ethics", "u"=>3], ["c"=>"NW", "t"=>"News Writing", "u"=>3], ["c"=>"BJ", "t"=>"Broadcast Journalism", "u"=>3], ["c"=>"IJ", "t"=>"Investigative Journalism", "u"=>3], ["c"=>"PJ", "t"=>"Photojournalism", "u"=>3], ["c"=>"RTP", "t"=>"Radio and TV Production", "u"=>3], ["c"=>"DMP", "t"=>"Digital Media Production", "u"=>3], ["c"=>"LT", "t"=>"Layout and Typography", "u"=>3], ["c"=>"CINT", "t"=>"Communication Internship", "u"=>6]
+    ],
+    "AB Political Science" => [
+        ["c"=>"IPS", "t"=>"Introduction to Political Science", "u"=>3], ["c"=>"IPA", "t"=>"Introduction to Political Analysis", "u"=>3], ["c"=>"PGP", "t"=>"Philippine Government and Politics", "u"=>3], ["c"=>"HPT", "t"=>"History of Political Thought", "u"=>3], ["c"=>"CGP", "t"=>"Comparative Government and Politics", "u"=>3], ["c"=>"IRWP", "t"=>"International Relations and World Politics", "u"=>3], ["c"=>"PMR", "t"=>"Political Methodology / Research", "u"=>3], ["c"=>"PIL", "t"=>"Public International Law", "u"=>3], ["c"=>"PLG", "t"=>"Philippine Local Governance", "u"=>3], ["c"=>"POD", "t"=>"Politics of Development", "u"=>3]
+    ],
+    "BA Fine Arts/Multimedia Arts" => [
+        ["c"=>"VP", "t"=>"Visual Perceptions", "u"=>3], ["c"=>"DRAW1", "t"=>"Drawing 1", "u"=>3], ["c"=>"DRAW2", "t"=>"Drawing 2", "u"=>3], ["c"=>"CTH", "t"=>"Color Theory", "u"=>3], ["c"=>"HOA1", "t"=>"History of Art 1", "u"=>3], ["c"=>"HOA2", "t"=>"History of Art 2", "u"=>3], ["c"=>"2DD", "t"=>"2D Digital Design", "u"=>3], ["c"=>"3DMA", "t"=>"3D Modeling and Animation", "u"=>3], ["c"=>"DPH", "t"=>"Digital Photography", "u"=>3], ["c"=>"VPE", "t"=>"Video Production and Editing", "u"=>3], ["c"=>"WDS", "t"=>"Web Design and Scripting", "u"=>3], ["c"=>"GDT", "t"=>"Graphic Design and Typography", "u"=>3], ["c"=>"SD", "t"=>"Sound Design", "u"=>3], ["c"=>"PPE", "t"=>"Post-Production Effects", "u"=>3], ["c"=>"MSP", "t"=>"Multimedia Seminar and Portfolio", "u"=>3], ["c"=>"IMD", "t"=>"Interactive Media Design", "u"=>3]
+    ],
+    "Bachelor in Elementary Education" => [
+        ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3], ["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
+        ["c"=>"ETE", "t"=>"Enhanced Teaching of English", "u"=>3], ["c"=>"TMM", "t"=>"Teaching Mathematics in Primary Grades", "u"=>3], ["c"=>"PEP", "t"=>"Pagtuturo ng Edukasyon sa Pagpapakatao", "u"=>3], ["c"=>"TSS", "t"=>"Teaching Social Studies", "u"=>3], ["c"=>"TSC", "t"=>"Teaching Science", "u"=>3], ["c"=>"TMAP", "t"=>"Teaching Music, Arts, PE, and Health", "u"=>3], ["c"=>"REE", "t"=>"Research in Elementary Education", "u"=>3]
+    ],
+    "Bachelor in Secondary Education" => [
+        ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3], ["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
+        ["c"=>"SOE", "t"=>"Structure of English", "u"=>3], ["c"=>"MAF", "t"=>"Mythology and Folklore", "u"=>3], ["c"=>"SPL", "t"=>"Survey of Philippine Literature", "u"=>3], ["c"=>"LC", "t"=>"Literary Criticism", "u"=>3], ["c"=>"LLMD", "t"=>"Language Learning Materials Development", "u"=>3],
+        ["c"=>"MG", "t"=>"Modern Geometry", "u"=>3], ["c"=>"LAL", "t"=>"Linear Algebra", "u"=>3], ["c"=>"AC", "t"=>"Advanced Calculus", "u"=>3], ["c"=>"TRG", "t"=>"Trigonometry", "u"=>3], ["c"=>"AA", "t"=>"Abstract Algebra", "u"=>3], ["c"=>"NT", "t"=>"Number Theory", "u"=>3],
+        ["c"=>"ES", "t"=>"Earth Science", "u"=>3], ["c"=>"MET", "t"=>"Meteorology", "u"=>3], ["c"=>"ORGC", "t"=>"Organic Chemistry", "u"=>3], ["c"=>"INOC", "t"=>"Inorganic Chemistry", "u"=>3], ["c"=>"GAE", "t"=>"Genetics and Evolution", "u"=>3], ["c"=>"MEC", "t"=>"Mechanics", "u"=>3], ["c"=>"WAO", "t"=>"Waves and Optics", "u"=>3],
+        ["c"=>"AS", "t"=>"Asian Studies", "u"=>3], ["c"=>"WH", "t"=>"World History", "u"=>3], ["c"=>"GEO", "t"=>"Geography", "u"=>3], ["c"=>"MME", "t"=>"Micro/Macroeconomics", "u"=>3], ["c"=>"SCA", "t"=>"Socio-Cultural Anthropology", "u"=>3]
+    ],
+    "Bachelor of Early Childhood Education" => [
+        ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3], ["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
+        ["c"=>"FECE", "t"=>"Foundations of Early Childhood Education", "u"=>3], ["c"=>"CAMD", "t"=>"Creative Arts, Music, and Drama", "u"=>3], ["c"=>"LLD", "t"=>"Language and Literacy Development", "u"=>3], ["c"=>"SME", "t"=>"Science and Math in Early Childhood", "u"=>3], ["c"=>"GCB", "t"=>"Guiding Children's Behavior", "u"=>3], ["c"=>"HSN", "t"=>"Health, Safety, and Nutrition", "u"=>3], ["c"=>"IEEC", "t"=>"Inclusive Education in Early Childhood", "u"=>3], ["c"=>"CGD", "t"=>"Child Growth and Development", "u"=>3]
+    ]
+];
+
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     if (isset($_GET['delete_user_id'])) {
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$_GET['delete_user_id']]);
@@ -330,9 +400,46 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     }
     if (isset($_POST['create_staff'])) {
         $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status) VALUES (?, ?, ?, ?, ?, 'approved')")
-            ->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $_POST['role']]);
-        $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
+        $role = $_POST['role'];
+        $course = ($role == 'teacher' && !empty($_POST['course'])) ? $_POST['course'] : null;
+
+        $stmt = $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status, course) VALUES (?, ?, ?, ?, ?, 'approved', ?) RETURNING id");
+        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $role, $course]);
+        $new_teacher_id = $stmt->fetchColumn();
+
+        // AUTO-ASSIGN SUBJECTS IF TEACHER
+        if ($role == 'teacher' && $course && isset($curriculumData[$course])) {
+            foreach ($curriculumData[$course] as $subj) {
+                // Check if subject already exists
+                $check = $pdo->prepare("SELECT id FROM subjects WHERE subject_code = ? AND course = ?");
+                $check->execute([$subj['c'], $course]);
+                $existing_sub_id = $check->fetchColumn();
+
+                if ($existing_sub_id) {
+                    // Update existing subject with new teacher
+                    $pdo->prepare("UPDATE subjects SET teacher_id = ? WHERE id = ?")->execute([$new_teacher_id, $existing_sub_id]);
+                } else {
+                    // Insert missing subject to curriculum
+                    $ins = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?, ?, ?, '2024-2025', '1st', ?, ?, 'TBA') RETURNING id");
+                    $ins->execute([$subj['c'], $subj['t'], $subj['u'], $course, $new_teacher_id]);
+                    $new_sub_id = $ins->fetchColumn();
+
+                    // Auto-enroll eligible students into this newly generated subject
+                    $st = $pdo->prepare("SELECT id FROM users WHERE role='student' AND status='approved' AND (course=? OR ?='Universal Standard Subjects')");
+                    $st->execute([$course, $course]);
+                    foreach($st->fetchAll() as $stu) {
+                        $echeck = $pdo->prepare("SELECT id FROM enrollments WHERE student_id=? AND subject_id=?");
+                        $echeck->execute([$stu['id'], $new_sub_id]);
+                        if(!$echeck->fetch()) {
+                            $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?,?)")->execute([$stu['id'], $new_sub_id]);
+                        }
+                    }
+                }
+            }
+            $msg = "<div class='alert alert-success text-dark'>Teacher created and dynamically assigned all curriculum subjects for {$course}!</div>";
+        } else {
+            $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
+        }
     }
 }
 ?>
@@ -1131,16 +1238,58 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             <input name="lname" placeholder="Last Name" class="form-control mb-2" required>
                             <input name="user" placeholder="Username" class="form-control mb-2" required>
                             <input name="password" type="password" placeholder="Password" class="form-control mb-2" required>
-                            <select name="role" class="form-select mb-3">
+                            
+                            <select name="role" id="staffRoleSelect" class="form-select mb-3" onchange="toggleStaffCourse()">
                                 <option value="teacher">Teacher</option>
                                 <option value="dean">Dean</option>
                                 <option value="records">Records</option>
                                 <option value="cashier">Cashier</option>
                                 <option value="finance">Finance</option>
                             </select>
+
+                            <div id="staffCourseContainer" class="mb-3">
+                                <select name="course" id="staffCourseSelect" class="form-select custom-dark-select">
+                                    <option value="">-- Assign a Course to Auto-Generate Subjects --</option>
+                                    <option value="Universal Standard Subjects">Universal Standard Subjects</option>
+                                    <option value="BS Accountancy">Bachelor of Science in Accountancy (BSA)</option>
+                                    <option value="BS Business Administration">BS Business Administration</option>
+                                    <option value="BS Entrepreneurship">BS Entrepreneurship</option>
+                                    <option value="BS Legal Management">BS Legal Management</option>
+                                    <option value="BS Tourism/Hospitality Management">BS Tourism/Hospitality Management</option>
+                                    <option value="BS Computer Science">BS Computer Science</option>
+                                    <option value="BS Information Technology">BS Information Technology</option>
+                                    <option value="BS Engineering">BS Civil/Mechanical/Electrical Engineering</option>
+                                    <option value="BS Architecture">BS Architecture</option>
+                                    <option value="BS Nursing">BS Nursing</option>
+                                    <option value="BS Psychology">BS Psychology</option>
+                                    <option value="AB Communication/Journalism">AB Communication/Journalism</option>
+                                    <option value="AB Political Science">AB Political Science</option>
+                                    <option value="BA Fine Arts/Multimedia Arts">BA Fine Arts/Multimedia Arts</option>
+                                    <option value="Bachelor in Elementary Education">Bachelor in Elementary Education (BEED)</option>
+                                    <option value="Bachelor in Secondary Education">Bachelor in Secondary Education (BSEd)</option>
+                                    <option value="Bachelor of Early Childhood Education">Bachelor of Early Childhood Education (BECED)</option>
+                                </select>
+                                <small class="text-white-50">Note: Choosing a course will automatically map this teacher to all of its default subjects.</small>
+                            </div>
+
                             <button name="create_staff" class="btn btn-orange w-100">Register Staff</button>
                         </form>
                     </div>
+
+                    <script>
+                        function toggleStaffCourse() {
+                            var role = document.getElementById('staffRoleSelect').value;
+                            var courseContainer = document.getElementById('staffCourseContainer');
+                            if(role === 'teacher') {
+                                courseContainer.style.display = 'block';
+                            } else {
+                                courseContainer.style.display = 'none';
+                                document.getElementById('staffCourseSelect').value = '';
+                            }
+                        }
+                        // Fire on load
+                        document.addEventListener('DOMContentLoaded', toggleStaffCourse);
+                    </script>
                     <?php
                 }
                 // --- TEACHER PAGES ---
