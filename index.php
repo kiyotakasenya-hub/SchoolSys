@@ -24,7 +24,6 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // CREATE TABLES
-    // CREATE TABLES
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -84,19 +83,20 @@ try {
             student_id INT
         );
     ");
-    ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
     try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
-    try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
 
     // Seed Admin if not exists
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); $stmt->execute();
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); 
+    $stmt->execute();
     if (!$stmt->fetch()) {
         $hash = password_hash('admin123', PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status) VALUES ('System', 'Admin', 'admin', ?, 'admin', 'approved')")->execute([$hash]);
     }
-} catch (PDOException $e) { die("System Error: " . $e->getMessage()); }
+} catch (PDOException $e) { 
+    die("System Error: " . $e->getMessage()); 
+}
 
 session_start();
 $msg = "";
