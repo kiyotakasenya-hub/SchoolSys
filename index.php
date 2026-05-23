@@ -202,7 +202,7 @@ if (isset($_POST['user_update_own_profile'])) {
 
 // RECORDS ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
-    if (issetPOST['update_student_profile']) {
+    if (isset($_POST['update_student_profile'])) {
         $photo_query = "";
         if(!empty($_FILES['photo']['name'])) {
             $photo_name = time() . "_" . $_FILES['photo']['name'];
@@ -482,6 +482,18 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             border-radius: 6px !important;
         }
 
+        /* MUSIC PLAYER STYLING overrides */
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .track-item:hover, .track-item.active {
+            background: rgba(217, 119, 54, 0.2);
+        }
+
         /* UTILS */
         .text-muted { color: rgba(255,255,255,0.7) !important; }
         a { color: #d97736; }
@@ -618,7 +630,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                         <a href="?page=my_subjects"><i class="bi bi-book"></i> My Subjects / Enroll</a>
                         <a href="?page=my_grades"><i class="bi bi-award"></i> My Grades</a>
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
-                        <a href="?page=my_tasks"><i class="bi bi-list-check"></i> My Tasks</a>
+                        <a href="?page=my_tasks"><i class="bi bi-list-check"></i> My Tasks & Music</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
                     <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
@@ -696,14 +708,15 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     </div>
                     <?php
                 }
-                // --- DEDICATED MY TASKS PAGE ---
+                // --- DEDICATED MY TASKS & GLASS SOUND SYSTEM MUSIC PLAYER PAGE ---
                 elseif ($page == 'my_tasks' && $_SESSION['role'] == 'student') {
                     ?>
-                    <h3 class="mb-4">My Tasks</h3>
+                    <h3 class="mb-4">My Tasks & Music Station</h3>
                     <div class="row">
-                        <div class="col-md-8 mx-auto">
-                            <div class="glass-panel p-4" id="tasks">
-                                <h5 class="mb-3 fw-semibold">Task List Manager</h5>
+                        <!-- Task Component Panel (Left Column) -->
+                        <div class="col-md-6 mb-4">
+                            <div class="glass-panel p-4 h-100" id="tasks">
+                                <h5 class="mb-3 fw-semibold"><i class="bi bi-list-check me-2"></i>Task Manager</h5>
                                 <form method="POST" class="d-flex mb-4">
                                     <input type="hidden" name="page" value="my_tasks">
                                     <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
@@ -725,7 +738,150 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </ul>
                             </div>
                         </div>
+
+                        <!-- Audio Matrix HTML5 Music Player Panel (Right Column) -->
+                        <div class="col-md-6 mb-4">
+                            <div class="glass-panel p-4 h-100">
+                                <h5 class="mb-3 fw-semibold"><i class="bi bi-music-note-beamed me-2"></i>Music Player Matrix</h5>
+                                
+                                <!-- Audio Web Core Component Element -->
+                                <div class="audio-player-wrapper p-3 mb-4 rounded text-center" style="background: rgba(0,0,0,0.2);">
+                                    <div id="nowPlayingText" class="small text-white-50 mb-2">No song loaded</div>
+                                    <audio id="portalAudioEngine" controls class="w-100 mb-2"></audio>
+                                    <div class="player-controls-fallback d-flex justify-content-center g-2 mt-2">
+                                        <button onclick="prevTrack()" class="btn btn-sm btn-outline-light mx-1"><i class="bi bi-skip-start-fill"></i></button>
+                                        <button onclick="nextTrack()" class="btn btn-sm btn-outline-light mx-1"><i class="bi bi-skip-end-fill"></i></button>
+                                    </div>
+                                </div>
+
+                                <!-- Add Track Form -->
+                                <h6 class="small fw-semibold text-white-50 mb-2">Add New Track URL</h6>
+                                <div class="d-flex gap-2 mb-3">
+                                    <input type="text" id="newTrackTitle" class="form-control form-control-sm" placeholder="Song Title">
+                                    <input type="text" id="newTrackUrl" class="form-control form-control-sm" placeholder="MP3 Link Url">
+                                    <button onclick="addPlaylistTrack()" class="btn btn-sm btn-orange"><i class="bi bi-plus-lg"></i></button>
+                                </div>
+
+                                <!-- Playlist Container Box -->
+                                <div class="playlist-container overflow-auto" style="max-height: 250px;">
+                                    <div id="playlistTrackContainer" class="d-flex flex-column gap-2">
+                                        <!-- Javascript drops custom stream tracks here directly -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Client-Side Persistent Localstorage Playlist Driver -->
+                    <script>
+                        const audioPlayer = document.getElementById('portalAudioEngine');
+                        const nowPlayingText = document.getElementById('nowPlayingText');
+                        let currentTrackIndex = -1;
+                        let playlist = [];
+
+                        // Load playlist from localStorage or fall back to sample streams
+                        if (localStorage.getItem('portal_playlist')) {
+                            playlist = JSON.parse(localStorage.getItem('portal_playlist'));
+                        } else {
+                            playlist = [
+                                { title: "Lo-Fi Beats Sample", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+                                { title: "Synthwave Instrumental", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
+                            ];
+                            saveToStorage();
+                        }
+
+                        function saveToStorage() {
+                            localStorage.setItem('portal_playlist', JSON.stringify(playlist));
+                        }
+
+                        function renderPlaylist() {
+                            const container = document.getElementById('playlistTrackContainer');
+                            container.innerHTML = '';
+                            
+                            if(playlist.length === 0) {
+                                container.innerHTML = '<div class="text-center py-3 text-white-50 small">Playlist empty</div>';
+                                return;
+                            }
+
+                            playlist.forEach((track, index) => {
+                                const activeClass = index === currentTrackIndex ? 'active fw-bold' : '';
+                                const div = document.createElement('div');
+                                div.className = `track-item d-flex justify-content-between align-items-center ${activeClass}`;
+                                div.onclick = (e) => {
+                                    if(e.target.closest('.btn-delete-track')) return;
+                                    playTrack(index);
+                                };
+                                div.innerHTML = `
+                                    <div class="text-truncate ps-1 small"><i class="bi bi-play-circle-fill me-2 opacity-50"></i>${track.title}</div>
+                                    <button class="btn btn-sm text-danger btn-delete-track p-1" onclick="removeTrack(${index})"><i class="bi bi-trash"></i></button>
+                                `;
+                                container.appendChild(div);
+                            });
+                        }
+
+                        function playTrack(index) {
+                            if (index < 0 || index >= playlist.length) return;
+                            currentTrackIndex = index;
+                            audioPlayer.src = playlist[index].url;
+                            nowPlayingText.innerText = "Playing: " + playlist[index].title;
+                            audioPlayer.play();
+                            renderPlaylist();
+                        }
+
+                        function addPlaylistTrack() {
+                            const titleInput = document.getElementById('newTrackTitle');
+                            const urlInput = document.getElementById('newTrackUrl');
+                            
+                            if(!titleInput.value.trim() || !urlInput.value.trim()) {
+                                alert("Please enter both song title and streaming audio MP3 link URL.");
+                                return;
+                            }
+
+                            playlist.push({
+                                title: titleInput.value.trim(),
+                                url: urlInput.value.trim()
+                            });
+
+                            saveToStorage();
+                            renderPlaylist();
+
+                            titleInput.value = '';
+                            urlInput.value = '';
+                        }
+
+                        function removeTrack(index) {
+                            playlist.splice(index, 1);
+                            if (index === currentTrackIndex) {
+                                audioPlayer.src = '';
+                                nowPlayingText.innerText = "No song loaded";
+                                currentTrackIndex = -1;
+                            } else if (index < currentTrackIndex) {
+                                currentTrackIndex--;
+                            }
+                            saveToStorage();
+                            renderPlaylist();
+                        }
+
+                        function nextTrack() {
+                            if(playlist.length === 0) return;
+                            let next = currentTrackIndex + 1;
+                            if(next >= playlist.length) next = 0;
+                            playTrack(next);
+                        }
+
+                        function prevTrack() {
+                            if(playlist.length === 0) return;
+                            let prev = currentTrackIndex - 1;
+                            if(prev < 0) prev = playlist.length - 1;
+                            playTrack(prev);
+                        }
+
+                        // Auto-advance loop infrastructure engine logic
+                        audioPlayer.onended = () => { nextTrack(); };
+
+                        // Initialize Playlist UI element
+                        document.addEventListener('DOMContentLoaded', () => { renderPlaylist(); });
+                    </script>
                     <?php
                 }
                 // --- RECORDS PAGES ---
