@@ -183,8 +183,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
             move_uploaded_file($_FILES['photo']['tmp_name'], "uploads/" . $photo_name);
             $photo_query = ", photo='$photo_name'";
         }
+        
+        // Convert blank date string to null for Postgres compliance
+        $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
+        
         $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, birthdate=?, address=? $photo_query WHERE id=?");
-        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['bdate'], $_POST['addr'], $_POST['sid']]);
+        $stmt->execute([$_POST['fname'], $_POST['lname'], $birthdate, $_POST['addr'], $_POST['sid']]);
         $msg = "<div class='alert alert-success text-dark'>Information updated.</div>";
     }
     if (isset($_POST['records_update_grade'])) {
@@ -264,7 +268,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     }
     if (isset($_GET['reject_id'])) {
         $pdo->prepare("UPDATE users SET status='rejected' WHERE id=?")->execute([$_GET['reject_id']]);
-        $msg = "<div class='alert alert-danger text-dark'>User Rejected.</div>";
+        $msg = "<div class='alert alert-success text-dark'>User Rejected.</div>";
     }
     if (isset($_POST['create_staff'])) {
         $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -287,14 +291,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             $photo_query = ", photo='$photo_name'";
         }
 
+        // FIX: Evaluates empty string inputs into valid database NULL targets for PostgreSQL compliance
+        $birthdate = !empty($_POST['bdate']) ? $_POST['bdate'] : null;
+
         // Handle Password Update explicitly
         if (!empty($_POST['new_password'])) {
             $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
-            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $hash, $_SESSION['user_id']]);
+            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $hash, $_SESSION['user_id']]);
         } else {
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
-            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $_SESSION['user_id']]);
+            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $birthdate, $_POST['addr'], $_SESSION['user_id']]);
         }
 
         $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Your profile information has been successfully saved!</div>";
@@ -756,7 +763,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <button class="btn btn-sm btn-orange" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
                                     <div class="modal fade" id="editS<?= $s['id'] ?>" tabindex="-1">
                                         <div class="modal-dialog"><form method="POST" enctype="multipart/form-data" class="modal-content">
-                                            <div class="modal-header border-0"><h5 class="text-dark">Edit Student</h5></div>
+                                            <div class="modal-header border-0"><h5>Edit Student</h5></div>
                                             <div class="modal-body text-start">
                                                 <input type="hidden" name="sid" value="<?= $s['id'] ?>">
                                                 <label class="text-dark">First Name</label><input name="fname" value="<?= $s['firstname'] ?>" class="form-control mb-2">
@@ -1094,8 +1101,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 </div>
                             </div>
                             <div class="col-md-1"><label>&nbsp;</label><button name="add_fee" class="btn btn-orange w-100"><i class="bi bi-plus"></i></button></div>
-                        </form>
-                    </div>
+                        </form></div>
                     
                     <div class="glass-panel p-2 table-responsive">
                         <table class="table mb-0">
@@ -1179,7 +1185,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "</table></div>";
                 }
                 elseif ($page == 'dean_enrollment' && $_SESSION['role'] == 'dean') {
-                    echo "<h3>Enrolled Students List</h3>";
+                    echo "]./<h3>Enrolled Students List</h3>";
                     $enrolled = $pdo->query("SELECT DISTINCT u.firstname, u.lastname, u.email, u.id FROM users u JOIN enrollments e ON u.id = e.student_id WHERE u.role = 'student'")->fetchAll();
                     ?>
                     <div class="glass-panel p-2 mt-3 table-responsive">
