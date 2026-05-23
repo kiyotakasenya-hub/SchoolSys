@@ -618,7 +618,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 $load_stmt->execute([$b['id']]);
                                 $total_assessment = $load_stmt->fetchColumn() ?: 0;
                                 // Calculate Payments
-                                $pay_stmt = $pdo->prepare("SELECT IFNULL(SUM(amount), 0) FROM payments WHERE student_id = ?");
+                                $pay_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_id = ?");
                                 $pay_stmt->execute([$b['id']]);
                                 $total_paid = $pay_stmt->fetchColumn();
                                 $balance = $total_assessment - $total_paid;
@@ -901,7 +901,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         $load_stmt = $pdo->prepare("SELECT SUM(amount) FROM fee_schedules WHERE student_id = ? OR student_id IS NULL");
                         $load_stmt->execute([$b['id']]);
                         $assessment = $load_stmt->fetchColumn() ?: 0;
-                        $pay_stmt = $pdo->prepare("SELECT IFNULL(SUM(amount), 0) FROM payments WHERE student_id = ?");
+                        $pay_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_id = ?");
                         $pay_stmt->execute([$b['id']]);
                         $paid = $pay_stmt->fetchColumn();
                         $balance = $assessment - $paid;
@@ -1042,7 +1042,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     $fees_stmt->execute([$_SESSION['user_id']]);
                     $fees = $fees_stmt->fetch();
                     $total_assessment = $fees['total'] ?? 0;
-                    $paid_stmt = $pdo->prepare("SELECT IFNULL(SUM(amount), 0) as paid FROM payments WHERE student_id = ?");
+                    $paid_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) as paid FROM payments WHERE student_id = ?");
                     $paid_stmt->execute([$_SESSION['user_id']]);
                     $total_paid = $paid_stmt->fetch()['paid'];
                     $balance = $total_assessment - $total_paid;
