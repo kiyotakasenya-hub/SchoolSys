@@ -256,11 +256,25 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'dean') {
         if (!empty($_POST['subject_id'])) {
             $stmt = $pdo->prepare("UPDATE subjects SET subject_code=?, subject_title=?, units=?, sy=?, sem=?, course=?, teacher_id=?, schedule=? WHERE id=?");
             $stmt->execute([$_POST['code'], $_POST['title'], $_POST['units'], $_POST['sy'], $_POST['sem'], $_POST['course'], $_POST['teacher_id'], $_POST['schedule'], $_POST['subject_id']]);
+            $msg = "<div class='alert alert-success text-dark'>Subject data updated.</div>";
         } else {
-            $stmt = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?,?,?,?,?,?,?,?)");
+            $stmt = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?,?,?,?,?,?,?,?) RETURNING id");
             $stmt->execute([$_POST['code'], $_POST['title'], $_POST['units'], $_POST['sy'], $_POST['sem'], $_POST['course'], $_POST['teacher_id'], $_POST['schedule']]);
+            $new_sub_id = $stmt->fetchColumn(); // Retrieve the auto-generated ID
+
+            // Auto-enroll active students of this specific course & Universal subjects
+            $st = $pdo->prepare("SELECT id FROM users WHERE role='student' AND status='approved' AND (course=? OR ?='Universal Standard Subjects')");
+            $st->execute([$_POST['course'], $_POST['course']]);
+            foreach($st->fetchAll() as $stu) {
+                // Verify they aren't already enrolled
+                $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id=? AND subject_id=?");
+                $check->execute([$stu['id'], $new_sub_id]);
+                if(!$check->fetch()) {
+                    $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?,?)")->execute([$stu['id'], $new_sub_id]);
+                }
+            }
+            $msg = "<div class='alert alert-success text-dark'>Subject added! Eligible students were automatically enrolled.</div>";
         }
-        $msg = "<div class='alert alert-success text-dark'>Subject data updated.</div>";
     }
     if (isset($_GET['del_sub'])) {
         $pdo->prepare("DELETE FROM subjects WHERE id=?")->execute([$_GET['del_sub']]);
@@ -290,7 +304,25 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     }
     if (isset($_GET['approve_id'])) {
         $pdo->prepare("UPDATE users SET status='approved' WHERE id=?")->execute([$_GET['approve_id']]);
-        $msg = "<div class='alert alert-success text-dark'>User Approved.</div>";
+        
+        // AUTO-ENROLL STUDENT UPON APPROVAL
+        $uStmt = $pdo->prepare("SELECT id, course FROM users WHERE id=?");
+        $uStmt->execute([$_GET['approve_id']]);
+        $stu = $uStmt->fetch();
+        
+        if ($stu && !empty($stu['course'])) {
+            $subs = $pdo->prepare("SELECT id FROM subjects WHERE course = ? OR course = 'Universal Standard Subjects'");
+            $subs->execute([$stu['course']]);
+            foreach($subs->fetchAll() as $sub) {
+                // Ensure duplicate enrollments do not occur
+                $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id=? AND subject_id=?");
+                $check->execute([$stu['id'], $sub['id']]);
+                if(!$check->fetch()) {
+                    $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?,?)")->execute([$stu['id'], $sub['id']]);
+                }
+            }
+        }
+        $msg = "<div class='alert alert-success text-dark'>User Approved & Auto-Enrolled into assigned curriculum subjects!</div>";
     }
     if (isset($_GET['reject_id'])) {
         $pdo->prepare("UPDATE users SET status='rejected' WHERE id=?")->execute([$_GET['reject_id']]);
@@ -445,7 +477,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         .modal-footer .btn-secondary { background-color: #5a6268 !important; border: none !important; color: #ffffff !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
         .modal-footer .btn-orange { background-color: #d97736 !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
 
-        /* MUSIC SYSTEM DECK STYLING (Cloning image_486b26.png layout directly) */
+        /* MUSIC SYSTEM DECK STYLING */
         .deck-wrapper {
             background: #1e1e1e !important;
             border-radius: 20px;
@@ -742,7 +774,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     </div>
                     <?php
                 }
-                // --- MY TASKS & WORKSPACE DASHBOARD (With Custom Player image_486b26.png & Timer) ---
+                // --- MY TASKS & WORKSPACE DASHBOARD ---
                 elseif ($page == 'my_tasks' && $_SESSION['role'] == 'student') {
                     ?>
                     <h3 class="mb-4">Workspace Hub</h3>
@@ -791,328 +823,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
                             </div>
                         </div>
-
-                        <div class="col-lg-6 mb-4">
-                            <div class="deck-wrapper mb-4">
-                                <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
-                                
-                                <div class="d-flex align-items-center justify-content-between px-1 mb-2">
-                                    <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
-                                    <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
-                                </div>
-                                <div class="px-1 mb-4">
-                                    <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
-                                </div>
-
-                                <div class="d-flex align-items-center justify-content-between px-3">
-                                    <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
-                                        <i class="bi bi-shuffle"></i>
-                                    </button>
-                                    <button onclick="prevDeckTrack()" class="deck-playback-btn" title="Previous Track">
-                                        <i class="bi bi-skip-start-fill"></i>
-                                    </button>
-                                    
-                                    <button onclick="toggleDeckPlayback()" id="btnMasterDeckPlay" class="deck-master-play-btn" title="Play/Pause">
-                                        <i class="bi bi-play-fill" style="margin-left: 3px;"></i>
-                                    </button>
-                                    
-                                    <button onclick="nextDeckTrack()" class="deck-playback-btn" title="Next Track">
-                                        <i class="bi bi-skip-end-fill"></i>
-                                    </button>
-                                    <button onclick="toggleVolumePopover()" id="btnDeckSliders" class="deck-playback-btn" title="Volume Sliders">
-                                        <i class="bi bi-sliders"></i>
-                                    </button>
-                                </div>
-
-                                <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
-                                    <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
-                                        <i class="bi bi-volume-up-fill text-white-50 small"></i>
-                                        <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.8" oninput="changeDeckVolume(this.value)">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-panel p-4">
-                                <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
-                                <div class="mb-4">
-                                    <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
-                                </div>
-
-                                <div class="playlist-vault-box overflow-auto" style="max-height: 200px;">
-                                    <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
-                                        </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-
-                    <script>
-                        // AUDIO INFRASTRUCTURE ENGINE DECK MATRIX
-                        const coreAudioNode = new Audio();
-                        let originalPlaylistQueue = [];
-                        let activePlaylistQueue = [];
-                        let currentQueueIndex = -1;
-                        let isShuffleActive = false;
-
-                        // Deck Tracking Element Reference Pointers
-                        const deckSeeker = document.getElementById('deckTimelineSeeker');
-                        const deckElapsedText = document.getElementById('deckTimeElapsed');
-                        const deckRemainingText = document.getElementById('deckTimeRemaining');
-                        const masterPlayBtn = document.getElementById('btnMasterDeckPlay');
-                        const trackMetaTitle = document.getElementById('trackDeckMetaTitle');
-
-                        function loadFilesIntoPlaylist(inputNode) {
-                            if(!inputNode.files || inputNode.files.length === 0) return;
-
-                            for(let i = 0; i < inputNode.files.length; i++) {
-                                const file = inputNode.files[i];
-                                const trackBlobUrl = URL.createObjectURL(file);
-                                const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Strip file extensions
-
-                                const trackObj = { title: cleanTitle, url: trackBlobUrl };
-                                originalPlaylistQueue.push(trackObj);
-                            }
-
-                            rebuildActiveQueueChain();
-                            renderDeckPlaylistUI();
-                            inputNode.value = ""; // Clear file picker loop reference
-                        }
-
-                        function rebuildActiveQueueChain() {
-                            if (!isShuffleActive) {
-                                activePlaylistQueue = [...originalPlaylistQueue];
-                            } else {
-                                // Classic modern Fisher-Yates array randomizer loop configuration
-                                activePlaylistQueue = [...originalPlaylistQueue];
-                                for (let i = activePlaylistQueue.length - 1; i > 0; i--) {
-                                    const j = Math.floor(Math.random() * (i + 1));
-                                    [activePlaylistQueue[i], activePlaylistQueue[j]] = [activePlaylistQueue[j], activePlaylistQueue[i]];
-                                }
-                            }
-                        }
-
-                        function renderDeckPlaylistUI() {
-                            const container = document.getElementById('deckPlaylistTracksContainer');
-                            container.innerHTML = '';
-
-                            if(originalPlaylistQueue.length === 0) {
-                                container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
-                                return;
-                            }
-
-                            // Render tracks based on the original list for visual stability
-                            originalPlaylistQueue.forEach((track) => {
-                                // Match indexing to active queue map tracking positions
-                                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-                                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-                                const currentClass = isCurrent ? 'active fw-bold' : '';
-
-                                const node = document.createElement('div');
-                                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
-                                node.onclick = (e) => {
-                                    if(e.target.closest('.btn-purge-track')) return;
-                                    fireTrackPlaybackByIndex(activeIdx);
-                                };
-
-                                node.innerHTML = `
-                                    <div class="text-truncate ps-1 small"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
-                                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
-                                `;
-                                container.appendChild(node);
-                            });
-                        }
-
-                        function fireTrackPlaybackByIndex(targetIdx) {
-                            if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
-                            currentQueueIndex = targetIdx;
-
-                            coreAudioNode.src = activePlaylistQueue[currentQueueIndex].url;
-                            trackMetaTitle.innerText = activePlaylistQueue[currentQueueIndex].title;
-                            
-                            coreAudioNode.play().catch(err => console.log("Playback initialized safely."));
-                            masterPlayBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-                            renderDeckPlaylistUI();
-                        }
-
-                        function toggleDeckPlayback() {
-                            if(activePlaylistQueue.length === 0) return;
-                            if(currentQueueIndex === -1) {
-                                fireTrackPlaybackByIndex(0);
-                                return;
-                            }
-
-                            if(coreAudioNode.paused) {
-                                coreAudioNode.play();
-                                masterPlayBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-                            } else {
-                                coreAudioNode.pause();
-                                masterPlayBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
-                            }
-                        }
-
-                        function nextDeckTrack() {
-                            if(activePlaylistQueue.length === 0) return;
-                            let idx = currentQueueIndex + 1;
-                            if(idx >= activePlaylistQueue.length) idx = 0;
-                            fireTrackPlaybackByIndex(idx);
-                        }
-
-                        function prevDeckTrack() {
-                            if(activePlaylistQueue.length === 0) return;
-                            let idx = currentQueueIndex - 1;
-                            if(idx < 0) idx = activePlaylistQueue.length - 1;
-                            fireTrackPlaybackByIndex(idx);
-                        }
-
-                        function toggleDeckShuffle() {
-                            isShuffleActive = !isShuffleActive;
-                            const btn = document.getElementById('btnDeckShuffle');
-                            
-                            // Track the current track to keep it playing seamlessly
-                            let currentTrackObj = currentQueueIndex !== -1 ? activePlaylistQueue[currentQueueIndex] : null;
-                            
-                            if(isShuffleActive) btn.classList.add('active');
-                            else btn.classList.remove('active');
-
-                            rebuildActiveQueueChain();
-
-                            if(currentTrackObj) {
-                                currentQueueIndex = activePlaylistQueue.findIndex(t => t.url === currentTrackObj.url);
-                            }
-                            renderDeckPlaylistUI();
-                        }
-
-                        function purgeTrackFromVault(targetUrl) {
-                            let trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
-                            if(!trackObj) return;
-
-                            let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
-                            originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
-                            
-                            if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
-                                coreAudioNode.pause();
-                                coreAudioNode.src = '';
-                                trackMetaTitle.innerText = "No Local File Loaded";
-                                currentQueueIndex = -1;
-                                masterPlayBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
-                            }
-
-                            rebuildActiveQueueChain();
-                            if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
-                                currentQueueIndex--;
-                            }
-                            renderDeckPlaylistUI();
-                        }
-
-                        function manualDeckSeek(val) {
-                            if(!coreAudioNode.duration) return;
-                            coreAudioNode.currentTime = (val / 100) * coreAudioNode.duration;
-                        }
-
-                        function changeDeckVolume(val) {
-                            coreAudioNode.volume = val;
-                        }
-
-                        function toggleVolumePopover() {
-                            const pane = document.getElementById('volumeSliderPane');
-                            pane.classList.toggle('d-none');
-                        }
-
-                        function timeFormatMap(secs) {
-                            if(isNaN(secs)) return "00:00";
-                            let m = Math.floor(secs / 60);
-                            let s = Math.floor(secs % 60);
-                            return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-                        }
-
-                        // Audio Event Bindings
-                        coreAudioNode.ontimeupdate = () => {
-                            if(!coreAudioNode.duration) return;
-                            
-                            const elapsed = coreAudioNode.currentTime;
-                            const duration = coreAudioNode.duration;
-                            const pct = (elapsed / duration) * 100;
-
-                            deckSeeker.value = pct;
-                            deckSeeker.style.setProperty('--seek-percent', pct + '%');
-                            
-                            deckElapsedText.innerText = timeFormatMap(elapsed);
-                            deckRemainingText.innerText = "- " + timeFormatMap(duration - elapsed);
-                        };
-
-                        coreAudioNode.onended = () => { nextDeckTrack(); };
-
-
-                        // STUDY WORKSPACE POMODORO COUNTER SYSTEM ENGINE LOGIC
-                        let timerEngineRunning = false;
-                        let timerLoopHandle = null;
-                        let currentBaseSeconds = 1500; // Store the chosen base time so we can reset to it
-                        let targetDurationSeconds = 1500; // Default 25m
-
-                        const clockDisplay = document.getElementById('countdownClockDisplay');
-                        const timerControlBtn = document.getElementById('btnTimerControl');
-
-                        function setTimerPreset(mins) {
-                            currentBaseSeconds = mins * 60;
-                            document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
-                            
-                            if(mins === 25) document.getElementById('btnPresetStudy').classList.add('active');
-                            if(mins === 5) document.getElementById('btnPresetShort').classList.add('active');
-                            if(mins === 15) document.getElementById('btnPresetLong').classList.add('active');
-                            
-                            resetTimerCore();
-                        }
-
-                        function setCustomTimer() {
-                            const mins = parseInt(document.getElementById('customTimerInput').value);
-                            if (mins && mins > 0) {
-                                currentBaseSeconds = mins * 60;
-                                document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
-                                resetTimerCore();
-                                document.getElementById('customTimerInput').value = ''; // clear input after setting
-                            }
-                        }
-
-                        function toggleTimerCore() {
-                            if(timerEngineRunning) {
-                                // Pause loop pipeline step execution tracking sequence context map
-                                clearInterval(timerLoopHandle);
-                                timerEngineRunning = false;
-                                timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
-                            } else {
-                                timerEngineRunning = true;
-                                timerControlBtn.innerHTML = '<i class="bi bi-pause-fill me-1"></i>Pause';
-                                
-                                timerLoopHandle = setInterval(() => {
-                                    if(targetDurationSeconds <= 0) {
-                                        clearInterval(timerLoopHandle);
-                                        timerEngineRunning = false;
-                                        timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
-                                        alert("Study timer session complete! Resetting block intervals.");
-                                        resetTimerCore();
-                                        return;
-                                    }
-                                    targetDurationSeconds--;
-                                    
-                                    let mins = Math.floor(targetDurationSeconds / 60);
-                                    let secs = Math.floor(targetDurationSeconds % 60);
-                                    clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
-                                }, 1000);
-                            }
-                        }
-
-                        function resetTimerCore() {
-                            clearInterval(timerLoopHandle);
-                            timerEngineRunning = false;
-                            timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
-                            
-                            targetDurationSeconds = currentBaseSeconds;
-
-                            let mins = Math.floor(targetDurationSeconds / 60);
-                            let secs = Math.floor(targetDurationSeconds % 60);
-                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
-                        }
-                    </script>
                     <?php
                 }
                 // --- RECORDS PAGES ---
@@ -1345,7 +1056,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 <td>".strtoupper($p['status'])."</td>
                                 <td>";
                         if($p['status'] == 'pending') {
-                            echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve</a> ";
+                            echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve & Auto-Enroll</a> ";
                         }
                         echo "<a href='?page=approvals&delete_user_id={$p['id']}' class='btn btn-sm btn-danger' onclick='return confirm(\"Are you sure?\")'>Delete</a>
                               </td></tr>";
@@ -1450,27 +1161,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                 elseif ($page == 'finance_fees' && $_SESSION['role'] == 'finance') {
                     ?>
                     <h3>Manage Fee Schedules</h3>
-                    <div class="glass-panel p-4 mb-4">
-                        <form method="POST" class="row g-2">
-                            <input type="hidden" name="subject_id" value="<?= $edit_sub['id'] ?? '' ?>">
-                            <div class="col-md-2"><input name="sy" placeholder="SY" class="form-control" value="<?= $edit_sub['sy'] ?? '' ?>" required></div>
-                            <div class="col-md-2"><select name="sem" class="form-select"><option <?= ($edit_sub['sem']??'')=='1st'?'selected':'' ?>>1st</option><option <?= ($edit_sub['sem']??'')=='2nd'?'selected':'' ?>>2nd</option></select></div>
-                            <div class="col-md-2"><input name="course" placeholder="Course" class="form-control" value="<?= $edit_sub['course'] ?? '' ?>" required></div>
-                            <div class="col-md-2"><input name="code" placeholder="Code" class="form-control" value="<?= $edit_sub['subject_code'] ?? '' ?>" required></div>
-                            <div class="col-md-3"><input name="title" placeholder="Title" class="form-control" value="<?= $edit_sub['subject_title'] ?? '' ?>" required></div>
-                            <div class="col-md-1"><input name="units" type="number" placeholder="Units" class="form-control" value="<?= $edit_sub['units'] ?? '' ?>" required></div>
-                            <div class="col-md-3">
-                                <select name="teacher_id" class="form-select custom-dark-select">
-                                    <option value="0">Unassigned</option>
-                                    <?php 
-                                    $techs = $pdo->query("SELECT id, lastname FROM users WHERE role='teacher'")->fetchAll();
-                                    foreach($techs as $t) echo "<option value='{$t['id']}' ".($edit_sub['teacher_id']??0 == $t['id']?'selected':'').">{$t['lastname']}</option>";
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="col-md-7"><input name="schedule" placeholder="Schedule" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
-                            <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
-                        </form></div>
                     
                     <div class="glass-panel p-2 table-responsive">
                         <table class="table mb-0">
@@ -1517,24 +1207,63 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     <div class="glass-panel p-4 mb-4">
                         <form method="POST" class="row g-2">
                             <input type="hidden" name="subject_id" value="<?= $edit_sub['id'] ?? '' ?>">
-                            <div class="col-md-2"><input name="sy" placeholder="SY" class="form-control" value="<?= $edit_sub['sy'] ?? '' ?>" required></div>
-                            <div class="col-md-2"><select name="sem" class="form-select"><option <?= ($edit_sub['sem']??'')=='1st'?'selected':'' ?>>1st</option><option <?= ($edit_sub['sem']??'')=='2nd'?'selected':'' ?>>2nd</option></select></div>
-                            <div class="col-md-2"><input name="course" placeholder="Course" class="form-control" value="<?= $edit_sub['course'] ?? '' ?>" required></div>
-                            <div class="col-md-2"><input name="code" placeholder="Code" class="form-control" value="<?= $edit_sub['subject_code'] ?? '' ?>" required></div>
-                            <div class="col-md-3"><input name="title" placeholder="Title" class="form-control" value="<?= $edit_sub['subject_title'] ?? '' ?>" required></div>
-                            <div class="col-md-1"><input name="units" type="number" placeholder="Units" class="form-control" value="<?= $edit_sub['units'] ?? '' ?>" required></div>
+                            
+                            <div class="col-md-2">
+                                <input name="sy" placeholder="SY (e.g. 2024-2025)" class="form-control" value="<?= $edit_sub['sy'] ?? '' ?>" required>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="sem" class="form-select">
+                                    <option <?= ($edit_sub['sem']??'')=='1st'?'selected':'' ?>>1st</option>
+                                    <option <?= ($edit_sub['sem']??'')=='2nd'?'selected':'' ?>>2nd</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="course" id="deanCourseSelect" class="form-select custom-dark-select" required onchange="populateSubjects()">
+                                    <option value="" disabled <?= !$edit_sub ? 'selected' : '' ?>>Select Course Category</option>
+                                    <option value="Universal Standard Subjects" <?= ($edit_sub['course']??'')=='Universal Standard Subjects'?'selected':'' ?>>Universal Standard Subjects</option>
+                                    <option value="BS Accountancy" <?= ($edit_sub['course']??'')=='BS Accountancy'?'selected':'' ?>>BS Accountancy</option>
+                                    <option value="BS Business Administration" <?= ($edit_sub['course']??'')=='BS Business Administration'?'selected':'' ?>>BS Business Administration</option>
+                                    <option value="BS Entrepreneurship" <?= ($edit_sub['course']??'')=='BS Entrepreneurship'?'selected':'' ?>>BS Entrepreneurship</option>
+                                    <option value="BS Legal Management" <?= ($edit_sub['course']??'')=='BS Legal Management'?'selected':'' ?>>BS Legal Management</option>
+                                    <option value="BS Tourism/Hospitality Management" <?= ($edit_sub['course']??'')=='BS Tourism/Hospitality Management'?'selected':'' ?>>BS Tourism/Hospitality Management</option>
+                                    <option value="BS Computer Science" <?= ($edit_sub['course']??'')=='BS Computer Science'?'selected':'' ?>>BS Computer Science</option>
+                                    <option value="BS Information Technology" <?= ($edit_sub['course']??'')=='BS Information Technology'?'selected':'' ?>>BS Information Technology</option>
+                                    <option value="BS Engineering" <?= ($edit_sub['course']??'')=='BS Engineering'?'selected':'' ?>>BS Engineering</option>
+                                    <option value="BS Architecture" <?= ($edit_sub['course']??'')=='BS Architecture'?'selected':'' ?>>BS Architecture</option>
+                                    <option value="BS Nursing" <?= ($edit_sub['course']??'')=='BS Nursing'?'selected':'' ?>>BS Nursing</option>
+                                    <option value="BS Psychology" <?= ($edit_sub['course']??'')=='BS Psychology'?'selected':'' ?>>BS Psychology</option>
+                                    <option value="AB Communication/Journalism" <?= ($edit_sub['course']??'')=='AB Communication/Journalism'?'selected':'' ?>>AB Communication/Journalism</option>
+                                    <option value="AB Political Science" <?= ($edit_sub['course']??'')=='AB Political Science'?'selected':'' ?>>AB Political Science</option>
+                                    <option value="BA Fine Arts/Multimedia Arts" <?= ($edit_sub['course']??'')=='BA Fine Arts/Multimedia Arts'?'selected':'' ?>>BA Fine Arts/Multimedia Arts</option>
+                                    <option value="Bachelor in Elementary Education" <?= ($edit_sub['course']??'')=='Bachelor in Elementary Education'?'selected':'' ?>>Bachelor in Elementary Education</option>
+                                    <option value="Bachelor in Secondary Education" <?= ($edit_sub['course']??'')=='Bachelor in Secondary Education'?'selected':'' ?>>Bachelor in Secondary Education</option>
+                                    <option value="Bachelor of Early Childhood Education" <?= ($edit_sub['course']??'')=='Bachelor of Early Childhood Education'?'selected':'' ?>>Bachelor of Early Childhood Education</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select id="deanSubjectPreset" class="form-select custom-dark-select" onchange="fillSubjectDetails()">
+                                    <option value="">-- Auto-Fill Subject Data --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2"><input name="code" id="deanCode" placeholder="Subject Code" class="form-control" value="<?= $edit_sub['subject_code'] ?? '' ?>" required></div>
+                            <div class="col-md-8"><input name="title" id="deanTitle" placeholder="Subject Title" class="form-control" value="<?= $edit_sub['subject_title'] ?? '' ?>" required></div>
+                            <div class="col-md-2"><input name="units" id="deanUnits" type="number" placeholder="Units" class="form-control" value="<?= $edit_sub['units'] ?? '' ?>" required></div>
+                            
                             <div class="col-md-3">
                                 <select name="teacher_id" class="form-select custom-dark-select">
-                                    <option value="0">Unassigned</option>
+                                    <option value="0">Unassigned (Teacher)</option>
                                     <?php 
                                     $techs = $pdo->query("SELECT id, lastname FROM users WHERE role='teacher'")->fetchAll();
                                     foreach($techs as $t) echo "<option value='{$t['id']}' ".($edit_sub['teacher_id']??0 == $t['id']?'selected':'').">{$t['lastname']}</option>";
                                     ?>
                                 </select>
                             </div>
-                            <div class="col-md-7"><input name="schedule" placeholder="Schedule" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
-                            <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
-                        </form></div>
+                            <div class="col-md-7"><input name="schedule" placeholder="Schedule (Optional)" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
+                            <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add Subject' ?></button></div>
+                        </form>
+                    </div>
+
                     <div class="glass-panel p-2 table-responsive">
                         <table class="table mb-0">
                             <thead class="table-dark"><tr><th>SY/Sem</th><th>Course</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>
@@ -1699,6 +1428,613 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         </div>
     </div>
 <?php endif; ?>
+
+<div id="globalMusicPlayerContainer" class="position-fixed bottom-0 end-0 m-3 m-md-4 no-print" style="z-index: 1050; width: 350px; max-height: 90vh; overflow-y: auto;">
+    <div class="deck-wrapper mb-3" style="padding: 16px;">
+        <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
+        
+        <div class="d-flex align-items-center justify-content-between px-1 mb-2">
+            <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
+            <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
+        </div>
+        <div class="px-1 mb-4">
+            <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between px-3">
+            <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
+                <i class="bi bi-shuffle"></i>
+            </button>
+            <button onclick="prevDeckTrack()" class="deck-playback-btn" title="Previous Track">
+                <i class="bi bi-skip-start-fill"></i>
+            </button>
+            
+            <button onclick="toggleDeckPlayback()" id="btnMasterDeckPlay" class="deck-master-play-btn" title="Play/Pause">
+                <i class="bi bi-play-fill" style="margin-left: 3px;"></i>
+            </button>
+            
+            <button onclick="nextDeckTrack()" class="deck-playback-btn" title="Next Track">
+                <i class="bi bi-skip-end-fill"></i>
+            </button>
+            <button onclick="toggleVolumePopover()" id="btnDeckSliders" class="deck-playback-btn" title="Volume Sliders">
+                <i class="bi bi-sliders"></i>
+            </button>
+        </div>
+
+        <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
+            <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
+                <i class="bi bi-volume-up-fill text-white-50 small"></i>
+                <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.8" oninput="changeDeckVolume(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-3">
+        <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
+        <div class="mb-3">
+            <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
+        </div>
+
+        <div class="playlist-vault-box overflow-auto" style="max-height: 150px;">
+            <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// --- AUTOMATIC CURRICULUM UI POPULATOR ---
+window.curriculumData = {
+    "Universal Standard Subjects": [
+        {c:"GE-MMW", t:"Mathematics in the Modern World", u:3}, {c:"GE-PC", t:"Purposive Communication", u:3}, {c:"GE-STS", t:"Science, Technology, and Society", u:3}, {c:"GE-CW", t:"Contemporary World", u:3}, {c:"GE-AA", t:"Art Appreciation", u:3}, {c:"GE-UTS", t:"Understanding the Self", u:3}, {c:"GE-RPH", t:"Readings in Philippine History", u:3}, {c:"GE-ETH", t:"Ethics", u:3}, {c:"RIZAL", t:"Life and Works of Rizal", u:3}, {c:"NSTP1", t:"National Service Training Program 1", u:3}, {c:"NSTP2", t:"National Service Training Program 2", u:3}, {c:"PE1", t:"PE 1 (Fitness/Wellness)", u:2}, {c:"PE2", t:"PE 2 (Rhythmic Activities)", u:2}, {c:"PE3", t:"PE 3 (Individual/Dual Sports)", u:2}, {c:"PE4", t:"PE 4 (Team Sports)", u:2}
+    ],
+    "BS Accountancy": [
+        {c:"CBB1", t:"Information Technology in Business", u:3}, {c:"CBB2", t:"Microeconomics", u:3}, {c:"CBB3", t:"Business Law (Obligations and Contracts)", u:3}, {c:"CBB4", t:"Income Taxation", u:3}, {c:"CBB5", t:"Strategic Management", u:3}, {c:"CBB6", t:"Good Governance and Social Responsibility", u:3}, {c:"CBB7", t:"Total Quality Management", u:3}, {c:"CBB8", t:"Human Resource Management", u:3},
+        {c:"FAR", t:"Financial Accounting and Reporting", u:3}, {c:"CAC", t:"Cost Accounting and Control", u:3}, {c:"IA1", t:"Intermediate Accounting 1", u:3}, {c:"IA2", t:"Intermediate Accounting 2", u:3}, {c:"IA3", t:"Intermediate Accounting 3", u:3}, {c:"CFAS", t:"Conceptual Framework and Accounting Standards", u:3}, {c:"AFAR1", t:"Advanced Financial Accounting and Reporting 1", u:3}, {c:"AFAR2", t:"Advanced Financial Accounting and Reporting 2", u:3}, {c:"MAC", t:"Management Accounting", u:3}, {c:"FM", t:"Financial Management", u:3}, {c:"MAS", t:"Management Advisory Services", u:3}, {c:"AAP", t:"Auditing and Assurance Principles", u:3}, {c:"AASI", t:"Auditing and Assurance: Specialized Industries", u:3}, {c:"ACIS", t:"Audit in a CIS/IT Environment", u:3}, {c:"BTAX", t:"Business Tax", u:3}, {c:"TBT", t:"Transfer and Business Taxation", u:3}, {c:"RFBT", t:"Regulatory Framework for Business Transactions", u:3}, {c:"ARM", t:"Accounting Research Methods", u:3}, {c:"AINT", t:"Accounting Internship", u:6}
+    ],
+    "BS Business Administration": [
+        {c:"CBB1", t:"Information Technology in Business", u:3}, {c:"CBB2", t:"Microeconomics", u:3}, {c:"CBB3", t:"Business Law (Obligations and Contracts)", u:3}, {c:"CBB4", t:"Income Taxation", u:3}, {c:"CBB5", t:"Strategic Management", u:3}, {c:"CBB6", t:"Good Governance and Social Responsibility", u:3}, {c:"CBB7", t:"Total Quality Management", u:3}, {c:"CBB8", t:"Human Resource Management", u:3},
+        {c:"POM", t:"Principles of Marketing", u:3}, {c:"MM", t:"Marketing Management", u:3}, {c:"OM", t:"Operations Management", u:3}, {c:"BRM", t:"Business Research Methods", u:3}, {c:"FM", t:"Financial Management", u:3}, {c:"PS", t:"Pricing Strategy", u:3}, {c:"CB", t:"Consumer Behavior", u:3}, {c:"PROS", t:"Professional Salesmanship", u:3}, {c:"BSIM", t:"Business Simulation", u:3}, {c:"BINT", t:"Practicum/Internship", u:6}
+    ],
+    "BS Entrepreneurship": [
+        {c:"CBB1", t:"Information Technology in Business", u:3}, {c:"CBB2", t:"Microeconomics", u:3}, {c:"CBB3", t:"Business Law (Obligations and Contracts)", u:3}, {c:"CBB4", t:"Income Taxation", u:3}, {c:"CBB5", t:"Strategic Management", u:3}, {c:"CBB6", t:"Good Governance and Social Responsibility", u:3}, {c:"CBB7", t:"Total Quality Management", u:3}, {c:"CBB8", t:"Human Resource Management", u:3},
+        {c:"EM", t:"Entrepreneurial Mindset", u:3}, {c:"OSE", t:"Opportunity Spotting and Evaluation", u:3}, {c:"MRCB", t:"Market Research and Consumer Behavior", u:3}, {c:"BPP", t:"Business Plan Preparation", u:3}, {c:"PDI", t:"Product Development and Innovation", u:3}, {c:"BPI1", t:"Business Plan Implementation 1", u:3}, {c:"BPI2", t:"Business Plan Implementation 2", u:3}, {c:"VCD", t:"Venture Capital and Development", u:3}, {c:"SBM", t:"Small Business Management", u:3}, {c:"EMKT", t:"Entrepreneurial Marketing", u:3}
+    ],
+    "BS Legal Management": [
+        {c:"CBB1", t:"Information Technology in Business", u:3}, {c:"CBB2", t:"Microeconomics", u:3}, {c:"CBB3", t:"Business Law (Obligations and Contracts)", u:3}, {c:"CBB4", t:"Income Taxation", u:3}, {c:"CBB5", t:"Strategic Management", u:3}, {c:"CBB6", t:"Good Governance and Social Responsibility", u:3}, {c:"CBB7", t:"Total Quality Management", u:3}, {c:"CBB8", t:"Human Resource Management", u:3},
+        {c:"CLAW", t:"Constitutional Law", u:3}, {c:"LBO", t:"Law on Business Organizations", u:3}, {c:"LLL", t:"Labor Law and Legislation", u:3}, {c:"SACT", t:"Sales, Agency, and Credit Transactions", u:3}, {c:"NIL", t:"Negotiable Instruments Law", u:3}, {c:"ALAW", t:"Administrative Law", u:3}, {c:"IPL", t:"Intellectual Property Law", u:3}, {c:"SCON", t:"Statutory Construction", u:3}, {c:"LRW", t:"Legal Research and Writing", u:3}, {c:"TLAW", t:"Taxation Law", u:3}
+    ],
+    "BS Tourism/Hospitality Management": [
+        {c:"MMPT", t:"Macro/Micro Perspective of Tourism & Hospitality", u:3}, {c:"TPG", t:"Tourism Policy and Governance", u:3}, {c:"TTO", t:"Tour and Travel Operations", u:3}, {c:"GCG", t:"Global Culture and Geography", u:3}, {c:"TMGT", t:"Transportation Management", u:3}, {c:"FOO", t:"Front Office Operations", u:3}, {c:"KE", t:"Kitchen Essentials", u:3}, {c:"FBSO", t:"Food & Beverage Service Operations", u:3}, {c:"AO", t:"Accommodation Operations", u:3}, {c:"BCM", t:"Banquet and Catering Management", u:3}, {c:"EVM", t:"Event Management", u:3}, {c:"THP", t:"Tourism/Hospitality Practicum", u:6}
+    ],
+    "BS Computer Science": [
+        {c:"ITC", t:"Introduction to Computing", u:3}, {c:"CP1", t:"Computer Programming 1", u:3}, {c:"CP2", t:"Computer Programming 2", u:3}, {c:"DSA", t:"Data Structures and Algorithms", u:3}, {c:"DM", t:"Discrete Mathematics", u:3}, {c:"CCS", t:"Calculus for Computer Science", u:3}, {c:"LA", t:"Linear Algebra", u:3}, {c:"PSCS", t:"Probability and Statistics for CS", u:3}, {c:"ARCO", t:"Architecture and Organization", u:3}, {c:"OS", t:"Operating Systems", u:3}, {c:"ATFL", t:"Automata Theory and Formal Languages", u:3}, {c:"SE1", t:"Software Engineering 1", u:3}, {c:"SE2", t:"Software Engineering 2", u:3}, {c:"DAA", t:"Design and Analysis of Algorithms", u:3}, {c:"PL", t:"Programming Languages", u:3}, {c:"NC", t:"Networks and Communications", u:3}, {c:"CST1", t:"CS Thesis 1", u:3}, {c:"CST2", t:"CS Thesis 2", u:3}
+    ],
+    "BS Information Technology": [
+        {c:"ITC", t:"Introduction to Computing", u:3}, {c:"CP1", t:"Computer Programming 1", u:3}, {c:"CP2", t:"Computer Programming 2", u:3}, {c:"DSA", t:"Data Structures", u:3}, {c:"SIA", t:"System Integration and Architecture", u:3}, {c:"NET1", t:"Networking 1", u:3}, {c:"NET2", t:"Networking 2", u:3}, {c:"DBMS1", t:"Database Management Systems 1", u:3}, {c:"DBMS2", t:"Database Management Systems 2", u:3}, {c:"WST", t:"Web Systems and Technologies", u:3}, {c:"IM", t:"Information Management", u:3}, {c:"SAM", t:"Systems Administration and Maintenance", u:3}, {c:"IAS", t:"Information Assurance and Security", u:3}, {c:"CAP1", t:"Capstone Project 1", u:3}, {c:"CAP2", t:"Capstone Project 2", u:3}, {c:"ITINT", t:"IT Internship", u:6}
+    ],
+    "BS Engineering": [
+        {c:"CA", t:"College Algebra", u:3}, {c:"AG", t:"Analytic Geometry", u:3}, {c:"SM", t:"Solid Mensuration", u:3}, {c:"DC", t:"Differential Calculus", u:3}, {c:"IC", t:"Integral Calculus", u:3}, {c:"DE", t:"Differential Equations", u:3}, {c:"EDA", t:"Engineering Data Analysis", u:3}, {c:"GC", t:"General Chemistry", u:3}, {c:"UP1", t:"University Physics 1", u:3}, {c:"UP2", t:"University Physics 2", u:3}, {c:"ED", t:"Engineering Drawings / CAD", u:3}, {c:"CF", t:"Computer Fundamentals", u:3}, {c:"SRB", t:"Statics of Rigid Bodies", u:3}, {c:"DRB", t:"Dynamics of Rigid Bodies", u:3}, {c:"MDB", t:"Mechanics of Deformable Bodies", u:3}, {c:"EE", t:"Engineering Economics", u:3}, {c:"EMGT", t:"Engineering Management", u:3}, {c:"TECH", t:"Technopreneurship", u:3},
+        {c:"SURV", t:"Surveying (Civil Track)", u:3}, {c:"ST", t:"Structural Theory (Civil Track)", u:3}, {c:"ME", t:"Materials Engineer (Civil Track)", u:3}, {c:"FM", t:"Fluid Mechanics (Civil Track)", u:3}, {c:"HYD", t:"Hydraulics (Civil Track)", u:3}, {c:"GTE", t:"Geotechnical Engineering (Civil Track)", u:3}, {c:"CSD", t:"Concrete and Steel Design (Civil Track)", u:3},
+        {c:"TH1", t:"Thermodynamics 1 (Mech Track)", u:3}, {c:"TH2", t:"Thermodynamics 2 (Mech Track)", u:3}, {c:"FMA", t:"Fluid Machinery (Mech Track)", u:3}, {c:"HT", t:"Heat Transfer (Mech Track)", u:3}, {c:"MD1", t:"Machine Design 1 (Mech Track)", u:3}, {c:"MD2", t:"Machine Design 2 (Mech Track)", u:3}, {c:"RAC", t:"Refrigeration and Air Conditioning (Mech Track)", u:3}, {c:"PPE", t:"Power Plant Engineering (Mech Track)", u:3},
+        {c:"EC1", t:"Electrical Circuits 1 (Elec Track)", u:3}, {c:"EC2", t:"Electrical Circuits 2 (Elec Track)", u:3}, {c:"ELM", t:"Electromagnetics (Elec Track)", u:3}, {c:"EMA1", t:"Electrical Machines 1 (Elec Track)", u:3}, {c:"EMA2", t:"Electrical Machines 2 (Elec Track)", u:3}, {c:"PSA", t:"Power System Analysis (Elec Track)", u:3}, {c:"ELC", t:"Electronic Circuits (Elec Track)", u:3}, {c:"CSDE", t:"Control Systems Design (Elec Track)", u:3}
+    ],
+    "BS Architecture": [
+        {c:"AD1", t:"Architectural Design 1", u:3}, {c:"AD2", t:"Architectural Design 2", u:3}, {c:"AD3", t:"Architectural Design 3", u:3}, {c:"AD4", t:"Architectural Design 4", u:3}, {c:"AD5", t:"Architectural Design 5", u:3}, {c:"AD6", t:"Architectural Design 6", u:3}, {c:"AD7", t:"Architectural Design 7", u:3}, {c:"AD8", t:"Architectural Design 8", u:3}, {c:"AD9", t:"Architectural Design 9", u:3}, {c:"AD10", t:"Architectural Design 10", u:3}, {c:"GRA1", t:"Graphics 1", u:3}, {c:"GRA2", t:"Graphics 2", u:3}, {c:"VT1", t:"Visual Techniques 1", u:3}, {c:"VT2", t:"Visual Techniques 2", u:3}, {c:"VT3", t:"Visual Techniques 3", u:3}, {c:"HOA1", t:"History of Architecture 1", u:3}, {c:"HOA2", t:"History of Architecture 2", u:3}, {c:"HOA3", t:"History of Architecture 3", u:3}, {c:"TOA1", t:"Theory of Architecture 1", u:3}, {c:"TOA2", t:"Theory of Architecture 2", u:3}, {c:"BT1", t:"Building Technology 1", u:3}, {c:"BT2", t:"Building Technology 2", u:3}, {c:"BT3", t:"Building Technology 3", u:3}, {c:"BT4", t:"Building Technology 4", u:3}, {c:"BT5", t:"Building Technology 5", u:3}, {c:"BU1", t:"Building Utilities 1", u:3}, {c:"BU2", t:"Building Utilities 2", u:3}, {c:"BU3", t:"Building Utilities 3", u:3}, {c:"AST", t:"Architectural Structures", u:3}, {c:"PP", t:"Professional Practice", u:3}, {c:"ATH1", t:"Architectural Thesis 1", u:3}, {c:"ATH2", t:"Architectural Thesis 2", u:3}
+    ],
+    "BS Nursing": [
+        {c:"ANP", t:"Anatomy and Physiology", u:3}, {c:"MB", t:"Microchemistry and Biochemistry", u:3}, {c:"MP", t:"Microbiology and Parasitology", u:3}, {c:"TFN", t:"Theoretical Foundations of Nursing", u:3}, {c:"HA", t:"Health Assessment", u:3}, {c:"CHN1", t:"Community Health Nursing 1", u:3}, {c:"CHN2", t:"Community Health Nursing 2", u:3}, {c:"PHM", t:"Pharmacology", u:3}, {c:"NDT", t:"Nutrition and Diet Therapy", u:3}, {c:"CMCF", t:"Care of Mother, Child, and Family", u:3}, {c:"CAAHS", t:"Care of Adults with Altered Health States", u:3}, {c:"MHPN", t:"Mental Health and Psychiatric Nursing", u:3}, {c:"NR1", t:"Nursing Research 1", u:3}, {c:"NR2", t:"Nursing Research 2", u:3}, {c:"EDN", t:"Emergency and Disaster Nursing", u:3}, {c:"RLE", t:"Related Learning Experience (Hospital Duty)", u:6}
+    ],
+    "BS Psychology": [
+        {c:"GP", t:"General Psychology", u:3}, {c:"PSTAT", t:"Psychological Statistics", u:3}, {c:"EP", t:"Experimental Psychology", u:3}, {c:"RMP1", t:"Research Methods in Psychology 1", u:3}, {c:"RMP2", t:"Research Methods in Psychology 2", u:3}, {c:"DP", t:"Developmental Psychology", u:3}, {c:"TOP", t:"Theories of Personality", u:3}, {c:"AP", t:"Abnormal Psychology", u:3}, {c:"SP", t:"Social Psychology", u:3}, {c:"CP", t:"Cognitive Psychology", u:3}, {c:"PBP", t:"Physiological / Biological Psychology", u:3}, {c:"PAP", t:"Psychological Assessment / Psychometrics", u:3}, {c:"IOP", t:"Industrial/Organizational Psychology", u:3}, {c:"CLP", t:"Clinical Psychology", u:3}, {c:"FMP", t:"Field Methods / Practicum in Psychology", u:6}
+    ],
+    "AB Communication/Journalism": [
+        {c:"ICM", t:"Introduction to Communication Media", u:3}, {c:"MCS", t:"Media, Culture, and Society", u:3}, {c:"CT", t:"Communication Theory", u:3}, {c:"CR", t:"Communication Research", u:3}, {c:"CMLE", t:"Communication Media Laws and Ethics", u:3}, {c:"NW", t:"News Writing", u:3}, {c:"BJ", t:"Broadcast Journalism", u:3}, {c:"IJ", t:"Investigative Journalism", u:3}, {c:"PJ", t:"Photojournalism", u:3}, {c:"RTP", t:"Radio and TV Production", u:3}, {c:"DMP", t:"Digital Media Production", u:3}, {c:"LT", t:"Layout and Typography", u:3}, {c:"CINT", t:"Communication Internship", u:6}
+    ],
+    "AB Political Science": [
+        {c:"IPS", t:"Introduction to Political Science", u:3}, {c:"IPA", t:"Introduction to Political Analysis", u:3}, {c:"PGP", t:"Philippine Government and Politics", u:3}, {c:"HPT", t:"History of Political Thought", u:3}, {c:"CGP", t:"Comparative Government and Politics", u:3}, {c:"IRWP", t:"International Relations and World Politics", u:3}, {c:"PMR", t:"Political Methodology / Research", u:3}, {c:"PIL", t:"Public International Law", u:3}, {c:"PLG", t:"Philippine Local Governance", u:3}, {c:"POD", t:"Politics of Development", u:3}
+    ],
+    "BA Fine Arts/Multimedia Arts": [
+        {c:"VP", t:"Visual Perceptions", u:3}, {c:"DRAW1", t:"Drawing 1", u:3}, {c:"DRAW2", t:"Drawing 2", u:3}, {c:"CTH", t:"Color Theory", u:3}, {c:"HOA1", t:"History of Art 1", u:3}, {c:"HOA2", t:"History of Art 2", u:3}, {c:"2DD", t:"2D Digital Design", u:3}, {c:"3DMA", t:"3D Modeling and Animation", u:3}, {c:"DPH", t:"Digital Photography", u:3}, {c:"VPE", t:"Video Production and Editing", u:3}, {c:"WDS", t:"Web Design and Scripting", u:3}, {c:"GDT", t:"Graphic Design and Typography", u:3}, {c:"SD", t:"Sound Design", u:3}, {c:"PPE", t:"Post-Production Effects", u:3}, {c:"MSP", t:"Multimedia Seminar and Portfolio", u:3}, {c:"IMD", t:"Interactive Media Design", u:3}
+    ],
+    "Bachelor in Elementary Education": [
+        {c:"CAL", t:"Child and Adolescent Learners and Learning Principles", u:3}, {c:"TTP", t:"The Teaching Profession", u:3}, {c:"TTC", t:"The Teacher and the Community", u:3}, {c:"FSIE", t:"Foundations of Special and Inclusive Education", u:3}, {c:"FLCT", t:"Facilitating Learner-Centered Teaching", u:3}, {c:"AOL1", t:"Assessment of Learning 1", u:3}, {c:"AOL2", t:"Assessment of Learning 2", u:3}, {c:"TTL1", t:"Technology for Teaching and Learning 1", u:3}, {c:"FS1", t:"Field Study 1", u:3}, {c:"FS2", t:"Field Study 2", u:3}, {c:"PT", t:"Practice Teaching", u:6},
+        {c:"ETE", t:"Enhanced Teaching of English", u:3}, {c:"TMM", t:"Teaching Mathematics in Primary Grades", u:3}, {c:"PEP", t:"Pagtuturo ng Edukasyon sa Pagpapakatao", u:3}, {c:"TSS", t:"Teaching Social Studies", u:3}, {c:"TSC", t:"Teaching Science", u:3}, {c:"TMAP", t:"Teaching Music, Arts, PE, and Health", u:3}, {c:"REE", t:"Research in Elementary Education", u:3}
+    ],
+    "Bachelor in Secondary Education": [
+        {c:"CAL", t:"Child and Adolescent Learners and Learning Principles", u:3}, {c:"TTP", t:"The Teaching Profession", u:3}, {c:"TTC", t:"The Teacher and the Community", u:3}, {c:"FSIE", t:"Foundations of Special and Inclusive Education", u:3}, {c:"FLCT", t:"Facilitating Learner-Centered Teaching", u:3}, {c:"AOL1", t:"Assessment of Learning 1", u:3}, {c:"AOL2", t:"Assessment of Learning 2", u:3}, {c:"TTL1", t:"Technology for Teaching and Learning 1", u:3}, {c:"FS1", t:"Field Study 1", u:3}, {c:"FS2", t:"Field Study 2", u:3}, {c:"PT", t:"Practice Teaching", u:6},
+        {c:"SOE", t:"Structure of English", u:3}, {c:"MAF", t:"Mythology and Folklore", u:3}, {c:"SPL", t:"Survey of Philippine Literature", u:3}, {c:"LC", t:"Literary Criticism", u:3}, {c:"LLMD", t:"Language Learning Materials Development", u:3},
+        {c:"MG", t:"Modern Geometry", u:3}, {c:"LAL", t:"Linear Algebra", u:3}, {c:"AC", t:"Advanced Calculus", u:3}, {c:"TRG", t:"Trigonometry", u:3}, {c:"AA", t:"Abstract Algebra", u:3}, {c:"NT", t:"Number Theory", u:3},
+        {c:"ES", t:"Earth Science", u:3}, {c:"MET", t:"Meteorology", u:3}, {c:"ORGC", t:"Organic Chemistry", u:3}, {c:"INOC", t:"Inorganic Chemistry", u:3}, {c:"GAE", t:"Genetics and Evolution", u:3}, {c:"MEC", t:"Mechanics", u:3}, {c:"WAO", t:"Waves and Optics", u:3},
+        {c:"AS", t:"Asian Studies", u:3}, {c:"WH", t:"World History", u:3}, {c:"GEO", t:"Geography", u:3}, {c:"MME", t:"Micro/Macroeconomics", u:3}, {c:"SCA", t:"Socio-Cultural Anthropology", u:3}
+    ],
+    "Bachelor of Early Childhood Education": [
+        {c:"CAL", t:"Child and Adolescent Learners and Learning Principles", u:3}, {c:"TTP", t:"The Teaching Profession", u:3}, {c:"TTC", t:"The Teacher and the Community", u:3}, {c:"FSIE", t:"Foundations of Special and Inclusive Education", u:3}, {c:"FLCT", t:"Facilitating Learner-Centered Teaching", u:3}, {c:"AOL1", t:"Assessment of Learning 1", u:3}, {c:"AOL2", t:"Assessment of Learning 2", u:3}, {c:"TTL1", t:"Technology for Teaching and Learning 1", u:3}, {c:"FS1", t:"Field Study 1", u:3}, {c:"FS2", t:"Field Study 2", u:3}, {c:"PT", t:"Practice Teaching", u:6},
+        {c:"FECE", t:"Foundations of Early Childhood Education", u:3}, {c:"CAMD", t:"Creative Arts, Music, and Drama", u:3}, {c:"LLD", t:"Language and Literacy Development", u:3}, {c:"SME", t:"Science and Math in Early Childhood", u:3}, {c:"GCB", t:"Guiding Children's Behavior", u:3}, {c:"HSN", t:"Health, Safety, and Nutrition", u:3}, {c:"IEEC", t:"Inclusive Education in Early Childhood", u:3}, {c:"CGD", t:"Child Growth and Development", u:3}
+    ]
+};
+
+window.populateSubjects = function() {
+    const course = document.getElementById('deanCourseSelect').value;
+    const presetSelect = document.getElementById('deanSubjectPreset');
+    if(!presetSelect) return;
+    
+    presetSelect.innerHTML = '<option value="">-- Auto-Fill Subject Data --</option>';
+    if(curriculumData[course]) {
+        curriculumData[course].forEach((subj, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.text = subj.c + " - " + subj.t;
+            presetSelect.appendChild(opt);
+        });
+    }
+};
+
+window.fillSubjectDetails = function() {
+    const course = document.getElementById('deanCourseSelect').value;
+    const presetIdx = document.getElementById('deanSubjectPreset').value;
+    
+    if(course && presetIdx !== "" && curriculumData[course] && curriculumData[course][presetIdx]) {
+        const data = curriculumData[course][presetIdx];
+        document.getElementById('deanCode').value = data.c;
+        document.getElementById('deanTitle').value = data.t;
+        document.getElementById('deanUnits').value = data.u;
+    }
+};
+
+
+// --- 1. CORE AUDIO SYSTEM MATRIX ---
+const coreAudioNode = new Audio();
+let originalPlaylistQueue = [];
+let activePlaylistQueue = [];
+let currentQueueIndex = -1;
+let isShuffleActive = false;
+
+// --- 2. INDEXEDDB PERSISTENCE LAYER ---
+const DB_NAME = 'CampusCoreMusicDB';
+const STORE_NAME = 'vault_tracks';
+let databaseRef = null;
+
+function initMusicDatabase(callback) {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = function(e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+        }
+    };
+    request.onsuccess = function(e) {
+        databaseRef = e.target.result;
+        if (callback) callback();
+    };
+    request.onerror = function(e) { console.error('IndexedDB structural error:', e); };
+}
+
+function persistTrackToDB(fileObject) {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.add({ name: fileObject.name, binaryData: fileObject });
+}
+
+function purgeTrackFromDB(fileName) {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.openCursor().onsuccess = function(e) {
+        const cursor = e.target.result;
+        if (cursor) {
+            if (cursor.value.name === fileName) { cursor.delete(); } 
+            else { cursor.continue(); }
+        }
+    };
+}
+
+function restoreTracksFromDB() {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    store.getAll().onsuccess = function(e) {
+        const tracks = e.target.result || [];
+        originalPlaylistQueue = [];
+        tracks.forEach(track => {
+            const reconstructedUrl = URL.createObjectURL(track.binaryData);
+            const cleanTitle = track.name.replace(/\.[^/.]+$/, "");
+            originalPlaylistQueue.push({ title: cleanTitle, url: reconstructedUrl, filename: track.name });
+        });
+        rebuildActiveQueueChain();
+        renderDeckPlaylistUI();
+    };
+}
+
+// --- 3. AUDIO ENGINE LOGIC ---
+function loadFilesIntoPlaylist(inputNode) {
+    if(!inputNode.files || inputNode.files.length === 0) return;
+    for(let i=0; i<inputNode.files.length; i++) {
+        let file = inputNode.files[i];
+        let url = URL.createObjectURL(file);
+        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
+        originalPlaylistQueue.push({ title: cleanTitle, url: url, filename: file.name });
+        persistTrackToDB(file); 
+    }
+    rebuildActiveQueueChain();
+    renderDeckPlaylistUI();
+    inputNode.value = ""; 
+}
+
+function purgeTrackFromVault(targetUrl) {
+    const trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
+    if(trackObj) { purgeTrackFromDB(trackObj.filename); } 
+    
+    let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
+    originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
+    
+    if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
+        coreAudioNode.pause();
+        coreAudioNode.src = '';
+        document.getElementById('trackDeckMetaTitle').innerText = "No Local File Loaded";
+        currentQueueIndex = -1;
+        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
+    }
+
+    rebuildActiveQueueChain();
+    if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
+        currentQueueIndex--;
+    }
+    renderDeckPlaylistUI();
+}
+
+function rebuildActiveQueueChain() {
+    if (!isShuffleActive) {
+        activePlaylistQueue = [...originalPlaylistQueue];
+    } else {
+        activePlaylistQueue = [...originalPlaylistQueue];
+        for (let i = activePlaylistQueue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [activePlaylistQueue[i], activePlaylistQueue[j]] = [activePlaylistQueue[j], activePlaylistQueue[i]];
+        }
+    }
+}
+
+function renderDeckPlaylistUI() {
+    const container = document.getElementById('deckPlaylistTracksContainer');
+    if(!container) return;
+    container.innerHTML = '';
+
+    if(originalPlaylistQueue.length === 0) {
+        container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
+        return;
+    }
+
+    originalPlaylistQueue.forEach((track) => {
+        let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+        const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+        const currentClass = isCurrent ? 'active fw-bold' : '';
+
+        const node = document.createElement('div');
+        node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+        node.onclick = (e) => {
+            if(e.target.closest('.btn-purge-track')) return;
+            fireTrackPlaybackByIndex(activeIdx);
+        };
+
+        node.innerHTML = `
+            <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
+            <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(node);
+    });
+}
+
+function fireTrackPlaybackByIndex(targetIdx) {
+    if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
+    currentQueueIndex = targetIdx;
+
+    coreAudioNode.src = activePlaylistQueue[currentQueueIndex].url;
+    document.getElementById('trackDeckMetaTitle').innerText = activePlaylistQueue[currentQueueIndex].title;
+    
+    coreAudioNode.play().catch(err => console.log("Playback initialized safely."));
+    document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-pause-fill"></i>';
+    renderDeckPlaylistUI();
+}
+
+function toggleDeckPlayback() {
+    if(activePlaylistQueue.length === 0) return;
+    if(currentQueueIndex === -1) {
+        fireTrackPlaybackByIndex(0);
+        return;
+    }
+
+    if(coreAudioNode.paused) {
+        coreAudioNode.play();
+        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-pause-fill"></i>';
+    } else {
+        coreAudioNode.pause();
+        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
+    }
+}
+
+function nextDeckTrack() {
+    if(activePlaylistQueue.length === 0) return;
+    let idx = currentQueueIndex + 1;
+    if(idx >= activePlaylistQueue.length) idx = 0;
+    fireTrackPlaybackByIndex(idx);
+}
+
+function prevDeckTrack() {
+    if(activePlaylistQueue.length === 0) return;
+    let idx = currentQueueIndex - 1;
+    if(idx < 0) idx = activePlaylistQueue.length - 1;
+    fireTrackPlaybackByIndex(idx);
+}
+
+function toggleDeckShuffle() {
+    isShuffleActive = !isShuffleActive;
+    const btn = document.getElementById('btnDeckShuffle');
+    
+    let currentTrackObj = currentQueueIndex !== -1 ? activePlaylistQueue[currentQueueIndex] : null;
+    
+    if(isShuffleActive) btn.classList.add('active');
+    else btn.classList.remove('active');
+
+    rebuildActiveQueueChain();
+
+    if(currentTrackObj) {
+        currentQueueIndex = activePlaylistQueue.findIndex(t => t.url === currentTrackObj.url);
+    }
+    renderDeckPlaylistUI();
+}
+
+function manualDeckSeek(val) {
+    if(!coreAudioNode.duration) return;
+    coreAudioNode.currentTime = (val / 100) * coreAudioNode.duration;
+}
+
+function changeDeckVolume(val) {
+    coreAudioNode.volume = val;
+}
+
+function toggleVolumePopover() {
+    const pane = document.getElementById('volumeSliderPane');
+    pane.classList.toggle('d-none');
+}
+
+function timeFormatMap(secs) {
+    if(isNaN(secs)) return "00:00";
+    let m = Math.floor(secs / 60);
+    let s = Math.floor(secs % 60);
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+coreAudioNode.ontimeupdate = () => {
+    if(!coreAudioNode.duration) return;
+    
+    const elapsed = coreAudioNode.currentTime;
+    const duration = coreAudioNode.duration;
+    const pct = (elapsed / duration) * 100;
+
+    const deckSeeker = document.getElementById('deckTimelineSeeker');
+    if(deckSeeker) {
+        deckSeeker.value = pct;
+        deckSeeker.style.setProperty('--seek-percent', pct + '%');
+    }
+    
+    const elapsedText = document.getElementById('deckTimeElapsed');
+    const remainingText = document.getElementById('deckTimeRemaining');
+    if(elapsedText) elapsedText.innerText = timeFormatMap(elapsed);
+    if(remainingText) remainingText.innerText = "- " + timeFormatMap(duration - elapsed);
+};
+
+coreAudioNode.onended = () => { nextDeckTrack(); };
+
+
+// --- 4. STUDY WORKSPACE POMODORO TIMER LOGIC ---
+let timerEngineRunning = false;
+let timerLoopHandle = null;
+let currentBaseSeconds = 1500; 
+let targetDurationSeconds = 1500; 
+
+function setTimerPreset(mins) {
+    currentBaseSeconds = mins * 60;
+    document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
+    
+    if(mins === 25) { const el = document.getElementById('btnPresetStudy'); if(el) el.classList.add('active'); }
+    if(mins === 5)  { const el = document.getElementById('btnPresetShort'); if(el) el.classList.add('active'); }
+    if(mins === 15) { const el = document.getElementById('btnPresetLong'); if(el) el.classList.add('active'); }
+    
+    resetTimerCore();
+}
+
+function setCustomTimer() {
+    const input = document.getElementById('customTimerInput');
+    if(!input) return;
+    const mins = parseInt(input.value);
+    if (mins && mins > 0) {
+        currentBaseSeconds = mins * 60;
+        document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
+        resetTimerCore();
+        input.value = ''; 
+    }
+}
+
+function toggleTimerCore() {
+    const timerControlBtn = document.getElementById('btnTimerControl');
+    
+    if(timerEngineRunning) {
+        clearInterval(timerLoopHandle);
+        timerEngineRunning = false;
+        if(timerControlBtn) timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+    } else {
+        timerEngineRunning = true;
+        if(timerControlBtn) timerControlBtn.innerHTML = '<i class="bi bi-pause-fill me-1"></i>Pause';
+        
+        timerLoopHandle = setInterval(() => {
+            if(targetDurationSeconds <= 0) {
+                clearInterval(timerLoopHandle);
+                timerEngineRunning = false;
+                if(timerControlBtn) timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+                alert("Study timer session complete! Resetting block intervals.");
+                resetTimerCore();
+                return;
+            }
+            targetDurationSeconds--;
+            
+            const clockDisplay = document.getElementById('countdownClockDisplay');
+            if(clockDisplay) {
+                let mins = Math.floor(targetDurationSeconds / 60);
+                let secs = Math.floor(targetDurationSeconds % 60);
+                clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+            }
+        }, 1000);
+    }
+}
+
+function resetTimerCore() {
+    clearInterval(timerLoopHandle);
+    timerEngineRunning = false;
+    
+    const timerControlBtn = document.getElementById('btnTimerControl');
+    if(timerControlBtn) timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+    
+    targetDurationSeconds = currentBaseSeconds;
+
+    const clockDisplay = document.getElementById('countdownClockDisplay');
+    if(clockDisplay) {
+        let mins = Math.floor(targetDurationSeconds / 60);
+        let secs = Math.floor(targetDurationSeconds % 60);
+        clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+    }
+}
+
+// --- 5. SPA LAYOUT ASYNCHRONOUS INTERCEPTOR ---
+document.addEventListener('click', function(e) {
+    const anchor = e.target.closest('a');
+    if (!anchor) return;
+    
+    const href = anchor.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+    
+    if (href.startsWith('?') || href.includes(window.location.pathname)) {
+        e.preventDefault();
+        executeSpaNavigation(href);
+    }
+});
+
+function executeSpaNavigation(targetUrl) {
+    fetch(targetUrl)
+        .then(res => res.text())
+        .then(htmlString => {
+            const parser = new DOMParser();
+            const foreignDoc = parser.parseFromString(htmlString, 'text/html');
+            
+            history.pushState(null, '', targetUrl);
+            
+            const isTargetLoggedOut = !foreignDoc.querySelector('#sidebarMenu');
+            const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
+            
+            if (isTargetLoggedOut !== isCurrentLoggedOut) {
+                const playerContainer = document.getElementById('globalMusicPlayerContainer');
+                if(playerContainer) playerContainer.remove();
+                
+                document.body.innerHTML = foreignDoc.body.innerHTML;
+                if(playerContainer) document.body.appendChild(playerContainer);
+            } else {
+                if (!isTargetLoggedOut) {
+                    const activeContentPanel = document.querySelector('.col-md-10');
+                    const foreignContentPanel = foreignDoc.querySelector('.col-md-10');
+                    if (activeContentPanel && foreignContentPanel) {
+                        activeContentPanel.innerHTML = foreignContentPanel.innerHTML;
+                    }
+                    
+                    const activeSidebar = document.querySelector('#sidebarMenu');
+                    const foreignSidebar = foreignDoc.querySelector('#sidebarMenu');
+                    if (activeSidebar && foreignSidebar) {
+                        activeSidebar.innerHTML = foreignSidebar.innerHTML;
+                    }
+                } else {
+                    const activeLogin = document.querySelector('.login-box')?.parentElement;
+                    const foreignLogin = foreignDoc.querySelector('.login-box')?.parentElement;
+                    if (activeLogin && foreignLogin) {
+                        activeLogin.innerHTML = foreignLogin.innerHTML;
+                    }
+                }
+            }
+            bindSpaFormSubmissions();
+            renderDeckPlaylistUI();
+        })
+        .catch(err => {
+            console.error("SPA Routing disruption:", err);
+            window.location.href = targetUrl;
+        });
+}
+
+function bindSpaFormSubmissions() {
+    document.querySelectorAll('form').forEach(form => {
+        if (form.dataset.spaIntercepted) return;
+        form.dataset.spaIntercepted = "true";
+        
+        form.addEventListener('submit', function(e) {
+            const endpoint = form.getAttribute('action') || window.location.search || '?page=home';
+            e.preventDefault();
+            
+            const payload = new FormData(form);
+            if (e.submitter && e.submitter.name) {
+                payload.append(e.submitter.name, e.submitter.value);
+            }
+            
+            fetch(endpoint, {
+                method: form.getAttribute('method') || 'POST',
+                body: form.getAttribute('method')?.toUpperCase() === 'GET' ? null : payload
+            })
+            .then(res => res.text())
+            .then(htmlString => {
+                const parser = new DOMParser();
+                const foreignDoc = parser.parseFromString(htmlString, 'text/html');
+                
+                const isTargetLoggedOut = !foreignDoc.querySelector('#sidebarMenu');
+                const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
+
+                if (isTargetLoggedOut !== isCurrentLoggedOut) {
+                    const playerContainer = document.getElementById('globalMusicPlayerContainer');
+                    if(playerContainer) playerContainer.remove();
+                    document.body.innerHTML = foreignDoc.body.innerHTML;
+                    if(playerContainer) document.body.appendChild(playerContainer);
+                } else {
+                    if (!isTargetLoggedOut) {
+                        const activeContentPanel = document.querySelector('.col-md-10');
+                        const foreignContentPanel = foreignDoc.querySelector('.col-md-10');
+                        if (activeContentPanel && foreignContentPanel) {
+                            activeContentPanel.innerHTML = foreignContentPanel.innerHTML;
+                        }
+                    } else {
+                        const activeLogin = document.querySelector('.login-box')?.parentElement;
+                        const foreignLogin = foreignDoc.querySelector('.login-box')?.parentElement;
+                        if (activeLogin && foreignLogin) {
+                            activeLogin.innerHTML = foreignLogin.innerHTML;
+                        }
+                    }
+                }
+
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style = '';
+
+                bindSpaFormSubmissions();
+            })
+            .catch(err => {
+                form.submit(); // fallback
+            });
+        });
+    });
+}
+
+// System Boot Initialization Sequence
+document.addEventListener('DOMContentLoaded', () => {
+    initMusicDatabase(restoreTracksFromDB);
+    bindSpaFormSubmissions();
+});
+</script>
 </body>
 </html>
