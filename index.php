@@ -126,8 +126,8 @@ if (isset($_POST['login'])) {
         if ($user['status'] == 'approved') {
             $_SESSION['user_id'] = $user['id']; $_SESSION['role'] = $user['role']; $_SESSION['name'] = $user['firstname']." ".$user['lastname'];
             header("Location: " . $_SERVER['PHP_SELF']); exit();
-        } else { $msg = "<div class='alert alert-warning'>Your account is currently: " . strtoupper($user['status']) . "</div>"; }
-    } else { $msg = "<div class='alert alert-danger'>Invalid credentials.</div>"; }
+        } else { $msg = "<div class='alert alert-warning text-dark'>Your account is currently: " . strtoupper($user['status']) . "</div>"; }
+    } else { $msg = "<div class='alert alert-danger text-dark'>Invalid credentials.</div>"; }
 }
 
 // STUDENT ONLY REGISTRATION LOGIC
@@ -141,16 +141,16 @@ if (isset($_POST['register_user'])) {
         $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['user'], $hash, $course]);
         
         // Success: Set session message and redirect to prevent form resubmission on refresh
-        $_SESSION['sys_msg'] = "<div class='alert alert-success'>Registration successful! Wait for Admin approval.</div>";
+        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Registration successful! Wait for Admin approval.</div>";
         header("Location: ?view=login");
         exit();
 
     } catch (PDOException $e) { 
         // Real Error Handling: Only show "taken" if it's a true 1062 duplicate key error
         if ($e->errorInfo[1] == 1062) {
-            $msg = "<div class='alert alert-danger'>Username or Email is already taken. Please try another.</div>";
+            $msg = "<div class='alert alert-danger text-dark'>Username or Email is already taken. Please try another.</div>";
         } else {
-            $msg = "<div class='alert alert-danger'>Database Error: " . $e->getMessage() . "</div>";
+            $msg = "<div class='alert alert-danger text-dark'>Database Error: " . $e->getMessage() . "</div>";
         }
     }
 }
@@ -167,12 +167,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'records') {
         }
         $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, birthdate=?, address=? $photo_query WHERE id=?");
         $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['bdate'], $_POST['addr'], $_POST['sid']]);
-        $msg = "<div class='alert alert-success'>Information updated.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Information updated.</div>";
     }
     if (isset($_POST['records_update_grade'])) {
         $stmt = $pdo->prepare("UPDATE enrollments SET prelim=?, midterm=?, final=?, remarks=? WHERE id=?");
         $stmt->execute([$_POST['p'], $_POST['m'], $_POST['f'], $_POST['r'], $_POST['eid']]);
-        $msg = "<div class='alert alert-success'>Academic records updated.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Academic records updated.</div>";
     }
 }
 
@@ -182,12 +182,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'cashier') {
         $receipt = "RCPT-" . time();
         $stmt = $pdo->prepare("INSERT INTO payments (student_id, amount, receipt_no, sy, sem, received_by) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$_POST['sid'], $_POST['amt'], $receipt, $_POST['sy'], $_POST['sem'], $_SESSION['user_id']]);
-        $msg = "<div class='alert alert-success'>Payment Successful! Receipt: $receipt</div>";
+        $msg = "<div class='alert alert-success text-dark'>Payment Successful! Receipt: $receipt</div>";
     }
     if (isset($_GET['del_payment'])) {
         $stmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
         $stmt->execute([$_GET['del_payment']]);
-        $msg = "<div class='alert alert-danger'>Payment record has been removed.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>Payment record has been removed.</div>";
     }
 }
 
@@ -198,7 +198,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'teacher') {
             $stmt = $pdo->prepare("UPDATE enrollments SET prelim=?, midterm=?, final=?, remarks=? WHERE id=?");
             $stmt->execute([$data['p'], $data['m'], $data['f'], $data['r'], $enrollment_id]);
         }
-        $msg = "<div class='alert alert-success'>Grades updated successfully.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Grades updated successfully.</div>";
     }
 }
 
@@ -212,11 +212,11 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'dean') {
             $stmt = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?,?,?,?,?,?,?,?)");
             $stmt->execute([$_POST['code'], $_POST['title'], $_POST['units'], $_POST['sy'], $_POST['sem'], $_POST['course'], $_POST['teacher_id'], $_POST['schedule']]);
         }
-        $msg = "<div class='alert alert-success'>Subject data updated.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Subject data updated.</div>";
     }
     if (isset($_GET['del_sub'])) {
         $pdo->prepare("DELETE FROM subjects WHERE id=?")->execute([$_GET['del_sub']]);
-        $msg = "<div class='alert alert-danger'>Subject deleted.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>Subject deleted.</div>";
     }
 }
 
@@ -226,41 +226,38 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'finance') {
         $student_id = ($_POST['target_student'] == "0") ? null : $_POST['target_student'];
         $stmt = $pdo->prepare("INSERT INTO fee_schedules (fee_name, fee_type, amount, sy, sem, student_id) VALUES (?,?,?,?,?,?)");
         $stmt->execute([$_POST['fee_name'], $_POST['fee_type'], $_POST['amount'], $_POST['sy'], $_POST['sem'], $student_id]);
-        $msg = "<div class='alert alert-success'>Fee schedule updated.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Fee schedule updated.</div>";
     }
     if (isset($_GET['del_fee'])) {
         $pdo->prepare("DELETE FROM fee_schedules WHERE id=?")->execute([$_GET['del_fee']]);
-        $msg = "<div class='alert alert-danger'>Fee removed.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>Fee removed.</div>";
     }
 }
 
 // ADMIN ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
-    // New Delete Logic
     if (isset($_GET['delete_user_id'])) {
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$_GET['delete_user_id']]);
-        $msg = "<div class='alert alert-danger'>User account has been permanently removed.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>User account has been permanently removed.</div>";
     }
     if (isset($_GET['approve_id'])) {
         $pdo->prepare("UPDATE users SET status='approved' WHERE id=?")->execute([$_GET['approve_id']]);
-        $msg = "<div class='alert alert-success'>User Approved.</div>";
+        $msg = "<div class='alert alert-success text-dark'>User Approved.</div>";
     }
     if (isset($_GET['reject_id'])) {
         $pdo->prepare("UPDATE users SET status='rejected' WHERE id=?")->execute([$_GET['reject_id']]);
-        $msg = "<div class='alert alert-danger'>User Rejected.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>User Rejected.</div>";
     }
     if (isset($_POST['create_staff'])) {
         $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status) VALUES (?, ?, ?, ?, ?, 'approved')")
             ->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $_POST['role']]);
-        $msg = "<div class='alert alert-success'>Staff account created successfully.</div>";
+        $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
     }
 }
 
 // --- STUDENT DASH ACTIONS ---
 if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
-    
-    // Handle Profile Update (The code we just added)
     if (isset($_POST['student_update_profile'])) {
         $photo_query = "";
         if(!empty($_FILES['photo']['name'])) {
@@ -271,33 +268,27 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         }
         $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
         $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $_SESSION['user_id']]);
-        $msg = "<div class='alert alert-success'>Your profile has been updated!</div>";
+        $msg = "<div class='alert alert-success text-dark'>Your profile has been updated!</div>";
         
-        // Refresh session data
         $uStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
         $uStmt->execute([$_SESSION['user_id']]);
         $currentUser = $uStmt->fetch();
     }
-
-    // Handle Enrollment
     if (isset($_GET['enroll_id'])) {
         $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id = ? AND subject_id = ?");
         $check->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
         if (!$check->fetch()) {
             $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?, ?)")
                 ->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
-            $msg = "<div class='alert alert-success'>Subject added to your load.</div>";
+            $msg = "<div class='alert alert-success text-dark'>Subject added to your load.</div>";
         }
     }
-
-    //  Handle Dropping
     if (isset($_GET['drop_id'])) {
         $pdo->prepare("DELETE FROM enrollments WHERE id = ? AND student_id = ?")
             ->execute([$_GET['drop_id'], $_SESSION['user_id']]);
-        $msg = "<div class='alert alert-warning'>Subject dropped.</div>";
+        $msg = "<div class='alert alert-warning text-dark'>Subject dropped.</div>";
     }
 } 
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -307,185 +298,178 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     <title>Campus Core Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Poppins', sans-serif; background: #f4f7f6; overflow-x: hidden; }
-        .sidebar { background: #2c3e50; color: white; height: 100%; }
-        .sidebar a { color: #bdc3c7; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #34495e; }
-        .sidebar a:hover, .sidebar a.active { background: #3498db; color: white; }
-        .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #3498db; }
+        /* GLOBAL THEME */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* GLASSMORPHISM PANELS */
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
         
+        /* SIDEBAR GLASS */
+        .glass-sidebar {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; 
+            height: 100%; 
+        }
+        .glass-sidebar a { color: #ccc; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.8); color: white; }
+        .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #d97736; }
+
+        /* BUTTONS */
+        .btn-orange, .btn-primary {
+            background: #d97736 !important;
+            color: #fff !important;
+            border: none !important;
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-orange:hover, .btn-primary:hover { background: #b8622b !important; }
+        
+        .btn-success { background: rgba(40, 167, 69, 0.8) !important; border: none; }
+        .btn-danger { background: rgba(220, 53, 69, 0.8) !important; border: none; }
+
+        /* GLOBAL INPUTS & SELECTS */
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: #fff !important;
+        }
+        .form-control::placeholder { color: rgba(255, 255, 255, 0.6) !important; }
+        .form-control:focus, .form-select:focus { 
+            background: rgba(255, 255, 255, 0.2) !important; 
+            border-color: #d97736 !important; 
+            box-shadow: 0 0 5px rgba(217, 119, 54, 0.5) !important;
+        }
+        select option { background: #2c3e50; color: #fff; }
+
+        /* LOGIN SPECIFIC */
+        .login-box { width: 100%; max-width: 420px; padding: 40px 35px; margin: 0 auto; }
+        .glass-input-login { border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important; border-radius: 0 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+        .terms-wrapper { font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 25px; }
+
+        /* TABLES */
+        .table { color: #fff !important; --bs-table-bg: transparent; border-color: rgba(255,255,255,0.2); }
+        .table-dark { background: rgba(0,0,0,0.6) !important; color: #fff !important; }
+        .table-hover tbody tr:hover { color: #fff; background-color: rgba(255,255,255,0.1) !important; }
+        .table td, .table th { background: transparent !important; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        /* MODALS */
+        .modal-content {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(15px);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .modal-header, .modal-footer { border-color: rgba(255,255,255,0.1); }
+
+        /* UTILS */
+        .text-muted { color: rgba(255,255,255,0.7) !important; }
+        a { color: #d97736; }
+        a:hover { color: #b8622b; }
+
         @media (min-width: 768px) { .sidebar-wrapper { min-height: 100vh; } }
         @media print { 
+            body { background: white !important; color: black !important; }
+            .glass-panel { background: white !important; color: black !important; box-shadow: none !important; }
+            .table { color: black !important; }
             .no-print, .mobile-nav { display: none !important; } 
             .col-md-10 { width: 100% !important; } 
         }
-
-        /* --- NEW LOGIN GLASSMORPHISM STYLES --- */
-        body.login-theme {
-            /* Placeholder Mountain Sunset Background */
-            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
-            background-size: cover;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            padding: 40px 35px;
-            color: #ffffff;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .glass-panel h3 {
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        /* Input lines */
-        .glass-input {
-            background: transparent !important;
-            border: none !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
-            border-radius: 0 !important;
-            color: #fff !important;
-            padding: 10px 5px;
-            box-shadow: none !important;
-            font-size: 0.95rem;
-        }
-
-        .glass-input::placeholder { color: rgba(255, 255, 255, 0.8); }
-        .glass-input:focus { border-bottom: 2px solid #fff !important; }
-        
-        /* Fix Chrome Auto-fill turning inputs white */
-        .glass-input:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-            -webkit-text-fill-color: white !important;
-            transition: background-color 5000s ease-in-out 0s;
-        }
-
-        .btn-orange {
-            background: #d97736;
-            color: #fff;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 20px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: 0.3s;
-        }
-
-        .btn-orange:hover {
-            background: #b8622b;
-            color: #fff;
-        }
-
-        .terms-wrapper {
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 25px;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .glass-panel a { color: #fff; text-decoration: underline; }
-        .glass-panel a:hover { color: #f0f0f0; }
     </style>
 </head>
 <body>
-<body class="<?= !isset($_SESSION['user_id']) ? 'login-theme' : '' ?>">
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center p-3">
-        <div class="glass-panel">
+        <div class="glass-panel login-box">
             <?= $msg ?>
-            
             <?php if ($view == 'login'): ?>
-                <h3>LOGIN</h3>
+                <h3 class="text-center fw-semibold mb-4" style="letter-spacing: 1px;">LOGIN</h3>
                 <form method="POST">
                     <div class="mb-4">
-                        <input type="text" name="username" class="form-control glass-input" placeholder="User Name" required autocomplete="off">
+                        <input type="text" name="username" class="form-control glass-input-login" placeholder="User Name" required autocomplete="off">
                     </div>
                     <div class="mb-4">
-                        <input type="password" name="password" class="form-control glass-input" placeholder="Password" required>
+                        <input type="password" name="password" class="form-control glass-input-login" placeholder="Password" required>
                     </div>
-                    
                     <div class="terms-wrapper">
                         <input type="checkbox" id="terms" required>
                         <label for="terms">I agree to the terms and conditions</label>
                     </div>
-
                     <button name="login" class="btn btn-orange w-100">Login</button>
                 </form>
                 <div class="text-center mt-4">
-                    <a href="?view=register" class="small text-decoration-none">Apply for a Student Account</a>
-                </div>	
-			
-			<?php else: ?>
-                        <h5>Create Student Account</h5>
-                        <form method="POST" autocomplete="off">
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-6"><input name="fname" placeholder="First Name" class="form-control" required></div>
-                                <div class="col-md-6"><input name="lname" placeholder="Last Name" class="form-control" required></div>
-                            </div>
-                            <input name="email" type="email" placeholder="Email Address" class="form-control mb-2" required>
+                    <a href="?view=register" class="small text-decoration-none text-white text-decoration-underline">Apply for a Student Account</a>
+                </div>
+            <?php else: ?>
+                <h3 class="text-center fw-semibold mb-4" style="font-size: 1.5rem;">Create Account</h3>
+                <form method="POST" autocomplete="off">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><input name="fname" placeholder="First Name" class="form-control" required></div>
+                        <div class="col-md-6"><input name="lname" placeholder="Last Name" class="form-control" required></div>
+                    </div>
+                    <input name="email" type="email" placeholder="Email Address" class="form-control mb-3" required>
 
-                            <select name="course" class="form-select mb-2" required>
-                                <option value="" disabled selected>Select Course</option>
-                                <optgroup label="Business, Management, and Accountancy">
-                                    <option value="BS Accountancy">Bachelor of Science in Accountancy (BSA)</option>
-                                    <option value="BS Business Administration">BS Business Administration</option>
-                                    <option value="BS Entrepreneurship">BS Entrepreneurship</option>
-                                    <option value="BS Legal Management">BS Legal Management</option>
-                                    <option value="BS Tourism/Hospitality Management">BS Tourism/Hospitality Management</option>
-                                </optgroup>
-                                <optgroup label="STEM & Technology">
-                                    <option value="BS Computer Science">BS Computer Science</option>
-                                    <option value="BS Information Technology">BS Information Technology</option>
-                                    <option value="BS Engineering">BS Civil/Mechanical/Electrical Engineering</option>
-                                    <option value="BS Architecture">BS Architecture</option>
-                                    <option value="BS Nursing">BS Nursing</option>
-                                    <option value="BS Psychology">BS Psychology</option>
-                                </optgroup>
-                                <optgroup label="Arts & Social Sciences">
-                                    <option value="AB Communication/Journalism">AB Communication/Journalism</option>
-                                    <option value="AB Political Science">AB Political Science</option>
-                                    <option value="BA Fine Arts/Multimedia Arts">BA Fine Arts/Multimedia Arts</option>
-                                </optgroup>
-                                <optgroup label="Education">
-                                    <option value="Bachelor in Elementary Education">Bachelor in Elementary Education (BEED)</option>
-                                    <option value="Bachelor in Secondary Education">Bachelor in Secondary Education (BSEd)</option>
-                                </optgroup>
-                                <optgroup label="Specializations (2026)">
-                                    <option value="Data Science: Applied Math">Data Science: Applied Mathematics</option>
-                                    <option value="Robotics & Mechatronics">Engineering: Robotics and Mechatronics</option>
-                                </optgroup>
-                            </select>
+                    <select name="course" class="form-select mb-3" required>
+                        <option value="" disabled selected>Select Course</option>
+                        <optgroup label="Business, Management, and Accountancy">
+                            <option value="BS Accountancy">Bachelor of Science in Accountancy (BSA)</option>
+                            <option value="BS Business Administration">BS Business Administration</option>
+                            <option value="BS Entrepreneurship">BS Entrepreneurship</option>
+                            <option value="BS Legal Management">BS Legal Management</option>
+                            <option value="BS Tourism/Hospitality Management">BS Tourism/Hospitality Management</option>
+                        </optgroup>
+                        <optgroup label="STEM & Technology">
+                            <option value="BS Computer Science">BS Computer Science</option>
+                            <option value="BS Information Technology">BS Information Technology</option>
+                            <option value="BS Engineering">BS Civil/Mechanical/Electrical Engineering</option>
+                            <option value="BS Architecture">BS Architecture</option>
+                            <option value="BS Nursing">BS Nursing</option>
+                            <option value="BS Psychology">BS Psychology</option>
+                        </optgroup>
+                        <optgroup label="Arts & Social Sciences">
+                            <option value="AB Communication/Journalism">AB Communication/Journalism</option>
+                            <option value="AB Political Science">AB Political Science</option>
+                            <option value="BA Fine Arts/Multimedia Arts">BA Fine Arts/Multimedia Arts</option>
+                        </optgroup>
+                        <optgroup label="Education">
+                            <option value="Bachelor in Elementary Education">Bachelor in Elementary Education (BEED)</option>
+                            <option value="Bachelor in Secondary Education">Bachelor in Secondary Education (BSEd)</option>
+                        </optgroup>
+                    </select>
 
-                         <input name="user" placeholder="Desired Username" class="form-control glass-input mb-3" required autocomplete="off">
-                    <input name="password" type="password" placeholder="Password" class="form-control glass-input mb-4" required autocomplete="new-password">
-                    
+                    <input name="user" placeholder="Desired Username" class="form-control mb-3" required autocomplete="off">
+                    <input name="password" type="password" placeholder="Password" class="form-control mb-4" required autocomplete="new-password">
                     <button name="register_user" class="btn btn-orange w-100">Submit Application</button>
                 </form>
                 <div class="text-center mt-3">
-                    <a href="?view=login" class="small text-decoration-none">Back to Login</a>
+                    <a href="?view=login" class="small text-decoration-none text-white text-decoration-underline">Back to Login</a>
                 </div>
             <?php endif; ?>
         </div>
     </div>
-        </div>
-    </div>
 <?php else: ?>
-    <nav class="navbar navbar-dark bg-dark d-md-none mobile-nav no-print">
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-nav no-print" style="background: rgba(0,0,0,0.8) !important;">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">Campus Core</span>
             <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
@@ -496,23 +480,20 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2 p-0 no-print sidebar-wrapper offcanvas-md offcanvas-start bg-dark" tabindex="-1" id="sidebarMenu">
-                
+            <div class="col-md-2 p-0 no-print sidebar-wrapper offcanvas-md offcanvas-start glass-sidebar" tabindex="-1" id="sidebarMenu">
                 <div class="offcanvas-header d-md-none border-bottom border-secondary text-white">
                     <h5 class="offcanvas-title">Menu</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
                 </div>
-
-                <div class="offcanvas-body d-flex flex-column sidebar p-0">
-                    <div class="p-4 bg-dark text-center">
+                <div class="offcanvas-body d-flex flex-column p-0">
+                    <div class="p-4 text-center" style="background: rgba(0,0,0,0.3);">
                         <?php if($_SESSION['role'] == 'student'): ?>
                             <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle profile-img-nav mb-2 shadow">
                         <?php endif; ?>
                         <h6><?= $_SESSION['name'] ?></h6>
-                        <small class="text-info"><?= strtoupper($_SESSION['role']) ?></small>
+                        <small style="color: #d97736;"><?= strtoupper($_SESSION['role']) ?></small>
                     </div>
                     <a href="?"><i class="bi bi-house"></i> Home</a>
-                    
                     <?php if($_SESSION['role'] == 'admin'): ?>
                         <a href="?page=approvals">User Approvals</a>
                         <a href="?page=create_staff">Create Staff</a>
@@ -541,8 +522,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
-                    
-                    <a href="?action=logout" class="text-danger mt-5"><i class="bi bi-power"></i> Logout</a>
+                    <a href="?action=logout" class="mt-5" style="color: #ff6b6b;"><i class="bi bi-power"></i> Logout</a>
                 </div>
             </div>
 
@@ -558,17 +538,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <h3>Student Dashboard</h3>
                         <div class="row mt-4">
                             <div class="col-md-4">
-                                <div class="card border-0 shadow-sm text-center p-4">
+                                <div class="glass-panel text-center p-4">
                                     <div class="mb-3">
-                                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm border" style="width:150px; height:150px; object-fit:cover;">
+                                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm border" style="width:150px; height:150px; object-fit:cover; border-color: #d97736 !important;">
                                     </div>
                                     <h4 class="mb-0"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h4>
                                     <p class="text-muted small">Student ID: STU-00<?= $currentUser['id'] ?></p>
                                     
-                                    <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#editMyProfile">
+                                    <button class="btn btn-sm btn-orange mt-2" data-bs-toggle="modal" data-bs-target="#editMyProfile">
                                         <i class="bi bi-pencil"></i> Edit Profile
                                     </button>
-                                    <hr>
+                                    <hr style="border-color: rgba(255,255,255,0.2);">
                                     <div class="text-start">
                                         <p class="mb-1"><strong>Email:</strong> <?= $currentUser['email'] ?></p>
                                         <p class="mb-1"><strong>Course:</strong> <?= $currentUser['course'] ?></p>
@@ -593,22 +573,22 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button name="student_update_profile" class="btn btn-primary">Save Changes</button>
+                                            <button name="student_update_profile" class="btn btn-orange">Save Changes</button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
 
                             <div class="col-md-8">
-                                <div class="card border-0 shadow-sm p-4">
+                                <div class="glass-panel p-4">
                                     <h5>Welcome back, <?= $currentUser['firstname'] ?>!</h5>
-                                    <p>You can manage your subjects and view your grades using the menu on the left.</p>
+                                    <p class="text-muted">You can manage your subjects and view your grades using the menu on the left.</p>
                                 </div>
                             </div>
                         </div>
                         <?php
                     } else {
-                        echo "<h3>Dashboard</h3><p>Welcome back, " . $_SESSION['name'] . ".</p>";
+                        echo "<h3>Dashboard</h3><p class='text-muted'>Welcome back, " . $_SESSION['name'] . ".</p>";
                     }
                 }
                 // --- RECORDS PAGES ---
@@ -616,18 +596,18 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "<h3>Student Information Management</h3>";
                     $students = $pdo->query("SELECT * FROM users WHERE role='student'")->fetchAll();
                     ?>
-                    <div class="table-responsive">
-                        <table class="table table-hover bg-white mt-3 shadow-sm">
+                    <div class="table-responsive glass-panel p-2 mt-3">
+                        <table class="table table-glass table-hover mb-0">
                             <thead class="table-dark"><tr><th>Photo</th><th>Name</th><th>Birthdate</th><th>Address</th><th>Action</th></tr></thead>
                             <tbody>
                             <?php foreach($students as $s): ?>
                             <tr>
-                                <td><img src="uploads/<?= $s['photo'] ?>" width="40" height="40" class="rounded-circle border"></td>
+                                <td><img src="uploads/<?= $s['photo'] ?>" width="40" height="40" class="rounded-circle border border-secondary"></td>
                                 <td><?= $s['lastname'] ?>, <?= $s['firstname'] ?></td>
                                 <td><?= $s['birthdate'] ?></td>
                                 <td><?= $s['address'] ?></td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
+                                    <button class="btn btn-sm btn-orange" data-bs-toggle="modal" data-bs-target="#editS<?= $s['id'] ?>">Edit Info</button>
                                     <div class="modal fade" id="editS<?= $s['id'] ?>" tabindex="-1">
                                         <div class="modal-dialog"><form method="POST" enctype="multipart/form-data" class="modal-content">
                                             <div class="modal-header"><h5>Edit Student</h5></div>
@@ -653,7 +633,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'rec_tor' && $_SESSION['role'] == 'records') {
                     echo "<h3>Transcript of Records (TOR)</h3>";
                     ?>
-                    <div class="card p-3 mb-4 no-print shadow-sm">
+                    <div class="glass-panel p-3 mb-4 no-print">
                         <form method="GET" class="row g-2">
                             <input type="hidden" name="page" value="rec_tor">
                             <div class="col-md-9">
@@ -665,7 +645,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     ?>
                                 </select>
                             </div>
-                            <div class="col-md-3"><button class="btn btn-dark w-100">Load TOR</button></div>
+                            <div class="col-md-3"><button class="btn btn-orange w-100">Load TOR</button></div>
                         </form>
                     </div>
                     <?php if (!empty($_GET['student_id'])): 
@@ -675,10 +655,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         $grades->execute([$sid]);
                         $all_grades = $grades->fetchAll();
                     ?>
-                        <div class="p-3 p-md-5 bg-white border">
+                        <div class="glass-panel p-3 p-md-5">
                             <div class="text-center mb-4">
                                 <h2>TRANSCRIPT OF RECORDS</h2>
-                                <hr>
+                                <hr style="border-color: rgba(255,255,255,0.2);">
                                 <div class="row text-start mt-4">
                                     <div class="col-6"><strong>Name:</strong> <?= $si['lastname'] ?>, <?= $si['firstname'] ?></div>
                                     <div class="col-6"><strong>Address:</strong> <?= $si['address'] ?></div>
@@ -686,7 +666,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered">
-                                    <thead class="table-light"><tr><th>SY/Sem</th><th>Code</th><th>Subject</th><th>Units</th><th>P</th><th>M</th><th>F</th><th>Remarks</th><th class="no-print">Edit</th></tr></thead>
+                                    <thead class="table-dark"><tr><th>SY/Sem</th><th>Code</th><th>Subject</th><th>Units</th><th>P</th><th>M</th><th>F</th><th>Remarks</th><th class="no-print">Edit</th></tr></thead>
                                     <tbody>
                                     <?php foreach($all_grades as $g): ?>
                                     <tr>
@@ -709,7 +689,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                                         </div>
                                                         <label>Remarks</label><input name="r" value="<?= $g['remarks'] ?>" class="form-control">
                                                     </div>
-                                                    <div class="modal-footer"><button name="records_update_grade" class="btn btn-primary btn-sm">Update</button></div>
+                                                    <div class="modal-footer"><button name="records_update_grade" class="btn btn-orange btn-sm">Update</button></div>
                                                 </form></div>
                                             </div>
                                         </td>
@@ -718,7 +698,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="text-end mt-3 no-print"><button onclick="window.print()" class="btn btn-dark">Print PDF View</button></div>
+                            <div class="text-end mt-3 no-print"><button onclick="window.print()" class="btn btn-secondary">Print PDF View</button></div>
                         </div>
                     <?php endif;
                 }
@@ -726,16 +706,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'cashier_billing' && $_SESSION['role'] == 'cashier') {
                     echo "<h3>Student Payables & Balance Summary</h3>";
                     ?>
-                    <div class="table-responsive">
-                        <table class="table table-hover bg-white shadow-sm mt-3">
+                    <div class="glass-panel p-2 mt-3 table-responsive">
+                        <table class="table table-hover mb-0">
                             <thead class="table-dark">
-                                <tr>
-                                    <th>Student Name</th>
-                                    <th>Total Assessment</th>
-                                    <th>Amount Paid</th>
-                                    <th>Balance Due</th>
-                                    <th>Status</th>
-                                </tr>
+                                <tr><th>Student Name</th><th>Total Assessment</th><th>Amount Paid</th><th>Balance Due</th><th>Status</th></tr>
                             </thead>
                             <tbody>
                                 <?php 
@@ -745,7 +719,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     $load_stmt->execute([$b['id']]);
                                     $total_assessment = $load_stmt->fetchColumn() ?: 0;
                                     
-                                    // FIXED COALESCE HERE
                                     $pay_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_id = ?");
                                     $pay_stmt->execute([$b['id']]);
                                     $total_paid = $pay_stmt->fetchColumn();
@@ -757,8 +730,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 <tr>
                                     <td><?= $b['lastname'] ?>, <?= $b['firstname'] ?></td>
                                     <td>₱<?= number_format($total_assessment, 2) ?></td>
-                                    <td class="text-success">₱<?= number_format($total_paid, 2) ?></td>
-                                    <td class="fw-bold text-danger">₱<?= number_format($balance, 2) ?></td>
+                                    <td class="text-success fw-bold">₱<?= number_format($total_paid, 2) ?></td>
+                                    <td class="fw-bold" style="color:#ff6b6b;">₱<?= number_format($balance, 2) ?></td>
                                     <td><span class="badge bg-<?= $status_color ?>"><?= $status_text ?></span></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -770,7 +743,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'cashier_payments' && $_SESSION['role'] == 'cashier') {
                     echo "<h3>Receive Payments</h3>";
                     ?>
-                    <div class="card p-4 border-0 shadow-sm mb-4">
+                    <div class="glass-panel p-4 mb-4">
                         <form method="POST" class="row g-3">
                             <div class="col-md-4">
                                 <label>Select Student</label>
@@ -788,8 +761,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         </form>
                     </div>
                     <h5>Recent Payments</h5>
-                    <div class="table-responsive">
-                        <table class="table bg-white shadow-sm">
+                    <div class="glass-panel p-2 table-responsive">
+                        <table class="table mb-0">
                             <thead class="table-dark">
                                 <tr><th>Receipt #</th><th>Student</th><th>Amount</th><th>Date</th><th class="no-print">Actions</th></tr>
                             </thead>
@@ -802,12 +775,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <td>₱<?= number_format($r['amount'], 2) ?></td>
                                     <td><?= date('M d, Y h:i A', strtotime($r['pay_date'])) ?></td>
                                     <td class="no-print">
-                                        <button onclick="window.print()" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i></button>
-                                        <a href="?page=cashier_payments&del_payment=<?= $r['id'] ?>" 
-                                           class="btn btn-sm btn-danger" 
-                                           onclick="return confirm('Are you sure you want to remove this payment record? This will update the student balance.')">
-                                           <i class="bi bi-trash"></i> Remove
-                                        </a>
+                                        <button onclick="window.print()" class="btn btn-sm btn-outline-light"><i class="bi bi-printer"></i></button>
+                                        <a href="?page=cashier_payments&del_payment=<?= $r['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this payment record? This will update the student balance.')"><i class="bi bi-trash"></i></a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -818,10 +787,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'cashier_reports' && $_SESSION['role'] == 'cashier') {
                     echo "<h3>Cash Collection Reports</h3>";
                     ?>
-                    <form method="POST" class="row g-2 mb-4 no-print">
+                    <form method="POST" class="row g-2 mb-4 no-print glass-panel p-3 mx-0">
                         <div class="col-md-3"><input type="date" name="d1" class="form-control" required></div>
                         <div class="col-md-3"><input type="date" name="d2" class="form-control" required></div>
-                        <div class="col-md-2"><button name="gen_report" class="btn btn-primary w-100">Show Report</button></div>
+                        <div class="col-md-2"><button name="gen_report" class="btn btn-orange w-100">Show Report</button></div>
                     </form>
                     <?php
                     if (isset($_POST['gen_report'])) {
@@ -829,50 +798,40 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         $stmt->execute([$_POST['d1'], $_POST['d2']]);
                         $results = $stmt->fetchAll();
                         echo "<h5>Collection from {$_POST['d1']} to {$_POST['d2']}</h5>";
-                        echo "<div class='table-responsive'><table class='table bg-white shadow-sm'><thead><tr><th>Date</th><th>Student</th><th>Receipt</th><th>Amount</th></tr></thead>";
+                        echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Date</th><th>Student</th><th>Receipt</th><th>Amount</th></tr></thead>";
                         $total = 0;
                         foreach($results as $res) {
                             echo "<tr><td>{$res['pay_date']}</td><td>{$res['lastname']}</td><td>{$res['receipt_no']}</td><td>₱".number_format($res['amount'],2)."</td></tr>";
                             $total += $res['amount'];
                         }
-                        echo "<tr><th colspan='3' class='text-end'>TOTAL COLLECTION:</th><th>₱".number_format($total,2)."</th></tr></table></div>";
-                        echo "<button onclick='window.print()' class='btn btn-dark no-print'>Print Report</button>";
+                        echo "<tr><th colspan='3' class='text-end'>TOTAL COLLECTION:</th><th style='color:#d97736;'>₱".number_format($total,2)."</th></tr></table></div>";
+                        echo "<button onclick='window.print()' class='btn btn-secondary mt-3 no-print'>Print Report</button>";
                     }
                 }
                 // --- ADMIN PAGES ---
                 elseif ($page == 'approvals' && $_SESSION['role'] == 'admin') {
-    echo "<h3>User Management</h3>";
-    // We fetch ALL users now, not just pending ones
-    $users = $pdo->query("SELECT * FROM users WHERE role != 'admin'")->fetchAll();
-    
-    echo "<div class='table-responsive'><table class='table bg-white'>
-            <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>";
-    
-    foreach($users as $p) {
-        echo "<tr>
-                <td>{$p['firstname']} {$p['lastname']}</td>
-                <td>{$p['role']}</td>
-                <td>".strtoupper($p['status'])."</td>
-                <td>";
-        
-        if($p['status'] == 'pending') {
-            echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve</a> ";
-        }
-        
-        echo "<a href='?page=approvals&delete_user_id={$p['id']}' 
-                 class='btn btn-sm btn-danger' 
-                 onclick='return confirm(\"Are you sure? This will delete the user and all their associated records.\")'>
-                 Delete
-              </a>
-              </td>
-              </tr>";
-    }
-    echo "</table></div>";
+                    echo "<h3>User Management</h3>";
+                    $users = $pdo->query("SELECT * FROM users WHERE role != 'admin'")->fetchAll();
+                    echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'>
+                            <thead class='table-dark'><tr><th>Name</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>";
+                    foreach($users as $p) {
+                        echo "<tr>
+                                <td>{$p['firstname']} {$p['lastname']}</td>
+                                <td>{$p['role']}</td>
+                                <td>".strtoupper($p['status'])."</td>
+                                <td>";
+                        if($p['status'] == 'pending') {
+                            echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve</a> ";
+                        }
+                        echo "<a href='?page=approvals&delete_user_id={$p['id']}' class='btn btn-sm btn-danger' onclick='return confirm(\"Are you sure? This will delete the user and all their associated records.\")'>Delete</a>
+                              </td></tr>";
+                    }
+                    echo "</table></div>";
                 }
                 elseif ($page == 'create_staff' && $_SESSION['role'] == 'admin') {
                     echo "<h3>Create Staff Account</h3>";
                     ?>
-                    <div class="card p-4 border-0 shadow-sm" style="max-width: 500px;">
+                    <div class="glass-panel p-4" style="max-width: 500px;">
                         <form method="POST">
                             <input name="fname" placeholder="First Name" class="form-control mb-2" required>
                             <input name="lname" placeholder="Last Name" class="form-control mb-2" required>
@@ -885,7 +844,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 <option value="cashier">Cashier</option>
                                 <option value="finance">Finance</option>
                             </select>
-                            <button name="create_staff" class="btn btn-primary w-100">Register Staff</button>
+                            <button name="create_staff" class="btn btn-orange w-100">Register Staff</button>
                         </form>
                     </div>
                     <?php
@@ -895,51 +854,36 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "<h3>My Assigned Classes</h3>";
                     $classes = $pdo->prepare("SELECT * FROM subjects WHERE teacher_id = ?");
                     $classes->execute([$_SESSION['user_id']]);
-                    echo "<div class='table-responsive'><table class='table bg-white shadow-sm'><thead><tr><th>Code</th><th>Title</th><th>Course</th><th>Schedule</th></tr></thead>";
+                    echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Code</th><th>Title</th><th>Course</th><th>Schedule</th></tr></thead>";
                     foreach($classes->fetchAll() as $c) echo "<tr><td>{$c['subject_code']}</td><td>{$c['subject_title']}</td><td>{$c['course']}</td><td>{$c['schedule']}</td></tr>";
                     echo "</table></div>";
                 }
                 elseif ($page == 'teacher_grades' && $_SESSION['role'] == 'teacher') {
                     echo "<h3>Grade Encoding</h3>";
-                    
-                    // Fetch students grouped and ordered by Course
-                    $q = $pdo->prepare("SELECT e.*, u.firstname, u.lastname, s.subject_title, s.course 
-                                      FROM enrollments e 
-                                      JOIN users u ON e.student_id = u.id 
-                                      JOIN subjects s ON e.subject_id = s.id 
-                                      WHERE s.teacher_id = ? 
-                                      ORDER BY s.course ASC, u.lastname ASC");
+                    $q = $pdo->prepare("SELECT e.*, u.firstname, u.lastname, s.subject_title, s.course FROM enrollments e JOIN users u ON e.student_id = u.id JOIN subjects s ON e.subject_id = s.id WHERE s.teacher_id = ? ORDER BY s.course ASC, u.lastname ASC");
                     $q->execute([$_SESSION['user_id']]);
                     $list = $q->fetchAll(PDO::FETCH_ASSOC); 
                     
                     if (empty($list)) { 
-                        echo "<div class='alert alert-info mt-3'>No students enrolled in your subjects.</div>"; 
+                        echo "<div class='alert alert-info text-dark mt-3'>No students enrolled in your subjects.</div>"; 
                     } else {
                         ?>
                         <form method="POST">
                             <?php 
                             $current_course = null; 
                             foreach($list as $s): 
-                                // Detect when the course changes to start a new section
                                 if ($current_course !== $s['course']): 
-                                    if ($current_course !== null) echo "</tbody></table></div>"; // Close previous table wrapper
+                                    if ($current_course !== null) echo "</tbody></table></div>"; 
                                     $current_course = $s['course'];
                             ?>
-                                <div class="mt-4 mb-2 p-2 bg-secondary text-white rounded shadow-sm">
+                                <div class="mt-4 mb-2 p-2 rounded shadow-sm" style="background: rgba(217, 119, 54, 0.8);">
                                     <i class="bi bi-mortarboard-fill"></i> 
                                     <strong>COURSE: <?= strtoupper($current_course ?: 'GENERAL / UNSET') ?></strong>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table bg-white shadow-sm">
+                                <div class="glass-panel p-2 table-responsive">
+                                    <table class="table mb-0">
                                         <thead class="table-dark">
-                                            <tr>
-                                                <th>Student Name</th>
-                                                <th>Subject</th>
-                                                <th style="width: 100px;">P</th>
-                                                <th style="width: 100px;">M</th>
-                                                <th style="width: 100px;">F</th>
-                                                <th>Remarks</th>
-                                            </tr>
+                                            <tr><th>Student Name</th><th>Subject</th><th style="width: 100px;">P</th><th style="width: 100px;">M</th><th style="width: 100px;">F</th><th>Remarks</th></tr>
                                         </thead>
                                         <tbody>
                                 <?php endif; ?>
@@ -952,13 +896,9 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <td><input type='text' name='grades[<?= $s['id'] ?>][r]' value='<?= $s['remarks'] ?>' class='form-control form-control-sm'></td>
                                 </tr>
                                 <?php endforeach; 
-                                if ($current_course !== null) echo "</tbody></table></div>"; // Close final wrapper
+                                if ($current_course !== null) echo "</tbody></table></div>"; 
                                 ?>
-                        <div class="mt-3">
-                            <button name="update_grades" class="btn btn-success shadow">
-                                <i class="bi bi-check-circle"></i> Save All Grades
-                            </button>
-                        </div>
+                        <div class="mt-3"><button name="update_grades" class="btn btn-success shadow"><i class="bi bi-check-circle"></i> Save All Grades</button></div>
                     </form>
                     <?php
                     }
@@ -966,36 +906,16 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 // --- FINANCE PAGES ---
                 elseif ($page == 'finance_load' && $_SESSION['role'] == 'finance') {
                     echo "<h3>Student Loads</h3>";
-                    $stmt = $pdo->query("SELECT e.id as eid, u.firstname, u.lastname, s.subject_code, s.subject_title, s.units, s.sy, s.sem 
-                                         FROM enrollments e 
-                                         JOIN users u ON e.student_id = u.id 
-                                         JOIN subjects s ON e.subject_id = s.id 
-                                         ORDER BY u.lastname ASC, s.sy DESC");
+                    $stmt = $pdo->query("SELECT e.id as eid, u.firstname, u.lastname, s.subject_code, s.subject_title, s.units, s.sy, s.sem FROM enrollments e JOIN users u ON e.student_id = u.id JOIN subjects s ON e.subject_id = s.id ORDER BY u.lastname ASC, s.sy DESC");
                     $loads = $stmt->fetchAll();
-                    if (!$loads) {
-                        echo "<div class='alert alert-info mt-3'>No active student loads found. Ensure students have added subjects.</div>";
-                    } else {
+                    if (!$loads) { echo "<div class='alert alert-info text-dark mt-3'>No active student loads found.</div>"; } else {
                         ?>
-                        <div class="table-responsive">
-                            <table class="table bg-white shadow-sm mt-3">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Student Name</th>
-                                        <th>Code</th>
-                                        <th>Subject Title</th>
-                                        <th>Units</th>
-                                        <th>Term (SY/Sem)</th>
-                                    </tr>
-                                </thead>
+                        <div class="glass-panel p-2 table-responsive mt-3">
+                            <table class="table mb-0">
+                                <thead class="table-dark"><tr><th>Student Name</th><th>Code</th><th>Subject Title</th><th>Units</th><th>Term (SY/Sem)</th></tr></thead>
                                 <tbody>
                                     <?php foreach($loads as $l): ?>
-                                    <tr>
-                                        <td><?= $l['lastname'] ?>, <?= $l['firstname'] ?></td>
-                                        <td><?= $l['subject_code'] ?></td>
-                                        <td><?= $l['subject_title'] ?></td>
-                                        <td><?= $l['units'] ?></td>
-                                        <td><?= $l['sy'] ?> - <?= $l['sem'] ?></td>
-                                    </tr>
+                                    <tr><td><?= $l['lastname'] ?>, <?= $l['firstname'] ?></td><td><?= $l['subject_code'] ?></td><td><?= $l['subject_title'] ?></td><td><?= $l['units'] ?></td><td><?= $l['sy'] ?> - <?= $l['sem'] ?></td></tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
@@ -1006,7 +926,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'finance_fees' && $_SESSION['role'] == 'finance') {
                     ?>
                     <h3>Manage Fee Schedules</h3>
-                    <div class="card p-4 mb-4 border-0 shadow-sm">
+                    <div class="glass-panel p-4 mb-4">
                         <form method="POST" class="row g-2">
                             <div class="col-md-3">
                                 <label>Target Student</label>
@@ -1027,12 +947,12 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <select name="sem" class="form-select"><option>1st</option><option>2nd</option></select>
                                 </div>
                             </div>
-                            <div class="col-md-1"><label>&nbsp;</label><button name="add_fee" class="btn btn-primary w-100"><i class="bi bi-plus"></i></button></div>
+                            <div class="col-md-1"><label>&nbsp;</label><button name="add_fee" class="btn btn-orange w-100"><i class="bi bi-plus"></i></button></div>
                         </form>
                     </div>
                     
-                    <div class="table-responsive">
-                        <table class="table bg-white shadow-sm">
+                    <div class="glass-panel p-2 table-responsive">
+                        <table class="table mb-0">
                             <thead class="table-dark"><tr><th>Target</th><th>Fee Name</th><th>Type</th><th>Amount</th><th>SY/Sem</th><th>Action</th></tr></thead>
                             <?php
                             $fees = $pdo->query("SELECT f.*, u.lastname as student_name FROM fee_schedules f LEFT JOIN users u ON f.student_id = u.id ORDER BY f.sy DESC, f.student_id ASC")->fetchAll();
@@ -1048,7 +968,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'finance_billing' && $_SESSION['role'] == 'finance') {
                     echo "<h3>Student Payable Fees & Balance</h3>";
                     ?>
-                    <div class="table-responsive"><table class='table bg-white shadow-sm'><thead><tr><th>Student</th><th>Total Assessment</th><th>Paid</th><th>Balance</th></tr></thead>
+                    <div class="glass-panel p-2 table-responsive"><table class='table mb-0'><thead class='table-dark'><tr><th>Student</th><th>Total Assessment</th><th>Paid</th><th>Balance</th></tr></thead>
                     <?php
                     $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student'")->fetchAll();
                     foreach($students as $b) {
@@ -1056,13 +976,12 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         $load_stmt->execute([$b['id']]);
                         $assessment = $load_stmt->fetchColumn() ?: 0;
                         
-                        // FIXED COALESCE HERE
                         $pay_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_id = ?");
                         $pay_stmt->execute([$b['id']]);
                         $paid = $pay_stmt->fetchColumn();
                         
                         $balance = $assessment - $paid;
-                        echo "<tr><td>{$b['lastname']}, {$b['firstname']}</td><td>₱".number_format($assessment,2) . "</td><td>₱".number_format($paid,2)."</td><td class='fw-bold text-danger'>₱".number_format($balance,2)."</td></tr>";
+                        echo "<tr><td>{$b['lastname']}, {$b['firstname']}</td><td>₱".number_format($assessment,2) . "</td><td class='text-success'>₱".number_format($paid,2)."</td><td class='fw-bold' style='color:#ff6b6b;'>₱".number_format($balance,2)."</td></tr>";
                     }
                     ?>
                     </table></div>
@@ -1074,7 +993,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     if(isset($_GET['edit_id'])){ $s = $pdo->prepare("SELECT * FROM subjects WHERE id=?"); $s->execute([$_GET['edit_id']]); $edit_sub = $s->fetch(); }
                     ?>
                     <h3>Course & Subject Management</h3>
-                    <div class="card p-4 mb-4 border-0 shadow-sm">
+                    <div class="glass-panel p-4 mb-4">
                         <form method="POST" class="row g-2">
                             <input type="hidden" name="subject_id" value="<?= $edit_sub['id'] ?? '' ?>">
                             <div class="col-md-2"><input name="sy" placeholder="SY" class="form-control" value="<?= $edit_sub['sy'] ?? '' ?>" required></div>
@@ -1093,11 +1012,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 </select>
                             </div>
                             <div class="col-md-7"><input name="schedule" placeholder="Schedule" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
-                            <div class="col-md-2"><button name="save_subject" class="btn btn-primary w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
+                            <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
                         </form>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table bg-white shadow-sm">
+                    <div class="glass-panel p-2 table-responsive">
+                        <table class="table mb-0">
                             <thead class="table-dark"><tr><th>SY/Sem</th><th>Course</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>
                             <?php
                             $subs = $pdo->query("SELECT s.*, u.lastname FROM subjects s LEFT JOIN users u ON s.teacher_id = u.id ORDER BY s.sy DESC, s.course ASC")->fetchAll();
@@ -1110,7 +1029,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 elseif ($page == 'dean_registered_students' && $_SESSION['role'] == 'dean') {
                     echo "<h3>Registered Students</h3>";
                     $students = $pdo->query("SELECT firstname, lastname, email, username, status, id FROM users WHERE role = 'student' ORDER BY lastname ASC")->fetchAll();
-                    echo "<div class='table-responsive'><table class='table table-hover bg-white shadow-sm'><thead class='table-dark'><tr><th>Name</th><th>Username</th><th>Email</th><th>Status</th></tr></thead>";
+                    echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Name</th><th>Username</th><th>Email</th><th>Status</th></tr></thead>";
                     foreach($students as $s) echo "<tr><td>{$s['lastname']}, {$s['firstname']}</td><td>{$s['username']}</td><td>{$s['email']}</td><td>".strtoupper($s['status'])."</td></tr>";
                     echo "</table></div>";
                 }
@@ -1118,8 +1037,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "<h3>Enrolled Students List</h3>";
                     $enrolled = $pdo->query("SELECT DISTINCT u.firstname, u.lastname, u.email, u.id FROM users u JOIN enrollments e ON u.id = e.student_id WHERE u.role = 'student'")->fetchAll();
                     ?>
-                    <div class="table-responsive">
-                        <table class="table bg-white shadow-sm mt-3">
+                    <div class="glass-panel p-2 mt-3 table-responsive">
+                        <table class="table mb-0">
                             <thead class="table-dark"><tr><th>Student ID</th><th>Full Name</th><th>Email Address</th><th>Status</th></tr></thead>
                             <tbody>
                                 <?php foreach($enrolled as $row): ?>
@@ -1134,8 +1053,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "<h3>Teacher Schedules & Assignments</h3>";
                     $schedules = $pdo->query("SELECT s.*, u.firstname, u.lastname FROM subjects s LEFT JOIN users u ON s.teacher_id = u.id ORDER BY u.lastname ASC")->fetchAll();
                     ?>
-                    <div class="table-responsive">
-                        <table class="table bg-white shadow-sm mt-3">
+                    <div class="glass-panel p-2 mt-3 table-responsive">
+                        <table class="table mb-0">
                             <thead class="table-dark"><tr><th>Instructor</th><th>Subject Code</th><th>Subject Title</th><th>Schedule</th></tr></thead>
                             <tbody>
                                 <?php foreach($schedules as $sch): ?>
@@ -1151,14 +1070,14 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     echo "<h3>Enrolled Subjects</h3>";
                     $my_subs = $pdo->prepare("SELECT e.id as eid, s.* FROM enrollments e JOIN subjects s ON e.subject_id = s.id WHERE e.student_id = ? ORDER BY s.sy DESC, s.sem DESC");
                     $my_subs->execute([$_SESSION['user_id']]);
-                    echo "<div class='table-responsive'><table class='table bg-white shadow-sm mb-4'><thead><tr><th>SY/Sem</th><th>Code</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>";
-                    while($r = $my_subs->fetch()) echo "<tr><td>{$r['sy']} - {$r['sem']}</td><td>{$r['subject_code']}</td><td>{$r['subject_title']}</td><td>{$r['units']}</td><td><a href='?page=my_subjects&drop_id={$r['eid']}' class='btn btn-sm btn-outline-danger'>Drop</a></td></tr>";
+                    echo "<div class='glass-panel p-2 mb-4 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>SY/Sem</th><th>Code</th><th>Subject</th><th>Units</th><th>Action</th></tr></thead>";
+                    while($r = $my_subs->fetch()) echo "<tr><td>{$r['sy']} - {$r['sem']}</td><td>{$r['subject_code']}</td><td>{$r['subject_title']}</td><td>{$r['units']}</td><td><a href='?page=my_subjects&drop_id={$r['eid']}' class='btn btn-sm btn-danger'>Drop</a></td></tr>";
                     echo "</table></div>";
                     
                     echo "<h3>Available Offerings</h3>";
                     $available = $pdo->query("SELECT * FROM subjects WHERE id NOT IN (SELECT subject_id FROM enrollments WHERE student_id = {$_SESSION['user_id']})")->fetchAll();
-                    echo "<div class='table-responsive'><table class='table bg-white shadow-sm'>";
-                    foreach($available as $a) echo "<tr><td>{$a['sy']} - {$a['sem']}</td><td>{$a['subject_title']}</td><td><a href='?page=my_subjects&enroll_id={$a['id']}' class='btn btn-sm btn-primary'>Add</a></td></tr>";
+                    echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Term</th><th>Subject</th><th>Action</th></tr></thead>";
+                    foreach($available as $a) echo "<tr><td>{$a['sy']} - {$a['sem']}</td><td>{$a['subject_title']}</td><td><a href='?page=my_subjects&enroll_id={$a['id']}' class='btn btn-sm btn-orange'>Add</a></td></tr>";
                     echo "</table></div>";
                 }
                 elseif ($page == 'my_grades' && $_SESSION['role'] == 'student') {
@@ -1174,13 +1093,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     $grades_stmt->execute([$_SESSION['user_id']]);
                     $my_grades = $grades_stmt->fetchAll();
                     
-                    if (!$my_grades) {
-                        echo "<div class='alert alert-info mt-3'>No grade records found. You may not be enrolled in any subjects yet.</div>";
-                    } else {
+                    if (!$my_grades) { echo "<div class='alert alert-info text-dark mt-3'>No grade records found.</div>"; } else {
                         ?>
-                        <div class="card p-4 border-0 shadow-sm mt-3">
+                        <div class="glass-panel p-2 mt-3">
                             <div class="table-responsive">
-                                <table class="table table-hover bg-white mb-0">
+                                <table class="table mb-0">
                                     <thead class="table-dark"><tr><th>SY/Sem</th><th>Subject</th><th>Units</th><th>Prelim</th><th>Midterm</th><th>Final</th><th>Remarks</th></tr></thead>
                                     <tbody>
                                         <?php foreach($my_grades as $g): ?>
@@ -1209,7 +1126,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     $fees = $fees_stmt->fetch();
                     $total_assessment = $fees['total'] ?? 0;
                     
-                    // FIXED COALESCE HERE
                     $paid_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) as paid FROM payments WHERE student_id = ?");
                     $paid_stmt->execute([$_SESSION['user_id']]);
                     $total_paid = $paid_stmt->fetch()['paid'];
@@ -1219,15 +1135,15 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     <h3>Billing & Accounts</h3>
                     <div class="row mb-4">
                         <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0">
+                            <div class="glass-panel p-4 text-center">
                                 <small class="text-muted">Total Assessment</small>
                                 <h4>₱<?= number_format($total_assessment, 2) ?></h4>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0">
+                            <div class="glass-panel p-4 text-center">
                                 <small class="text-muted">Remaining Balance</small>
-                                <h4 class="<?= $balance <= 0 ? 'text-success' : 'text-danger' ?>">₱<?= number_format(max(0, $balance), 2) ?></h4>
+                                <h4 style="color: <?= $balance <= 0 ? '#4cd137' : '#ff6b6b' ?>;">₱<?= number_format(max(0, $balance), 2) ?></h4>
                             </div>
                         </div>
                     </div>
@@ -1235,15 +1151,15 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 }
                 elseif ($page == 'my_permit' && $_SESSION['role'] == 'student') {
                     ?>
-                    <div class="card p-5 text-center shadow-sm mx-auto border-0" style="max-width: 600px;">
-                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle mx-auto mb-3" style="width:100px; height:100px; object-fit:cover;">
+                    <div class="glass-panel p-5 text-center mx-auto" style="max-width: 600px;">
+                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle mx-auto mb-3 border" style="width:100px; height:100px; object-fit:cover; border-color:#d97736 !important;">
                         <h2>EXAM PERMIT</h2>
                         <p class="mb-0 fw-bold"><?= $_SESSION['name'] ?></p>
                         <p class="text-muted">STU-00<?= $_SESSION['user_id'] ?></p>
-                        <h4 class="text-success mt-2">STATUS: CLEARED</h4>
-                        <hr>
+                        <h4 style="color:#4cd137;" class="mt-2">STATUS: CLEARED</h4>
+                        <hr style="border-color:rgba(255,255,255,0.2);">
                         <small class="text-muted d-block mb-3">This permit is valid for the current examination period.</small>
-                        <button onclick="window.print()" class="btn btn-dark mt-3 no-print">Print Permit</button>
+                        <button onclick="window.print()" class="btn btn-secondary mt-3 no-print">Print Permit</button>
                     </div>
                     <?php
                 }
