@@ -307,40 +307,130 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     <title>Campus Core Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #f4f7f6; overflow-x: hidden; }
+        body { font-family: 'Poppins', sans-serif; background: #f4f7f6; overflow-x: hidden; }
         .sidebar { background: #2c3e50; color: white; height: 100%; }
         .sidebar a { color: #bdc3c7; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #34495e; }
         .sidebar a:hover, .sidebar a.active { background: #3498db; color: white; }
         .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #3498db; }
         
-        /* Force minimum height on desktop */
-        @media (min-width: 768px) {
-            .sidebar-wrapper { min-height: 100vh; }
-        }
-        
+        @media (min-width: 768px) { .sidebar-wrapper { min-height: 100vh; } }
         @media print { 
             .no-print, .mobile-nav { display: none !important; } 
             .col-md-10 { width: 100% !important; } 
         }
+
+        /* --- NEW LOGIN GLASSMORPHISM STYLES --- */
+        body.login-theme {
+            /* Placeholder Mountain Sunset Background */
+            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 40px 35px;
+            color: #ffffff;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .glass-panel h3 {
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        /* Input lines */
+        .glass-input {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+            border-radius: 0 !important;
+            color: #fff !important;
+            padding: 10px 5px;
+            box-shadow: none !important;
+            font-size: 0.95rem;
+        }
+
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.8); }
+        .glass-input:focus { border-bottom: 2px solid #fff !important; }
+        
+        /* Fix Chrome Auto-fill turning inputs white */
+        .glass-input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .btn-orange {
+            background: #d97736;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: 0.3s;
+        }
+
+        .btn-orange:hover {
+            background: #b8622b;
+            color: #fff;
+        }
+
+        .terms-wrapper {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 25px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .glass-panel a { color: #fff; text-decoration: underline; }
+        .glass-panel a:hover { color: #f0f0f0; }
     </style>
 </head>
 <body>
+<body class="<?= !isset($_SESSION['user_id']) ? 'login-theme' : '' ?>">
 <?php if (!isset($_SESSION['user_id'])): ?>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="text-center mb-4"><h3>Campus Core Management</h3></div>
-                <?= $msg ?>
-                <div class="card p-4 shadow-sm border-0">
-                    <?php if ($view == 'login'): ?>
-                        <form method="POST">
-                            <label>Username</label><input type="text" name="username" class="form-control mb-3" required autocomplete="off">
-                            <label>Password</label><input type="password" name="password" class="form-control mb-3" required>
-                            <button name="login" class="btn btn-primary w-100">Sign In</button>
-                        </form>
-                        <div class="text-center mt-3"><a href="?view=register">Apply for a Student Account</a></div>
-                    <?php else: ?>
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center p-3">
+        <div class="glass-panel">
+            <?= $msg ?>
+            
+            <?php if ($view == 'login'): ?>
+                <h3>LOGIN</h3>
+                <form method="POST">
+                    <div class="mb-4">
+                        <input type="text" name="username" class="form-control glass-input" placeholder="User Name" required autocomplete="off">
+                    </div>
+                    <div class="mb-4">
+                        <input type="password" name="password" class="form-control glass-input" placeholder="Password" required>
+                    </div>
+                    
+                    <div class="terms-wrapper">
+                        <input type="checkbox" id="terms" required>
+                        <label for="terms">I agree to the terms and conditions</label>
+                    </div>
+
+                    <button name="login" class="btn btn-orange w-100">Login</button>
+                </form>
+                <div class="text-center mt-4">
+                    <a href="?view=register" class="small text-decoration-none">Apply for a Student Account</a>
+                </div>	
+			
+			<?php else: ?>
                         <h5>Create Student Account</h5>
                         <form method="POST" autocomplete="off">
                             <div class="row g-2 mb-2">
@@ -381,14 +471,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                 </optgroup>
                             </select>
 
-                            <input name="user" placeholder="Desired Username" class="form-control mb-2" required autocomplete="off">
-                            <input name="password" type="password" placeholder="Password" class="form-control mb-3" required autocomplete="new-password">
-                            <button name="register_user" class="btn btn-success w-100">Submit Application</button>
-                        </form>
-                        <div class="text-center mt-3"><a href="?view=login">Back to Login</a></div>
-                    <?php endif; ?>
+                         <input name="user" placeholder="Desired Username" class="form-control glass-input mb-3" required autocomplete="off">
+                    <input name="password" type="password" placeholder="Password" class="form-control glass-input mb-4" required autocomplete="new-password">
+                    
+                    <button name="register_user" class="btn btn-orange w-100">Submit Application</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="?view=login" class="small text-decoration-none">Back to Login</a>
                 </div>
-            </div>
+            <?php endif; ?>
+        </div>
+    </div>
         </div>
     </div>
 <?php else: ?>
