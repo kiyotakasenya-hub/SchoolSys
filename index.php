@@ -260,7 +260,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'dean') {
         } else {
             $stmt = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?,?,?,?,?,?,?,?) RETURNING id");
             $stmt->execute([$_POST['code'], $_POST['title'], $_POST['units'], $_POST['sy'], $_POST['sem'], $_POST['course'], $_POST['teacher_id'], $_POST['schedule']]);
-            $new_sub_id = $stmt->fetchColumn(); // Retrieve the auto-generated ID
+            $new_sub_id = $stmt->fetchColumn(); 
 
             // Auto-enroll active students of this specific course & Universal subjects
             $st = $pdo->prepare("SELECT id FROM users WHERE role='student' AND status='approved' AND (course=? OR ?='Universal Standard Subjects')");
@@ -823,6 +823,65 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- EMBEDDED MUSIC PLAYER -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="glass-panel p-4 h-100 d-flex flex-column" id="workspaceMusicPlayer">
+                                <h5 class="mb-4 fw-semibold"><i class="bi bi-boombox me-2"></i>Audio Deck</h5>
+                                
+                                <div class="deck-wrapper mb-4 flex-grow-0" style="padding: 16px;">
+                                    <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
+                                    
+                                    <div class="d-flex align-items-center justify-content-between px-1 mb-2">
+                                        <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
+                                        <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
+                                    </div>
+                                    <div class="px-1 mb-4">
+                                        <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-between px-3">
+                                        <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
+                                            <i class="bi bi-shuffle"></i>
+                                        </button>
+                                        <button onclick="prevDeckTrack()" class="deck-playback-btn" title="Previous Track">
+                                            <i class="bi bi-skip-start-fill"></i>
+                                        </button>
+                                        
+                                        <button onclick="toggleDeckPlayback()" id="btnMasterDeckPlay" class="deck-master-play-btn" title="Play/Pause">
+                                            <i class="bi bi-play-fill" style="margin-left: 3px;"></i>
+                                        </button>
+                                        
+                                        <button onclick="nextDeckTrack()" class="deck-playback-btn" title="Next Track">
+                                            <i class="bi bi-skip-end-fill"></i>
+                                        </button>
+                                        <button onclick="toggleVolumePopover()" id="btnDeckSliders" class="deck-playback-btn" title="Volume Sliders">
+                                            <i class="bi bi-sliders"></i>
+                                        </button>
+                                    </div>
+
+                                    <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
+                                        <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
+                                            <i class="bi bi-volume-up-fill text-white-50 small"></i>
+                                            <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.8" oninput="changeDeckVolume(this.value)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-grow-1 d-flex flex-column">
+                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
+                                    <div class="mb-3">
+                                        <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
+                                    </div>
+
+                                    <div class="playlist-vault-box flex-grow-1 overflow-auto" style="min-height: 150px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
+                                        <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     <?php
                 }
@@ -1429,59 +1488,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     </div>
 <?php endif; ?>
 
-<div id="globalMusicPlayerContainer" class="position-fixed bottom-0 end-0 m-3 m-md-4 no-print" style="z-index: 1050; width: 350px; max-height: 90vh; overflow-y: auto;">
-    <div class="deck-wrapper mb-3" style="padding: 16px;">
-        <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
-        
-        <div class="d-flex align-items-center justify-content-between px-1 mb-2">
-            <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
-            <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
-        </div>
-        <div class="px-1 mb-4">
-            <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
-        </div>
-
-        <div class="d-flex align-items-center justify-content-between px-3">
-            <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
-                <i class="bi bi-shuffle"></i>
-            </button>
-            <button onclick="prevDeckTrack()" class="deck-playback-btn" title="Previous Track">
-                <i class="bi bi-skip-start-fill"></i>
-            </button>
-            
-            <button onclick="toggleDeckPlayback()" id="btnMasterDeckPlay" class="deck-master-play-btn" title="Play/Pause">
-                <i class="bi bi-play-fill" style="margin-left: 3px;"></i>
-            </button>
-            
-            <button onclick="nextDeckTrack()" class="deck-playback-btn" title="Next Track">
-                <i class="bi bi-skip-end-fill"></i>
-            </button>
-            <button onclick="toggleVolumePopover()" id="btnDeckSliders" class="deck-playback-btn" title="Volume Sliders">
-                <i class="bi bi-sliders"></i>
-            </button>
-        </div>
-
-        <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
-            <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
-                <i class="bi bi-volume-up-fill text-white-50 small"></i>
-                <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.8" oninput="changeDeckVolume(this.value)">
-            </div>
-        </div>
-    </div>
-
-    <div class="glass-panel p-3">
-        <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
-        <div class="mb-3">
-            <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
-        </div>
-
-        <div class="playlist-vault-box overflow-auto" style="max-height: 150px;">
-            <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // --- AUTOMATIC CURRICULUM UI POPULATOR ---
@@ -1644,7 +1650,7 @@ function restoreTracksFromDB() {
             originalPlaylistQueue.push({ title: cleanTitle, url: reconstructedUrl, filename: track.name });
         });
         rebuildActiveQueueChain();
-        renderDeckPlaylistUI();
+        syncPlayerUI();
     };
 }
 
@@ -1659,7 +1665,7 @@ function loadFilesIntoPlaylist(inputNode) {
         persistTrackToDB(file); 
     }
     rebuildActiveQueueChain();
-    renderDeckPlaylistUI();
+    syncPlayerUI();
     inputNode.value = ""; 
 }
 
@@ -1673,16 +1679,14 @@ function purgeTrackFromVault(targetUrl) {
     if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
         coreAudioNode.pause();
         coreAudioNode.src = '';
-        document.getElementById('trackDeckMetaTitle').innerText = "No Local File Loaded";
         currentQueueIndex = -1;
-        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
     }
 
     rebuildActiveQueueChain();
     if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
         currentQueueIndex--;
     }
-    renderDeckPlaylistUI();
+    syncPlayerUI();
 }
 
 function rebuildActiveQueueChain() {
@@ -1697,34 +1701,62 @@ function rebuildActiveQueueChain() {
     }
 }
 
-function renderDeckPlaylistUI() {
+// Global UI synchronization engine. Connects the background JS Audio element back to the active page DOM.
+function syncPlayerUI() {
     const container = document.getElementById('deckPlaylistTracksContainer');
-    if(!container) return;
-    container.innerHTML = '';
-
-    if(originalPlaylistQueue.length === 0) {
-        container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
-        return;
+    const titleEl = document.getElementById('trackDeckMetaTitle');
+    const playBtn = document.getElementById('btnMasterDeckPlay');
+    const shuffleBtn = document.getElementById('btnDeckShuffle');
+    
+    if (titleEl) {
+        if (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) {
+            titleEl.innerText = activePlaylistQueue[currentQueueIndex].title;
+        } else {
+            titleEl.innerText = "No Local File Loaded";
+        }
+    }
+    
+    if (playBtn) {
+        if (currentQueueIndex !== -1 && !coreAudioNode.paused) {
+            playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        } else {
+            playBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
+        }
     }
 
-    originalPlaylistQueue.forEach((track) => {
-        let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-        const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-        const currentClass = isCurrent ? 'active fw-bold' : '';
+    if (shuffleBtn) {
+        if (isShuffleActive) {
+            shuffleBtn.classList.add('active');
+        } else {
+            shuffleBtn.classList.remove('active');
+        }
+    }
 
-        const node = document.createElement('div');
-        node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
-        node.onclick = (e) => {
-            if(e.target.closest('.btn-purge-track')) return;
-            fireTrackPlaybackByIndex(activeIdx);
-        };
+    if(container) {
+        container.innerHTML = '';
+        if(originalPlaylistQueue.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
+        } else {
+            originalPlaylistQueue.forEach((track) => {
+                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+                const currentClass = isCurrent ? 'active fw-bold' : '';
 
-        node.innerHTML = `
-            <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
-            <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
-        `;
-        container.appendChild(node);
-    });
+                const node = document.createElement('div');
+                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+                node.onclick = (e) => {
+                    if(e.target.closest('.btn-purge-track')) return;
+                    fireTrackPlaybackByIndex(activeIdx);
+                };
+
+                node.innerHTML = `
+                    <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
+                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
+                `;
+                container.appendChild(node);
+            });
+        }
+    }
 }
 
 function fireTrackPlaybackByIndex(targetIdx) {
@@ -1732,11 +1764,8 @@ function fireTrackPlaybackByIndex(targetIdx) {
     currentQueueIndex = targetIdx;
 
     coreAudioNode.src = activePlaylistQueue[currentQueueIndex].url;
-    document.getElementById('trackDeckMetaTitle').innerText = activePlaylistQueue[currentQueueIndex].title;
-    
     coreAudioNode.play().catch(err => console.log("Playback initialized safely."));
-    document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-pause-fill"></i>';
-    renderDeckPlaylistUI();
+    syncPlayerUI();
 }
 
 function toggleDeckPlayback() {
@@ -1748,11 +1777,10 @@ function toggleDeckPlayback() {
 
     if(coreAudioNode.paused) {
         coreAudioNode.play();
-        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-pause-fill"></i>';
     } else {
         coreAudioNode.pause();
-        document.getElementById('btnMasterDeckPlay').innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
     }
+    syncPlayerUI();
 }
 
 function nextDeckTrack() {
@@ -1771,19 +1799,14 @@ function prevDeckTrack() {
 
 function toggleDeckShuffle() {
     isShuffleActive = !isShuffleActive;
-    const btn = document.getElementById('btnDeckShuffle');
     
     let currentTrackObj = currentQueueIndex !== -1 ? activePlaylistQueue[currentQueueIndex] : null;
-    
-    if(isShuffleActive) btn.classList.add('active');
-    else btn.classList.remove('active');
-
     rebuildActiveQueueChain();
 
     if(currentTrackObj) {
         currentQueueIndex = activePlaylistQueue.findIndex(t => t.url === currentTrackObj.url);
     }
-    renderDeckPlaylistUI();
+    syncPlayerUI();
 }
 
 function manualDeckSeek(val) {
@@ -1797,7 +1820,7 @@ function changeDeckVolume(val) {
 
 function toggleVolumePopover() {
     const pane = document.getElementById('volumeSliderPane');
-    pane.classList.toggle('d-none');
+    if(pane) pane.classList.toggle('d-none');
 }
 
 function timeFormatMap(secs) {
@@ -1934,11 +1957,7 @@ function executeSpaNavigation(targetUrl) {
             const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
             
             if (isTargetLoggedOut !== isCurrentLoggedOut) {
-                const playerContainer = document.getElementById('globalMusicPlayerContainer');
-                if(playerContainer) playerContainer.remove();
-                
                 document.body.innerHTML = foreignDoc.body.innerHTML;
-                if(playerContainer) document.body.appendChild(playerContainer);
             } else {
                 if (!isTargetLoggedOut) {
                     const activeContentPanel = document.querySelector('.col-md-10');
@@ -1961,7 +1980,7 @@ function executeSpaNavigation(targetUrl) {
                 }
             }
             bindSpaFormSubmissions();
-            renderDeckPlaylistUI();
+            syncPlayerUI();
         })
         .catch(err => {
             console.error("SPA Routing disruption:", err);
@@ -1996,10 +2015,7 @@ function bindSpaFormSubmissions() {
                 const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
 
                 if (isTargetLoggedOut !== isCurrentLoggedOut) {
-                    const playerContainer = document.getElementById('globalMusicPlayerContainer');
-                    if(playerContainer) playerContainer.remove();
                     document.body.innerHTML = foreignDoc.body.innerHTML;
-                    if(playerContainer) document.body.appendChild(playerContainer);
                 } else {
                     if (!isTargetLoggedOut) {
                         const activeContentPanel = document.querySelector('.col-md-10');
@@ -2016,12 +2032,14 @@ function bindSpaFormSubmissions() {
                     }
                 }
 
+                // Handle bootstrap modals manually removing backdrop overlays
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(b => b.remove());
                 document.body.classList.remove('modal-open');
                 document.body.style = '';
 
                 bindSpaFormSubmissions();
+                syncPlayerUI();
             })
             .catch(err => {
                 form.submit(); // fallback
