@@ -142,14 +142,24 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
 
 // Login Logic
 if (isset($_POST['login'])) {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?"); $stmt->execute([$_POST['username']]);
+    // Use LOWER() to ignore uppercase/lowercase, and LIMIT 1 to safely bypass duplicates
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1"); 
+    $stmt->execute([trim($_POST['username'])]);
     $user = $stmt->fetch();
+    
     if ($user && password_verify($_POST['password'], $user['password'])) {
         if ($user['status'] == 'approved') {
-            $_SESSION['user_id'] = $user['id']; $_SESSION['role'] = $user['role']; $_SESSION['name'] = $user['firstname']." ".$user['lastname'];
-            header("Location: " . $_SERVER['PHP_SELF']); exit();
-        } else { $msg = "<div class='alert alert-warning text-dark'>Your account is currently: " . strtoupper($user['status']) . "</div>"; }
-    } else { $msg = "<div class='alert alert-danger text-dark'>Invalid credentials.</div>"; }
+            $_SESSION['user_id'] = $user['id']; 
+            $_SESSION['role'] = $user['role']; 
+            $_SESSION['name'] = $user['firstname']." ".$user['lastname'];
+            header("Location: " . $_SERVER['PHP_SELF']); 
+            exit();
+        } else { 
+            $msg = "<div class='alert alert-warning text-dark'>Your account is currently: " . strtoupper($user['status']) . "</div>"; 
+        }
+    } else { 
+        $msg = "<div class='alert alert-danger text-dark'>Invalid credentials.</div>"; 
+    }
 }
 
 // STUDENT ONLY REGISTRATION LOGIC
@@ -403,42 +413,51 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         $role = $_POST['role'];
         $course = ($role == 'teacher' && !empty($_POST['course'])) ? $_POST['course'] : null;
 
-        $stmt = $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status, course) VALUES (?, ?, ?, ?, ?, 'approved', ?) RETURNING id");
-        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $role, $course]);
-        $new_teacher_id = $stmt->fetchColumn();
+        try {
+            $stmt = $pdo->prepare("INSERT INTO users (firstname, lastname, username, password, role, status, course) VALUES (?, ?, ?, ?, ?, 'approved', ?) RETURNING id");
+            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['user'], $hash, $role, $course]);
+            $new_teacher_id = $stmt->fetchColumn();
 
-        // AUTO-ASSIGN SUBJECTS IF TEACHER
-        if ($role == 'teacher' && $course && isset($curriculumData[$course])) {
-            foreach ($curriculumData[$course] as $subj) {
-                // Check if subject already exists
-                $check = $pdo->prepare("SELECT id FROM subjects WHERE subject_code = ? AND course = ?");
-                $check->execute([$subj['c'], $course]);
-                $existing_sub_id = $check->fetchColumn();
+            // AUTO-ASSIGN SUBJECTS IF TEACHER
+            if ($role == 'teacher' && $course && isset($curriculumData[$course])) {
+                foreach ($curriculumData[$course] as $subj) {
+                    // Check if subject already exists
+                    $check = $pdo->prepare("SELECT id FROM subjects WHERE subject_code = ? AND course = ?");
+                    $check->execute([$subj['c'], $course]);
+                    $existing_sub_id = $check->fetchColumn();
 
-                if ($existing_sub_id) {
-                    // Update existing subject with new teacher
-                    $pdo->prepare("UPDATE subjects SET teacher_id = ? WHERE id = ?")->execute([$new_teacher_id, $existing_sub_id]);
-                } else {
-                    // Insert missing subject to curriculum
-                    $ins = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?, ?, ?, '2024-2025', '1st', ?, ?, 'TBA') RETURNING id");
-                    $ins->execute([$subj['c'], $subj['t'], $subj['u'], $course, $new_teacher_id]);
-                    $new_sub_id = $ins->fetchColumn();
+                    if ($existing_sub_id) {
+                        // Update existing subject with new teacher
+                        $pdo->prepare("UPDATE subjects SET teacher_id = ? WHERE id = ?")->execute([$new_teacher_id, $existing_sub_id]);
+                    } else {
+                        // Insert missing subject to curriculum
+                        $ins = $pdo->prepare("INSERT INTO subjects (subject_code, subject_title, units, sy, sem, course, teacher_id, schedule) VALUES (?, ?, ?, '2024-2025', '1st', ?, ?, 'TBA') RETURNING id");
+                        $ins->execute([$subj['c'], $subj['t'], $subj['u'], $course, $new_teacher_id]);
+                        $new_sub_id = $ins->fetchColumn();
 
-                    // Auto-enroll eligible students into this newly generated subject
-                    $st = $pdo->prepare("SELECT id FROM users WHERE role='student' AND status='approved' AND (course=? OR ?='Universal Standard Subjects')");
-                    $st->execute([$course, $course]);
-                    foreach($st->fetchAll() as $stu) {
-                        $echeck = $pdo->prepare("SELECT id FROM enrollments WHERE student_id=? AND subject_id=?");
-                        $echeck->execute([$stu['id'], $new_sub_id]);
-                        if(!$echeck->fetch()) {
-                            $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?,?)")->execute([$stu['id'], $new_sub_id]);
+                        // Auto-enroll eligible students into this newly generated subject
+                        $st = $pdo->prepare("SELECT id FROM users WHERE role='student' AND status='approved' AND (course=? OR ?='Universal Standard Subjects')");
+                        $st->execute([$course, $course]);
+                        foreach($st->fetchAll() as $stu) {
+                            $echeck = $pdo->prepare("SELECT id FROM enrollments WHERE student_id=? AND subject_id=?");
+                            $echeck->execute([$stu['id'], $new_sub_id]);
+                            if(!$echeck->fetch()) {
+                                $pdo->prepare("INSERT INTO enrollments (student_id, subject_id) VALUES (?,?)")->execute([$stu['id'], $new_sub_id]);
+                            }
                         }
                     }
                 }
+                $msg = "<div class='alert alert-success text-dark'>Teacher created and dynamically assigned all curriculum subjects for {$course}!</div>";
+            } else {
+                $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
             }
-            $msg = "<div class='alert alert-success text-dark'>Teacher created and dynamically assigned all curriculum subjects for {$course}!</div>";
-        } else {
-            $msg = "<div class='alert alert-success text-dark'>Staff account created successfully.</div>";
+        } catch (PDOException $e) {
+            // Catch unique constraint violations (23505 in PostgreSQL, 1062 in MySQL)
+            if ($e->getCode() == 23505 || (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062)) {
+                $msg = "<div class='alert alert-danger text-dark'>Error: The username '{$_POST['user']}' is already taken. Please choose a different username.</div>";
+            } else {
+                $msg = "<div class='alert alert-danger text-dark'>Database Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+            }
         }
     }
 }
