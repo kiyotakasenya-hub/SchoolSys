@@ -302,46 +302,52 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Core Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    
     <style>
-        /* 3. UNIFIED THEME */
-        body { background: #f4f7f6; font-family: 'Poppins', sans-serif; }
-        h1, h2, h3, h4, h5, h6 { font-family: 'Cinzel', serif; }
-        
-        .sidebar { min-height: 100vh; background: #2c3e50; color: white; }
-        .sidebar a { color: #bdc3c7; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #34495e; }
-        .sidebar a:hover, .sidebar a.active { background: #3498db; color: white; }
-        
-        /* Particles styling */
-        #particles-js { position: fixed; width: 100%; height: 100%; z-index: -1; top: 0; left: 0; background: #2c3e50; }
-        .card { background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(5px); }
-        
-        .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #3498db; }
-        @media print { .no-print { display: none !important; } .sidebar { display: none !important; } .col-md-10 { width: 100% !important; } }
+        body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: #0b0e14; overflow: hidden; }
+        #particles-js { position: fixed; width: 100%; height: 100%; z-index: -1; }
+        .container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .form-box { background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); width: 350px; color: white; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; margin-bottom: 5px; }
+        .input-group { margin: 20px 0; position: relative; }
+        .input-field { width: 100%; background: transparent; border: none; border-bottom: 2px solid #fff; color: white; padding: 10px 0; outline: none; }
+        .login-btn { width: 100%; padding: 10px; background: #00d4ff; border: none; border-radius: 5px; color: #000; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        a { color: #00d4ff; text-decoration: none; }
     </style>
-	<body>
-    <div id="particles-js"></div>
-    <script>
-        particlesJS("particles-js", {
-            "particles": {
-                "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                "color": { "value": "#ffffff" },
-                "line_linked": { "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1 },
-                "move": { "enable": true, "speed": 2 }
-            },
-            "retina_detect": true
-        });
-    </script>
 </head>
 <body>
 <?php if (!isset($_SESSION['user_id'])): ?>
+	<div id="particles-js"></div>
+    
+    <div class="container">
+        <div class="form-box">
+            <h2>Login</h2>
+            <p>Welcome Back</p>
+            
+            <form method="POST">
+                <div class="input-group">
+                    <input type="text" name="username" required class="input-field" placeholder="Username">
+                </div>
+                
+                <div class="input-group">
+                    <input type="password" name="password" required class="input-field" placeholder="Password">
+                </div>
+                
+                <button type="submit" name="login" class="login-btn">SIGN IN</button>
+                
+                <div class="signup-link" style="margin-top: 15px;">
+                    Don't have an account? <a href="?view=register">Register</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // Use the particle configuration you provided
+        particlesJS('particles-js', { /* ... paste your config object here ... */ });
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
