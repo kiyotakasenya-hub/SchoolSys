@@ -304,9 +304,22 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Core Portal</title>
+	<meta charset="UTF-8">
+    <title>Campus Core Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+		<style>
+    body { background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Cinzel', serif; }
+    
+    /* Optional: Make your login card text look cleaner */
+    .card { font-family: 'Poppins', sans-serif; }
+    
+    .sidebar { min-height: 100vh; background: #2c3e50; color: white; }
+    /* ... your existing styles ... */
         body { background: #f4f7f6; overflow-x: hidden; }
         .sidebar { background: #2c3e50; color: white; height: 100%; }
         .sidebar a { color: #bdc3c7; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #34495e; }
