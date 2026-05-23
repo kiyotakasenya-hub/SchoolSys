@@ -64,7 +64,7 @@ try {
         CREATE TABLE IF NOT EXISTS fee_schedules (
             id SERIAL PRIMARY KEY,
             fee_name VARCHAR(100), 
-            fee_type VARCHAR('Tuition', 'Misc', 'Lab', 'Other') DEFAULT 'Tuition',
+            fee_type VARCHAR(20) DEFAULT 'Tuition'
             amount DECIMAL(10,2), sy VARCHAR(20), sem VARCHAR(20),
             student_id INT DEFAULT NULL
         );
