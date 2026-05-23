@@ -136,17 +136,13 @@ if (isset($_POST['register_user'])) {
     $course = $_POST['course'] ?? 'Not Set';
     
     try {
-        // Hardcoded role to 'student'
         $stmt = $pdo->prepare("INSERT INTO users (firstname, lastname, email, username, password, role, status, course) VALUES (?, ?, ?, ?, ?, 'student', 'pending', ?)");
         $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['user'], $hash, $course]);
         
-        // Success: Set session message and redirect to prevent form resubmission on refresh
         $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Registration successful! Wait for Admin approval.</div>";
         header("Location: ?view=login");
         exit();
-
     } catch (PDOException $e) { 
-        // Real Error Handling: Only show "taken" if it's a true 1062 duplicate key error
         if ($e->errorInfo[1] == 1062) {
             $msg = "<div class='alert alert-danger text-dark'>Username or Email is already taken. Please try another.</div>";
         } else {
@@ -258,6 +254,8 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 
 // --- STUDENT DASH ACTIONS ---
 if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
+    
+    // Handle Profile & Password Update
     if (isset($_POST['student_update_profile'])) {
         $photo_query = "";
         if(!empty($_FILES['photo']['name'])) {
@@ -266,14 +264,23 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             move_uploaded_file($_FILES['photo']['tmp_name'], "uploads/" . $photo_name);
             $photo_query = ", photo='$photo_name'";
         }
-        $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
-        $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $_SESSION['user_id']]);
+
+        if (!empty($_POST['new_password'])) {
+            $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
+            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $hash, $_SESSION['user_id']]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=? $photo_query WHERE id=?");
+            $stmt->execute([$_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['bdate'], $_POST['addr'], $_SESSION['user_id']]);
+        }
+
         $msg = "<div class='alert alert-success text-dark'>Your profile has been updated!</div>";
         
         $uStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
         $uStmt->execute([$_SESSION['user_id']]);
         $currentUser = $uStmt->fetch();
     }
+
     if (isset($_GET['enroll_id'])) {
         $check = $pdo->prepare("SELECT id FROM enrollments WHERE student_id = ? AND subject_id = ?");
         $check->execute([$_SESSION['user_id'], $_GET['enroll_id']]);
@@ -304,11 +311,14 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         /* GLOBAL THEME */
         body { 
             font-family: 'Poppins', sans-serif; 
-            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background: url('57be78a6-4e37-46bb-a7fd-232320886fa1-cover.jpg') no-repeat center center fixed;
             background-size: cover;
             color: #fff;
             overflow-x: hidden;
         }
+
+        /* SMOOTH TRANSITIONS */
+        a, button, input, select, textarea, .glass-panel { transition: all 0.3s ease-in-out; }
 
         /* GLASSMORPHISM PANELS */
         .glass-panel {
@@ -330,8 +340,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: white; 
             height: 100%; 
         }
-        .glass-sidebar a { color: #ccc; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.8); color: white; }
+        .glass-sidebar a { color: #ccc; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.8); color: white; padding-left: 25px; }
         .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #d97736; }
 
         /* BUTTONS */
@@ -342,10 +352,8 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             border-radius: 25px;
             padding: 8px 20px;
             font-weight: 600;
-            transition: 0.3s;
         }
-        .btn-orange:hover, .btn-primary:hover { background: #b8622b !important; }
-        
+        .btn-orange:hover, .btn-primary:hover { background: #b8622b !important; transform: translateY(-2px); }
         .btn-success { background: rgba(40, 167, 69, 0.8) !important; border: none; }
         .btn-danger { background: rgba(220, 53, 69, 0.8) !important; border: none; }
 
@@ -361,11 +369,16 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             border-color: #d97736 !important; 
             box-shadow: 0 0 5px rgba(217, 119, 54, 0.5) !important;
         }
-        select option { background: #2c3e50; color: #fff; }
+        
+        /* DARK DROPDOWN STYLING */
+        .custom-dark-select { background-color: #2c3e50 !important; color: #ecf0f1 !important; border: 1px solid rgba(255,255,255,0.3) !important; }
+        .custom-dark-select option, .custom-dark-select optgroup { background-color: #2c3e50; color: #ecf0f1; padding: 10px; }
+        .custom-dark-select option:checked { background-color: #3498db !important; }
 
         /* LOGIN SPECIFIC */
         .login-box { width: 100%; max-width: 420px; padding: 40px 35px; margin: 0 auto; }
-        .glass-input-login { border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important; border-radius: 0 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+        .glass-input-login { border-bottom: 2px solid rgba(255, 255, 255, 0.6) !important; border-radius: 0 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+        .glass-input-login:focus { border-bottom: 2px solid #ffffff !important; }
         .terms-wrapper { font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 25px; }
 
         /* TABLES */
@@ -430,7 +443,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     </div>
                     <input name="email" type="email" placeholder="Email Address" class="form-control mb-3" required>
 
-                    <select name="course" class="form-select mb-3" required>
+                    <select name="course" class="form-select custom-dark-select mb-3" required>
                         <option value="" disabled selected>Select Course</option>
                         <optgroup label="Business, Management, and Accountancy">
                             <option value="BS Accountancy">Bachelor of Science in Accountancy (BSA)</option>
@@ -567,6 +580,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                                 <div class="col-6"><label>Last Name</label><input name="lname" value="<?= $currentUser['lastname'] ?>" class="form-control" required></div>
                                             </div>
                                             <label>Email</label><input type="email" name="email" value="<?= $currentUser['email'] ?>" class="form-control mb-2" required>
+                                            
+                                            <label>Change Password <small class="text-muted">(Leave blank to keep current)</small></label>
+                                            <input type="password" name="new_password" class="form-control mb-2" placeholder="New Password">
+                                            
                                             <label>Birthdate</label><input type="date" name="bdate" value="<?= $currentUser['birthdate'] ?>" class="form-control mb-2">
                                             <label>Address</label><textarea name="addr" class="form-control mb-2"><?= $currentUser['address'] ?></textarea>
                                             <label>Change Photo</label><input type="file" name="photo" class="form-control" accept="image/*">
@@ -597,7 +614,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     $students = $pdo->query("SELECT * FROM users WHERE role='student'")->fetchAll();
                     ?>
                     <div class="table-responsive glass-panel p-2 mt-3">
-                        <table class="table table-glass table-hover mb-0">
+                        <table class="table table-hover mb-0">
                             <thead class="table-dark"><tr><th>Photo</th><th>Name</th><th>Birthdate</th><th>Address</th><th>Action</th></tr></thead>
                             <tbody>
                             <?php foreach($students as $s): ?>
@@ -637,7 +654,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <form method="GET" class="row g-2">
                             <input type="hidden" name="page" value="rec_tor">
                             <div class="col-md-9">
-                                <select name="student_id" class="form-select" required>
+                                <select name="student_id" class="form-select custom-dark-select" required>
                                     <option value="">-- Select Student --</option>
                                     <?php 
                                     $st = $pdo->query("SELECT id, lastname, firstname FROM users WHERE role='student'")->fetchAll();
@@ -747,7 +764,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <form method="POST" class="row g-3">
                             <div class="col-md-4">
                                 <label>Select Student</label>
-                                <select name="sid" class="form-select" required>
+                                <select name="sid" class="form-select custom-dark-select" required>
                                     <?php 
                                     $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student'")->fetchAll();
                                     foreach($students as $s) echo "<option value='{$s['id']}'>{$s['lastname']}, {$s['firstname']}</option>";
@@ -776,7 +793,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                                     <td><?= date('M d, Y h:i A', strtotime($r['pay_date'])) ?></td>
                                     <td class="no-print">
                                         <button onclick="window.print()" class="btn btn-sm btn-outline-light"><i class="bi bi-printer"></i></button>
-                                        <a href="?page=cashier_payments&del_payment=<?= $r['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this payment record? This will update the student balance.')"><i class="bi bi-trash"></i></a>
+                                        <a href="?page=cashier_payments&del_payment=<?= $r['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Remove this payment?')"><i class="bi bi-trash"></i></a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -823,7 +840,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         if($p['status'] == 'pending') {
                             echo "<a href='?page=approvals&approve_id={$p['id']}' class='btn btn-sm btn-success'>Approve</a> ";
                         }
-                        echo "<a href='?page=approvals&delete_user_id={$p['id']}' class='btn btn-sm btn-danger' onclick='return confirm(\"Are you sure? This will delete the user and all their associated records.\")'>Delete</a>
+                        echo "<a href='?page=approvals&delete_user_id={$p['id']}' class='btn btn-sm btn-danger' onclick='return confirm(\"Are you sure?\")'>Delete</a>
                               </td></tr>";
                     }
                     echo "</table></div>";
@@ -930,7 +947,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <form method="POST" class="row g-2">
                             <div class="col-md-3">
                                 <label>Target Student</label>
-                                <select name="target_student" class="form-select">
+                                <select name="target_student" class="form-select custom-dark-select">
                                     <option value="0">-- All Students --</option>
                                     <?php 
                                     $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student'")->fetchAll();
@@ -1003,7 +1020,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             <div class="col-md-3"><input name="title" placeholder="Title" class="form-control" value="<?= $edit_sub['subject_title'] ?? '' ?>" required></div>
                             <div class="col-md-1"><input name="units" type="number" placeholder="Units" class="form-control" value="<?= $edit_sub['units'] ?? '' ?>" required></div>
                             <div class="col-md-3">
-                                <select name="teacher_id" class="form-select">
+                                <select name="teacher_id" class="form-select custom-dark-select">
                                     <option value="0">Unassigned</option>
                                     <?php 
                                     $techs = $pdo->query("SELECT id, lastname FROM users WHERE role='teacher'")->fetchAll();
