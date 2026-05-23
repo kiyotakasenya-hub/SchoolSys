@@ -3,7 +3,7 @@
 $dbUrl = getenv("postgresql://schoolsys_5qrh_user:zPZ898i6bJtrXaHEXHKCLn4qee294Lja@dpg-d88g446l51nc73fetcf0-a.oregon-postgres.render.com/schoolsys_5qrh");
 
 if (!$dbUrl) {
-    die("DATABASE_URL not found.");
+    die("postgresql://schoolsys_5qrh_user:zPZ898i6bJtrXaHEXHKCLn4qee294Lja@dpg-d88g446l51nc73fetcf0-a.oregon-postgres.render.com/schoolsys_5qrh");
 }
 
 try {
