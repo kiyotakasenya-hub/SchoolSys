@@ -311,7 +311,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         /* GLOBAL THEME */
         body { 
             font-family: 'Poppins', sans-serif; 
-            background: url('images/57be78a6-4e37-46bb-a7fd-232320886fa1-cover.jpg') no-repeat center center fixed;
+            background: url('57be78a6-4e37-46bb-a7fd-232320886fa1-cover.jpg') no-repeat center center fixed;
             background-size: cover;
             color: #fff;
             overflow-x: hidden;
