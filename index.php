@@ -1597,6 +1597,15 @@ let activePlaylistQueue = [];
 let currentQueueIndex = -1;
 let isShuffleActive = false;
 
+// Helper to kill music instantly
+function stopMusicEngine() {
+    if (coreAudioNode) {
+        coreAudioNode.pause();
+        coreAudioNode.src = '';
+    }
+    currentQueueIndex = -1;
+}
+
 // --- 2. INDEXEDDB PERSISTENCE LAYER ---
 const DB_NAME = 'CampusCoreMusicDB';
 const STORE_NAME = 'vault_tracks';
@@ -1940,6 +1949,12 @@ document.addEventListener('click', function(e) {
     
     if (href.startsWith('?') || href.includes(window.location.pathname)) {
         e.preventDefault();
+        
+        // INTERCEPT LOGOUT CLICK EXPLICITLY TO KILL AUDIO INSTANTLY
+        if (href.includes('action=logout')) {
+            stopMusicEngine();
+        }
+        
         executeSpaNavigation(href);
     }
 });
@@ -1957,6 +1972,10 @@ function executeSpaNavigation(targetUrl) {
             const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
             
             if (isTargetLoggedOut !== isCurrentLoggedOut) {
+                // HALT MUSIC IF TRANSITIONING OUT OF SESSION
+                if (isTargetLoggedOut) {
+                    stopMusicEngine();
+                }
                 document.body.innerHTML = foreignDoc.body.innerHTML;
             } else {
                 if (!isTargetLoggedOut) {
@@ -2015,6 +2034,10 @@ function bindSpaFormSubmissions() {
                 const isCurrentLoggedOut = !document.querySelector('#sidebarMenu');
 
                 if (isTargetLoggedOut !== isCurrentLoggedOut) {
+                    // HALT MUSIC IF TRANSITIONING OUT OF SESSION DUE TO FORM BEHAVIOR (e.g. Session Expiry)
+                    if (isTargetLoggedOut) {
+                        stopMusicEngine();
+                    }
                     document.body.innerHTML = foreignDoc.body.innerHTML;
                 } else {
                     if (!isTargetLoggedOut) {
