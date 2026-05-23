@@ -118,12 +118,15 @@ if (isset($_POST['add_task'])) {
     $stmt = $pdo->prepare("INSERT INTO tasks (student_id, task_content) VALUES (?, ?)");
     $stmt->execute([$_SESSION['user_id'], $_POST['task_text']]);
     $_SESSION['sys_msg'] = "<div class='alert alert-success'>Task added!</div>";
-    header("Location: ?page=home"); exit();
+    // Redirect back to wherever they added the task from
+    $redirect_page = $_GET['page'] ?? 'home';
+    header("Location: ?page=" . $redirect_page); exit();
 }
 if (isset($_GET['del_task'])) {
     $pdo->prepare("DELETE FROM tasks WHERE id = ? AND student_id = ?")
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
-    header("Location: ?page=home"); exit();
+    $redirect_page = $_GET['page'] ?? 'home';
+    header("Location: ?page=" . $redirect_page); exit();
 }
 
 // Fetch current user data if logged in
@@ -286,6 +289,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             $photo_query = ", photo='$photo_name'";
         }
 
+        // Properly handle password change if filled
         if (!empty($_POST['new_password'])) {
             $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET firstname=?, lastname=?, email=?, birthdate=?, address=?, password=? $photo_query WHERE id=?");
@@ -297,6 +301,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
 
         $msg = "<div class='alert alert-success text-dark'>Your profile has been updated!</div>";
         
+        // Refresh User Data Post-Update
         $uStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
         $uStmt->execute([$_SESSION['user_id']]);
         $currentUser = $uStmt->fetch();
@@ -343,11 +348,12 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ffffff !important;
+            border-radius: 8px;
         }
 
-        /* 3. ENSURE ALL TEXT IS WHITE */
-        h1, h2, h3, h4, h5, h6, p, label, span, div, td, th {
-            color: #ffffff !important;
+        /* 3. ENSURE GLOBAL TEXT IS WHITE (EXCEPT MODALS) */
+        h1, h2, h3, h4, h5, h6, p, span, td, th {
+            color: #ffffff;
         }
 
         /* 4. TABLES - LIGHT BLACK WITH WHITE TEXT */
@@ -355,23 +361,17 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             color: #ffffff !important; 
             border-color: rgba(255, 255, 255, 0.1) !important;
         }
-        .table-dark { 
-            background: rgba(0, 0, 0, 0.3) !important; 
-        }
-        .table-hover tbody tr:hover { 
-            background-color: rgba(255, 255, 255, 0.05) !important; 
-        }
+        .table-dark { background: rgba(0, 0, 0, 0.3) !important; }
+        .table-hover tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
 
-        /* 5. SIDEBAR - GLASSMORPHISM (Matched to Photo 1) */
+        /* 5. SIDEBAR - GLASSMORPHISM */
         .glass-sidebar {
-            background: rgba(45, 55, 75, 0.35) !important; /* Soft semi-transparent */
+            background: rgba(45, 55, 75, 0.35) !important; 
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .glass-sidebar .offcanvas-body {
-            padding: 0;
-        }
+        .glass-sidebar .offcanvas-body { padding: 0; }
         .glass-sidebar .profile-section {
             padding: 40px 20px 20px;
             text-align: center;
@@ -384,10 +384,10 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         }
         .glass-sidebar a { 
             color: #e0e0e0 !important; 
-            text-decoration: none !important; /* Forces no underline */
+            text-decoration: none !important; 
             padding: 16px 24px;
             display: block;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Soft divider */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
             font-size: 0.95rem;
             transition: all 0.2s ease;
         }
@@ -405,9 +405,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             border-bottom: none;
             margin-top: 20px;
         }
-        .glass-sidebar .logout-link:hover {
-            background: rgba(255, 107, 107, 0.1) !important;
-        }
+        .glass-sidebar .logout-link:hover { background: rgba(255, 107, 107, 0.1) !important; }
 
         /* 6. INPUTS - LIGHT BLACK */
         .form-control, .form-select {
@@ -417,11 +415,56 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         }
         .form-control::placeholder { color: #aaaaaa !important; }
 
-        /* 7. BUTTONS - KEEP THE TEACHER GOLD/ORANGE ACCENT */
-        .btn-orange, .btn-primary, .btn-success {
+        /* 7. BUTTONS */
+        .btn-orange {
             background: #d97736 !important;
             border: none !important;
             color: #ffffff !important;
+        }
+
+        /* 8. MODAL SPECIFIC OVERRIDES (White Theme as requested) */
+        .modal-content {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            border: none;
+            border-radius: 8px;
+        }
+        .modal-header {
+            border-bottom: 1px solid #eaeaea;
+        }
+        .modal-header h5 {
+            color: #333333 !important;
+            font-weight: 600;
+        }
+        .modal-body {
+            padding: 30px;
+        }
+        /* Specific input styling inside the white modal */
+        .modal-body .form-control {
+            background-color: #2a2a30 !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px;
+            padding: 12px 15px;
+        }
+        .modal-body .form-control::placeholder {
+            color: rgba(255,255,255,0.7) !important;
+        }
+        .modal-footer {
+            border-top: 1px solid #eaeaea;
+            background-color: #ffffff;
+            padding: 20px 30px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .modal-footer .btn-secondary {
+            background-color: #6c757d !important;
+            border: none !important;
+            color: #ffffff !important;
+            padding: 8px 20px;
+        }
+        .modal-footer .btn-orange {
+            padding: 8px 20px;
         }
 
         /* UTILS */
@@ -453,7 +496,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                     <div class="mb-4">
                         <input type="password" name="password" class="form-control glass-input-login" placeholder="Password" required>
                     </div>
-                    <div class="terms-wrapper mb-3">
+                    <div class="terms-wrapper mb-3 text-white">
                         <input type="checkbox" id="terms" required>
                         <label for="terms">I agree to the terms and conditions</label>
                     </div>
@@ -537,7 +580,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <small style="color: #d97736; font-weight: 500; letter-spacing: 1px;"><?= strtoupper($_SESSION['role']) ?></small>
                     </div>
                     
-                    <a href="?"><i class="bi bi-house"></i> Home</a>
+                    <a href="?page=home"><i class="bi bi-house"></i> Home</a>
                     <?php if($_SESSION['role'] == 'admin'): ?>
                         <a href="?page=approvals"><i class="bi bi-person-check"></i> User Approvals</a>
                         <a href="?page=create_staff"><i class="bi bi-person-plus"></i> Create Staff</a>
@@ -564,6 +607,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                         <a href="?page=my_subjects"><i class="bi bi-book"></i> My Subjects / Enroll</a>
                         <a href="?page=my_grades"><i class="bi bi-award"></i> My Grades</a>
                         <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
+                        <a href="?page=my_tasks"><i class="bi bi-card-checklist"></i> My Tasks</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
                     <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
@@ -576,50 +620,57 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 $page = $_GET['page'] ?? 'home';
                 
                // --- HOME DASHBOARD ---
-                if ($page == 'home') {
+                if ($page == 'home' || $page == 'my_tasks') {
                     if ($_SESSION['role'] == 'student') {
                         ?>
-                        <h3>Student Dashboard</h3>
-                        <div class="row mt-4">
-                            <div class="col-md-4">
-                                <div class="glass-panel text-center p-4">
-                                    <div class="mb-3">
-                                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm border" style="width:150px; height:150px; object-fit:cover; border-color: #d97736 !important;">
+                        <h3 class="mb-4">Student Dashboard</h3>
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <!-- Profile Card matching Screenshot 2 layout -->
+                                <div class="glass-panel p-4 h-100">
+                                    <div class="text-center mb-4">
+                                        <img src="uploads/<?= $currentUser['photo'] ?? 'default.png' ?>" class="rounded-circle shadow-sm" style="width:130px; height:130px; object-fit:cover; border: 2px solid #d97736;">
+                                        <h5 class="mt-3 mb-0"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h5>
+                                        <small class="text-muted">Student ID: STU-00<?= $currentUser['id'] ?></small>
+                                        <div class="mt-3">
+                                            <button class="btn btn-sm btn-orange px-3 py-1" data-bs-toggle="modal" data-bs-target="#editMyProfile">
+                                                <i class="bi bi-pencil me-1"></i> Edit Profile
+                                            </button>
+                                        </div>
                                     </div>
-                                    <h4 class="mb-0"><?= $currentUser['firstname'] ?> <?= $currentUser['lastname'] ?></h4>
-                                    <p class="text-muted small">Student ID: STU-00<?= $currentUser['id'] ?></p>
-                                    
-                                    <button class="btn btn-sm btn-orange mt-2" data-bs-toggle="modal" data-bs-target="#editMyProfile">
-                                        <i class="bi bi-pencil"></i> Edit Profile
-                                    </button>
-                                    <hr style="border-color: rgba(255,255,255,0.2);">
-                                    <div class="text-start">
-                                        <p class="mb-1"><strong>Email:</strong> <?= $currentUser['email'] ?></p>
-                                        <p class="mb-1"><strong>Course:</strong> <?= $currentUser['course'] ?></p>
-                                        <p class="mb-0"><strong>Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
+                                    <div class="text-start" style="font-size: 0.9rem;">
+                                        <p class="mb-2"><strong style="color: #ccc;">Email:</strong> <?= $currentUser['email'] ?></p>
+                                        <p class="mb-2"><strong style="color: #ccc;">Course:</strong> <?= $currentUser['course'] ?></p>
+                                        <p class="mb-0"><strong style="color: #ccc;">Address:</strong> <?= $currentUser['address'] ?: 'Not set' ?></p>
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- EDIT PROFILE MODAL (Styled to match Image 1 exactly) -->
                             <div class="modal fade" id="editMyProfile" tabindex="-1">
-                                <div class="modal-dialog">
+                                <div class="modal-dialog modal-dialog-centered">
                                     <form method="POST" enctype="multipart/form-data" class="modal-content">
-                                        <div class="modal-header"><h5>Update My Information</h5></div>
-                                        <div class="modal-body text-start">
-                                            <div class="row mb-2">
-                                                <div class="col-6"><label>First Name</label><input name="fname" value="<?= $currentUser['firstname'] ?>" class="form-control" required></div>
-                                                <div class="col-6"><label>Last Name</label><input name="lname" value="<?= $currentUser['lastname'] ?>" class="form-control" required></div>
+                                        <div class="modal-body">
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <input type="text" name="fname" value="<?= $currentUser['firstname'] ?>" class="form-control" placeholder="First Name" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" name="lname" value="<?= $currentUser['lastname'] ?>" class="form-control" placeholder="Last Name" required>
+                                                </div>
                                             </div>
-                                            <label>Email</label><input type="email" name="email" value="<?= $currentUser['email'] ?>" class="form-control mb-2" required>
                                             
-                                            <label>Change Password <small class="text-muted">(Leave blank to keep current)</small></label>
-                                            <input type="password" name="new_password" class="form-control mb-2" placeholder="New Password">
+                                            <input type="email" name="email" value="<?= $currentUser['email'] ?>" class="form-control mb-3" placeholder="Email Address" required>
                                             
-                                            <label>Birthdate</label><input type="date" name="bdate" value="<?= $currentUser['birthdate'] ?>" class="form-control mb-2">
-                                            <label>Address</label><textarea name="addr" class="form-control mb-2"><?= $currentUser['address'] ?></textarea>
-                                            <label>Change Photo</label><input type="file" name="photo" class="form-control" accept="image/*">
+                                            <input type="password" name="new_password" class="form-control mb-3" placeholder="New Password">
+                                            
+                                            <input type="date" name="bdate" value="<?= $currentUser['birthdate'] ?>" class="form-control mb-3" placeholder="dd/mm/yyyy">
+                                            
+                                            <textarea name="addr" class="form-control mb-3" rows="3" placeholder="Address"><?= $currentUser['address'] ?></textarea>
+                                            
+                                            <input type="file" name="photo" class="form-control" accept="image/*">
                                         </div>
-                                        <div class="modal-footer">
+                                        <div class="modal-footer justify-content-end">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                             <button name="student_update_profile" class="btn btn-orange">Save Changes</button>
                                         </div>
@@ -628,28 +679,33 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                             </div>
 
                             <div class="col-md-8">
-                                <div class="glass-panel p-4">
+                                <div class="mb-4">
                                     <h5>Welcome back, <?= $currentUser['firstname'] ?>!</h5>
-                                    <p class="text-muted">You can manage your subjects and view your grades using the menu on the left.</p>
+                                    <p class="text-muted small">You can manage your subjects and view your grades using the menu on the left.</p>
+                                </div>
 
-								<div class="glass-panel p-4 mt-4" style="background: rgba(0,0,0,0.2) !important;">
-    								<h5>My Tasks</h5>
-    								<form method="POST" class="d-flex mb-3">
-        				<input type="text" name="task_text" class="form-control me-2" placeholder="Enter a new task..." required>
-       			 <button name="add_task" class="btn btn-orange">Add</button>
-   					 </form>
-   				 <ul class="list-group">
-        <?php
-        $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
-        $tasks->execute([$_SESSION['user_id']]);
-        foreach($tasks as $t): ?>
-            <li class="list-group-item d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: white;">
-                <?= htmlspecialchars($t['task_content']) ?>
-                <a href="?page=home&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-</div>
+								<!-- MY TASKS SECTION -->
+                                <div class="glass-panel p-4" id="tasks">
+    								<h5 class="mb-3">My Tasks</h5>
+    								<form method="POST" class="d-flex mb-4">
+                                        <input type="hidden" name="page" value="<?= $page ?>">
+        				                <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
+       			                        <button name="add_task" class="btn btn-orange px-4">Add</button>
+   					                </form>
+                                    <ul class="list-group">
+                                        <?php
+                                        $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
+                                        $tasks->execute([$_SESSION['user_id']]);
+                                        foreach($tasks as $t): ?>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                                <?= htmlspecialchars($t['task_content']) ?>
+                                                <a href="?page=<?= $page ?>&del_task=<?= $t['id'] ?>" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                            </li>
+                                        <?php endforeach; ?>
+                                        <?php if($tasks->rowCount() == 0): ?>
+                                            <li class="list-group-item text-muted text-center" style="background: transparent; border: none;">No current tasks.</li>
+                                        <?php endif; ?>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
