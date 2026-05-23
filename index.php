@@ -322,81 +322,53 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         /* SMOOTH TRANSITIONS */
         a, button, input, select, textarea, .glass-panel { transition: all 0.3s ease-in-out; }
 
-        /* GLASSMORPHISM PANELS */
+        /* SOFT DARK GLASSMORPHISM */
         .glass-panel {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
+            background: rgba(30, 30, 38, 0.7); /* Light Dark background */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
             color: #ffffff;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         
-        /* SIDEBAR GLASS */
+        /* SIDEBAR LIGHT DARK */
         .glass-sidebar {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(25, 25, 32, 0.85);
             backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            color: white; 
-            height: 100%; 
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .glass-sidebar a { color: #ccc; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.8); color: white; padding-left: 25px; }
-        .profile-img-nav { width: 80px; height: 80px; object-fit: cover; border: 3px solid #d97736; }
+        .glass-sidebar a { color: #b0b0b0; text-decoration: none; padding: 12px 20px; display: block; }
+        .glass-sidebar a:hover, .glass-sidebar a.active { background: rgba(217, 119, 54, 0.2); color: #d97736; }
 
         /* BUTTONS */
-        .btn-orange, .btn-primary {
+        .btn-orange {
             background: #d97736 !important;
             color: #fff !important;
-            border: none !important;
-            border-radius: 25px;
-            padding: 8px 20px;
-            font-weight: 600;
+            border-radius: 8px;
         }
-        .btn-orange:hover, .btn-primary:hover { background: #b8622b !important; transform: translateY(-2px); }
-        .btn-success { background: rgba(40, 167, 69, 0.8) !important; border: none; }
-        .btn-danger { background: rgba(220, 53, 69, 0.8) !important; border: none; }
+        .btn-orange:hover { background: #b8622b !important; }
 
-        /* GLOBAL INPUTS & SELECTS */
+        /* INPUTS - LIGHT DARK */
         .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: #fff !important;
         }
-        .form-control::placeholder { color: rgba(255, 255, 255, 0.6) !important; }
-        .form-control:focus, .form-select:focus { 
-            background: rgba(255, 255, 255, 0.2) !important; 
-            border-color: #d97736 !important; 
-            box-shadow: 0 0 5px rgba(217, 119, 54, 0.5) !important;
-        }
-        
-        /* DARK DROPDOWN STYLING */
-        .custom-dark-select { background-color: #2c3e50 !important; color: #ecf0f1 !important; border: 1px solid rgba(255,255,255,0.3) !important; }
-        .custom-dark-select option, .custom-dark-select optgroup { background-color: #2c3e50; color: #ecf0f1; padding: 10px; }
-        .custom-dark-select option:checked { background-color: #3498db !important; }
+        .form-control:focus { background: rgba(255, 255, 255, 0.1) !important; border-color: #d97736 !important; }
 
-        /* LOGIN SPECIFIC */
-        .login-box { width: 100%; max-width: 420px; padding: 40px 35px; margin: 0 auto; }
-        .glass-input-login { border-bottom: 2px solid rgba(255, 255, 255, 0.6) !important; border-radius: 0 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
-        .glass-input-login:focus { border-bottom: 2px solid #ffffff !important; }
-        .terms-wrapper { font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 25px; }
-
-        /* TABLES */
-        .table { color: #fff !important; --bs-table-bg: transparent; border-color: rgba(255,255,255,0.2); }
-        .table-dark { background: rgba(0,0,0,0.6) !important; color: #fff !important; }
-        .table-hover tbody tr:hover { color: #fff; background-color: rgba(255,255,255,0.1) !important; }
-        .table td, .table th { background: transparent !important; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        /* TABLES - LIGHT DARK */
+        .table { color: #e0e0e0 !important; }
+        .table-dark { background: rgba(0, 0, 0, 0.2) !important; }
+        .table-hover tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
 
         /* MODALS */
         .modal-content {
-            background: rgba(20, 20, 20, 0.85);
-            backdrop-filter: blur(15px);
+            background: rgba(30, 30, 38, 0.95);
+            border: 1px solid rgba(255,255,255,0.1);
             color: white;
-            border: 1px solid rgba(255,255,255,0.2);
         }
-        .modal-header, .modal-footer { border-color: rgba(255,255,255,0.1); }
 
         /* UTILS */
         .text-muted { color: rgba(255,255,255,0.7) !important; }
