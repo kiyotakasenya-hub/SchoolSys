@@ -1,6 +1,6 @@
 <?php
 // --- 1. DATABASE SETUP & AUTO-PATCHER ---
-$dbUrl = getenv("postgresql://schoolsys_5qrh_user:zPZ898i6bJtrXaHEXHKCLn4qee294Lja@dpg-d88g446l51nc73fetcf0-a.oregon-postgres.render.com:5432/schoolsys_5qrh");
+$dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? null;
 
 if (!$dbUrl) {
     die("postgresql://schoolsys_5qrh_user:zPZ898i6bJtrXaHEXHKCLn4qee294Lja@dpg-d88g446l51nc73fetcf0-a.oregon-postgres.render.com:5432/schoolsys_5qrh");
