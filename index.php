@@ -62,8 +62,7 @@ try {
 			received_by INT
         );
         try {
-    $pdo->exec("
-    CREATE TABLE IF NOT EXISTS fee_schedules (
+    $pdo->exec("CREATE TABLE IF NOT EXISTS fee_schedules (
         id SERIAL PRIMARY KEY,
         fee_name VARCHAR(100),
         fee_type VARCHAR(20) DEFAULT 'Tuition',
@@ -71,10 +70,16 @@ try {
         sy VARCHAR(20),
         sem VARCHAR(20),
         student_id INT
-    );
-    ");
+    )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        firstname VARCHAR(50),
+        lastname VARCHAR(50)
+    )");
+
 } catch (PDOException $e) {
-    echo $e->getMessage();
+    echo "System Error: " . $e->getMessage();
 }
     ");
 
