@@ -294,7 +294,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     }
     if (isset($_GET['reject_id'])) {
         $pdo->prepare("UPDATE users SET status='rejected' WHERE id=?")->execute([$_GET['reject_id']]);
-        $msg = "<div class='alert alert-success text-dark'>User Rejected.</div>";
+        $msg = "<div class='alert alert-danger text-dark'>User Rejected.</div>";
     }
     if (isset($_POST['create_staff'])) {
         $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -338,7 +338,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             color: #ffffff;
         }
 
-        /* 4. TABLES - GLASS THROUGH TRANS TRANSPARENCY FIX */
+        /* 4. TABLES */
         .table { 
             color: #ffffff !important; 
             border-color: rgba(255, 255, 255, 0.1) !important;
@@ -348,12 +348,8 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             background-color: transparent !important;
             color: #ffffff !important;
         }
-        .table-dark { 
-            background: rgba(0, 0, 0, 0.2) !important; 
-        }
-        .table-hover tbody tr:hover { 
-            background-color: rgba(255, 255, 255, 0.05) !important; 
-        }
+        .table-dark { background: rgba(0, 0, 0, 0.2) !important; }
+        .table-hover tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
 
         /* 5. SIDEBAR - GLASSMORPHISM */
         .glass-sidebar {
@@ -398,7 +394,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         }
         .glass-sidebar .logout-link:hover { background: rgba(255, 107, 107, 0.1) !important; }
 
-        /* 6. INPUTS - FOR NON-MODAL COMPONENT SECTIONS */
+        /* 6. INPUTS */
         .form-control, .form-select {
             background: rgba(42, 42, 48, 0.8) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -413,7 +409,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             color: #ffffff !important;
         }
 
-        /* 8. MODAL ACCORDING TO IMAGE 4 SPECIFICATIONS */
+        /* 8. MODALS */
         .modal-content {
             background: rgba(45, 55, 75, 0.4) !important; 
             backdrop-filter: blur(25px) saturate(120%);
@@ -422,9 +418,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             border-radius: 12px !important;
             box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
-        .modal-body {
-            padding: 24px !important;
-        }
+        .modal-body { padding: 24px !important; }
         .modal-body .form-control {
             background-color: #2e3035 !important;
             color: #ffffff !important;
@@ -433,19 +427,9 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             padding: 12px 16px !important;
             font-size: 0.95rem !important;
         }
-        .modal-body .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.85) !important;
-        }
-        .modal-body textarea.form-control {
-            min-height: 100px;
-            resize: none;
-        }
-        .modal-body input[type="file"].form-control {
-            padding: 0 !important;
-            display: flex;
-            align-items: center;
-            background-color: #2e3035 !important;
-        }
+        .modal-body .form-control::placeholder { color: rgba(255, 255, 255, 0.85) !important; }
+        .modal-body textarea.form-control { min-height: 100px; resize: none; }
+        .modal-body input[type="file"].form-control { padding: 0 !important; display: flex; align-items: center; background-color: #2e3035 !important; }
         .modal-body input[type="file"].form-control::file-selector-button {
             background-color: rgba(255, 255, 255, 0.15) !important;
             color: #ffffff !important;
@@ -457,41 +441,98 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
             cursor: pointer;
             font-weight: 500;
         }
-        .modal-body input[type="file"].form-control::file-selector-button:hover {
-            background-color: rgba(255, 255, 255, 0.25) !important;
-        }
-        .modal-footer {
-            border-top: none !important;
-            padding: 0 24px 24px 24px !important;
-            background: transparent !important;
-        }
-        .modal-footer .btn-secondary {
-            background-color: #5a6268 !important;
-            border: none !important;
-            color: #ffffff !important;
-            padding: 10px 24px !important;
-            font-size: 0.95rem !important;
-            border-radius: 6px !important;
-            opacity: 0.9;
-        }
-        .modal-footer .btn-secondary:hover { opacity: 1; }
-        .modal-footer .btn-orange {
-            background-color: #d97736 !important;
-            padding: 10px 24px !important;
-            font-size: 0.95rem !important;
-            border-radius: 6px !important;
-        }
+        .modal-footer { border-top: none !important; padding: 0 24px 24px 24px !important; background: transparent !important; }
+        .modal-footer .btn-secondary { background-color: #5a6268 !important; border: none !important; color: #ffffff !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
+        .modal-footer .btn-orange { background-color: #d97736 !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
 
-        /* MUSIC PLAYER STYLING overrides */
+        /* MUSIC SYSTEM DECK STYLING (Cloning image_486b26.png layout directly) */
+        .deck-wrapper {
+            background: #1e1e1e !important;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .track-timeline-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #444;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .track-timeline-slider::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--seek-percent, 0%), #444 var(--seek-percent, 0%), #444 100%);
+            border-radius: 2px;
+        }
+        .track-timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff0033;
+            cursor: pointer;
+            margin-top: -5px;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+        .deck-playback-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            opacity: 0.85;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .deck-playback-btn:hover { opacity: 1; transform: scale(1.05); }
+        .deck-playback-btn.active { color: #ff0033 !important; }
+        .deck-master-play-btn {
+            width: 64px;
+            height: 64px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            font-size: 1.8rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        .deck-master-play-btn:hover { background: rgba(255,255,255,0.18); transform: scale(1.03); }
+        
         .track-item {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
             border-radius: 6px;
             padding: 8px 12px;
-            transition: background 0.2s;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        .track-item:hover, .track-item.active {
-            background: rgba(217, 119, 54, 0.2);
+        .track-item:hover, .track-item.active { background: rgba(217, 119, 54, 0.15); }
+
+        /* POMODORO TIMER PANEL STYLING */
+        .timer-preset-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .timer-preset-btn:hover, .timer-preset-btn.active {
+            background: #d97736;
+            border-color: #d97736;
         }
 
         /* UTILS */
@@ -500,13 +541,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         a:hover { color: #b8622b; }
 
         @media (min-width: 768px) { .sidebar-wrapper { min-height: 100vh; } }
-        @media print { 
-            body { background: white !important; color: black !important; }
-            .glass-panel { background: white !important; color: black !important; box-shadow: none !important; }
-            .table { color: black !important; }
-            .no-print, .mobile-nav { display: none !important; } 
-            .col-md-10 { width: 100% !important; } 
-        }
     </style>
 </head>
 <body>
@@ -708,21 +742,21 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     </div>
                     <?php
                 }
-                // --- DEDICATED MY TASKS & GLASS SOUND SYSTEM MUSIC PLAYER PAGE ---
+                // --- MY TASKS & WORKSPACE DASHBOARD (With Custom Player image_486b26.png & Timer) ---
                 elseif ($page == 'my_tasks' && $_SESSION['role'] == 'student') {
                     ?>
-                    <h3 class="mb-4">My Tasks & Music Station</h3>
+                    <h3 class="mb-4">Workspace Hub</h3>
                     <div class="row">
-                        <!-- Task Component Panel (Left Column) -->
-                        <div class="col-md-6 mb-4">
-                            <div class="glass-panel p-4 h-100" id="tasks">
+                        <!-- Left Column: Task Component Panel -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="glass-panel p-4 mb-4" id="tasks">
                                 <h5 class="mb-3 fw-semibold"><i class="bi bi-list-check me-2"></i>Task Manager</h5>
                                 <form method="POST" class="d-flex mb-4">
                                     <input type="hidden" name="page" value="my_tasks">
                                     <input type="text" name="task_text" class="form-control me-2 py-2" placeholder="Enter a new task..." required>
                                     <button name="add_task" class="btn btn-orange px-4 rounded">Add</button>
                                 </form>
-                                <ul class="list-group">
+                                <ul class="list-group" style="max-height: 280px; overflow-y: auto;">
                                     <?php
                                     $tasks = $pdo->prepare("SELECT * FROM tasks WHERE student_id = ? ORDER BY created_at DESC");
                                     $tasks->execute([$_SESSION['user_id']]);
@@ -737,150 +771,344 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                     <?php endif; ?>
                                 </ul>
                             </div>
+
+                            <!-- STUDY POMODORO TIMER MATRIX COMPONENT -->
+                            <div class="glass-panel p-4">
+                                <h5 class="mb-3 fw-semibold"><i class="bi bi-hourglass-split me-2"></i>Study Timer Mode</h5>
+                                <div class="d-flex justify-content-center gap-2 mb-3">
+                                    <button onclick="setTimerPreset(25)" class="timer-preset-btn active" id="btnPresetStudy">25m Study</button>
+                                    <button onclick="setTimerPreset(5)" class="timer-preset-btn" id="btnPresetShort">5m Break</button>
+                                    <button onclick="setTimerPreset(15)" class="timer-preset-btn" id="btnPresetLong">15m Break</button>
+                                </div>
+                                <div class="text-center my-4">
+                                    <div id="countdownClockDisplay" class="fw-semibold display-3" style="font-family: monospace; letter-spacing: 2px;">25:00</div>
+                                </div>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button id="btnTimerControl" onclick="toggleTimerCore()" class="btn btn-orange px-4"><i class="bi bi-play-fill me-1"></i>Start</button>
+                                    <button onclick="resetTimerCore()" class="btn btn-outline-light px-4"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Audio Matrix HTML5 Music Player Panel (Right Column) -->
-                        <div class="col-md-6 mb-4">
-                            <div class="glass-panel p-4 h-100">
-                                <h5 class="mb-3 fw-semibold"><i class="bi bi-music-note-beamed me-2"></i>Music Player Matrix</h5>
+                        <!-- Right Column: Audio Deck System -->
+                        <div class="col-lg-6 mb-4">
+                            <!-- Custom Deck System Clone from image_486b26.png -->
+                            <div class="deck-wrapper mb-4">
+                                <div id="trackDeckMetaTitle" class="text-truncate text-center small text-white-50 mb-3" style="letter-spacing: 0.5px;">No Local File Loaded</div>
                                 
-                                <!-- Audio Web Core Component Element -->
-                                <div class="audio-player-wrapper p-3 mb-4 rounded text-center" style="background: rgba(0,0,0,0.2);">
-                                    <div id="nowPlayingText" class="small text-white-50 mb-2">No song loaded</div>
-                                    <audio id="portalAudioEngine" controls class="w-100 mb-2"></audio>
-                                    <div class="player-controls-fallback d-flex justify-content-center g-2 mt-2">
-                                        <button onclick="prevTrack()" class="btn btn-sm btn-outline-light mx-1"><i class="bi bi-skip-start-fill"></i></button>
-                                        <button onclick="nextTrack()" class="btn btn-sm btn-outline-light mx-1"><i class="bi bi-skip-end-fill"></i></button>
+                                <!-- Timeline Seek Deck Interface Container -->
+                                <div class="d-flex align-items-center justify-content-between px-1 mb-2">
+                                    <span id="deckTimeElapsed" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">00:00</span>
+                                    <span id="deckTimeRemaining" style="font-size: 0.8rem; font-family: monospace; opacity:0.8;">- 00:00</span>
+                                </div>
+                                <div class="px-1 mb-4">
+                                    <input type="range" id="deckTimelineSeeker" class="track-timeline-slider" value="0" min="0" max="100" step="0.1" oninput="manualDeckSeek(this.value)">
+                                </div>
+
+                                <!-- Action Buttons Node Row Alignment cloning image_486b26.png layout layout -->
+                                <div class="d-flex align-items-center justify-content-between px-3">
+                                    <button onclick="toggleDeckShuffle()" id="btnDeckShuffle" class="deck-playback-btn" title="Toggle Shuffle">
+                                        <i class="bi bi-shuffle"></i>
+                                    </button>
+                                    <button onclick="prevDeckTrack()" class="deck-playback-btn" title="Previous Track">
+                                        <i class="bi bi-skip-start-fill"></i>
+                                    </button>
+                                    
+                                    <button onclick="toggleDeckPlayback()" id="btnMasterDeckPlay" class="deck-master-play-btn" title="Play/Pause">
+                                        <i class="bi bi-play-fill" style="margin-left: 3px;"></i>
+                                    </button>
+                                    
+                                    <button onclick="nextDeckTrack()" class="deck-playback-btn" title="Next Track">
+                                        <i class="bi bi-skip-end-fill"></i>
+                                    </button>
+                                    <button onclick="toggleVolumePopover()" id="btnDeckSliders" class="deck-playback-btn" title="Volume Sliders">
+                                        <i class="bi bi-sliders"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Hidden context engine node volume element container slider popover -->
+                                <div id="volumeSliderPane" class="mt-3 px-2 d-none transition">
+                                    <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded">
+                                        <i class="bi bi-volume-up-fill text-white-50 small"></i>
+                                        <input type="range" class="form-range" min="0" max="1" step="0.05" value="0.8" oninput="changeDeckVolume(this.value)">
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Add Track Form -->
-                                <h6 class="small fw-semibold text-white-50 mb-2">Add New Track URL</h6>
-                                <div class="d-flex gap-2 mb-3">
-                                    <input type="text" id="newTrackTitle" class="form-control form-control-sm" placeholder="Song Title">
-                                    <input type="text" id="newTrackUrl" class="form-control form-control-sm" placeholder="MP3 Link Url">
-                                    <button onclick="addPlaylistTrack()" class="btn btn-sm btn-orange"><i class="bi bi-plus-lg"></i></button>
+                            <!-- Playlist Track Vault Manager Interface Container -->
+                            <div class="glass-panel p-4">
+                                <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
+                                <div class="mb-4">
+                                    <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
                                 </div>
 
-                                <!-- Playlist Container Box -->
-                                <div class="playlist-container overflow-auto" style="max-height: 250px;">
-                                    <div id="playlistTrackContainer" class="d-flex flex-column gap-2">
-                                        <!-- Javascript drops custom stream tracks here directly -->
+                                <div class="playlist-vault-box overflow-auto" style="max-height: 200px;">
+                                    <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
+                                        <!-- Tracks array loaded dynamically -->
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Client-Side Persistent Localstorage Playlist Driver -->
+                    <!-- Core Logic Processing Scripts -->
                     <script>
-                        const audioPlayer = document.getElementById('portalAudioEngine');
-                        const nowPlayingText = document.getElementById('nowPlayingText');
-                        let currentTrackIndex = -1;
-                        let playlist = [];
+                        // AUDIO INFRASTRUCTURE ENGINE DECK MATRIX
+                        const coreAudioNode = new Audio();
+                        let originalPlaylistQueue = [];
+                        let activePlaylistQueue = [];
+                        let currentQueueIndex = -1;
+                        let isShuffleActive = false;
 
-                        // Load playlist from localStorage or fall back to sample streams
-                        if (localStorage.getItem('portal_playlist')) {
-                            playlist = JSON.parse(localStorage.getItem('portal_playlist'));
-                        } else {
-                            playlist = [
-                                { title: "Lo-Fi Beats Sample", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-                                { title: "Synthwave Instrumental", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
-                            ];
-                            saveToStorage();
+                        // Deck Tracking Element Reference Pointers
+                        const deckSeeker = document.getElementById('deckTimelineSeeker');
+                        const deckElapsedText = document.getElementById('deckTimeElapsed');
+                        const deckRemainingText = document.getElementById('deckTimeRemaining');
+                        const masterPlayBtn = document.getElementById('btnMasterDeckPlay');
+                        const trackMetaTitle = document.getElementById('trackDeckMetaTitle');
+
+                        function loadFilesIntoPlaylist(inputNode) {
+                            if(!inputNode.files || inputNode.files.length === 0) return;
+
+                            for(let i = 0; i < inputNode.files.length; i++) {
+                                const file = inputNode.files[i];
+                                const trackBlobUrl = URL.createObjectURL(file);
+                                const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Strip file extensions
+
+                                const trackObj = { title: cleanTitle, url: trackBlobUrl };
+                                originalPlaylistQueue.push(trackObj);
+                            }
+
+                            rebuildActiveQueueChain();
+                            renderDeckPlaylistUI();
+                            inputNode.value = ""; // Clear file picker loop reference
                         }
 
-                        function saveToStorage() {
-                            localStorage.setItem('portal_playlist', JSON.stringify(playlist));
+                        function rebuildActiveQueueChain() {
+                            if (!isShuffleActive) {
+                                activePlaylistQueue = [...originalPlaylistQueue];
+                            } else {
+                                // Classic modern Fisher-Yates array randomizer loop configuration
+                                activePlaylistQueue = [...originalPlaylistQueue];
+                                for (let i = activePlaylistQueue.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [activePlaylistQueue[i], activePlaylistQueue[j]] = [activePlaylistQueue[j], activePlaylistQueue[i]];
+                                }
+                            }
                         }
 
-                        function renderPlaylist() {
-                            const container = document.getElementById('playlistTrackContainer');
+                        function renderDeckPlaylistUI() {
+                            const container = document.getElementById('deckPlaylistTracksContainer');
                             container.innerHTML = '';
-                            
-                            if(playlist.length === 0) {
-                                container.innerHTML = '<div class="text-center py-3 text-white-50 small">Playlist empty</div>';
+
+                            if(originalPlaylistQueue.length === 0) {
+                                container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
                                 return;
                             }
 
-                            playlist.forEach((track, index) => {
-                                const activeClass = index === currentTrackIndex ? 'active fw-bold' : '';
-                                const div = document.createElement('div');
-                                div.className = `track-item d-flex justify-content-between align-items-center ${activeClass}`;
-                                div.onclick = (e) => {
-                                    if(e.target.closest('.btn-delete-track')) return;
-                                    playTrack(index);
+                            // Render tracks based on the original list for visual stability
+                            originalPlaylistQueue.forEach((track) => {
+                                // Match indexing to active queue map tracking positions
+                                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+                                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+                                const currentClass = isCurrent ? 'active fw-bold' : '';
+
+                                const node = document.createElement('div');
+                                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+                                node.onclick = (e) => {
+                                    if(e.target.closest('.btn-purge-track')) return;
+                                    fireTrackPlaybackByIndex(activeIdx);
                                 };
-                                div.innerHTML = `
-                                    <div class="text-truncate ps-1 small"><i class="bi bi-play-circle-fill me-2 opacity-50"></i>${track.title}</div>
-                                    <button class="btn btn-sm text-danger btn-delete-track p-1" onclick="removeTrack(${index})"><i class="bi bi-trash"></i></button>
+
+                                node.innerHTML = `
+                                    <div class="text-truncate ps-1 small"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
+                                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
                                 `;
-                                container.appendChild(div);
+                                container.appendChild(node);
                             });
                         }
 
-                        function playTrack(index) {
-                            if (index < 0 || index >= playlist.length) return;
-                            currentTrackIndex = index;
-                            audioPlayer.src = playlist[index].url;
-                            nowPlayingText.innerText = "Playing: " + playlist[index].title;
-                            audioPlayer.play();
-                            renderPlaylist();
+                        function fireTrackPlaybackByIndex(targetIdx) {
+                            if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
+                            currentQueueIndex = targetIdx;
+
+                            coreAudioNode.src = activePlaylistQueue[currentQueueIndex].url;
+                            trackMetaTitle.innerText = activePlaylistQueue[currentQueueIndex].title;
+                            
+                            coreAudioNode.play().catch(err => console.log("Playback initialized safely."));
+                            masterPlayBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+                            renderDeckPlaylistUI();
                         }
 
-                        function addPlaylistTrack() {
-                            const titleInput = document.getElementById('newTrackTitle');
-                            const urlInput = document.getElementById('newTrackUrl');
-                            
-                            if(!titleInput.value.trim() || !urlInput.value.trim()) {
-                                alert("Please enter both song title and streaming audio MP3 link URL.");
+                        function toggleDeckPlayback() {
+                            if(activePlaylistQueue.length === 0) return;
+                            if(currentQueueIndex === -1) {
+                                fireTrackPlaybackByIndex(0);
                                 return;
                             }
 
-                            playlist.push({
-                                title: titleInput.value.trim(),
-                                url: urlInput.value.trim()
-                            });
-
-                            saveToStorage();
-                            renderPlaylist();
-
-                            titleInput.value = '';
-                            urlInput.value = '';
-                        }
-
-                        function removeTrack(index) {
-                            playlist.splice(index, 1);
-                            if (index === currentTrackIndex) {
-                                audioPlayer.src = '';
-                                nowPlayingText.innerText = "No song loaded";
-                                currentTrackIndex = -1;
-                            } else if (index < currentTrackIndex) {
-                                currentTrackIndex--;
+                            if(coreAudioNode.paused) {
+                                coreAudioNode.play();
+                                masterPlayBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+                            } else {
+                                coreAudioNode.pause();
+                                masterPlayBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
                             }
-                            saveToStorage();
-                            renderPlaylist();
                         }
 
-                        function nextTrack() {
-                            if(playlist.length === 0) return;
-                            let next = currentTrackIndex + 1;
-                            if(next >= playlist.length) next = 0;
-                            playTrack(next);
+                        function nextDeckTrack() {
+                            if(activePlaylistQueue.length === 0) return;
+                            let idx = currentQueueIndex + 1;
+                            if(idx >= activePlaylistQueue.length) idx = 0;
+                            fireTrackPlaybackByIndex(idx);
                         }
 
-                        function prevTrack() {
-                            if(playlist.length === 0) return;
-                            let prev = currentTrackIndex - 1;
-                            if(prev < 0) prev = playlist.length - 1;
-                            playTrack(prev);
+                        function prevDeckTrack() {
+                            if(activePlaylistQueue.length === 0) return;
+                            let idx = currentQueueIndex - 1;
+                            if(idx < 0) idx = activePlaylistQueue.length - 1;
+                            fireTrackPlaybackByIndex(idx);
                         }
 
-                        // Auto-advance loop infrastructure engine logic
-                        audioPlayer.onended = () => { nextTrack(); };
+                        function toggleDeckShuffle() {
+                            isShuffleActive = !isShuffleActive;
+                            const btn = document.getElementById('btnDeckShuffle');
+                            
+                            // Track the current track to keep it playing seamlessly
+                            let currentTrackObj = currentQueueIndex !== -1 ? activePlaylistQueue[currentQueueIndex] : null;
+                            
+                            if(isShuffleActive) btn.classList.add('active');
+                            else btn.classList.remove('active');
 
-                        // Initialize Playlist UI element
-                        document.addEventListener('DOMContentLoaded', () => { renderPlaylist(); });
+                            rebuildActiveQueueChain();
+
+                            if(currentTrackObj) {
+                                currentQueueIndex = activePlaylistQueue.findIndex(t => t.url === currentTrackObj.url);
+                            }
+                            renderDeckPlaylistUI();
+                        }
+
+                        function purgeTrackFromVault(targetUrl) {
+                            let trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
+                            if(!trackObj) return;
+
+                            let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
+                            originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
+                            
+                            if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
+                                coreAudioNode.pause();
+                                coreAudioNode.src = '';
+                                trackMetaTitle.innerText = "No Local File Loaded";
+                                currentQueueIndex = -1;
+                                masterPlayBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
+                            }
+
+                            rebuildActiveQueueChain();
+                            if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
+                                currentQueueIndex--;
+                            }
+                            renderDeckPlaylistUI();
+                        }
+
+                        function manualDeckSeek(val) {
+                            if(!coreAudioNode.duration) return;
+                            coreAudioNode.currentTime = (val / 100) * coreAudioNode.duration;
+                        }
+
+                        function changeDeckVolume(val) {
+                            coreAudioNode.volume = val;
+                        }
+
+                        function toggleVolumePopover() {
+                            const pane = document.getElementById('volumeSliderPane');
+                            pane.classList.toggle('d-none');
+                        }
+
+                        function timeFormatMap(secs) {
+                            if(isNaN(secs)) return "00:00";
+                            let m = Math.floor(secs / 60);
+                            let s = Math.floor(secs % 60);
+                            return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+                        }
+
+                        // Audio Event Bindings
+                        coreAudioNode.ontimeupdate = () => {
+                            if(!coreAudioNode.duration) return;
+                            
+                            const elapsed = coreAudioNode.currentTime;
+                            const duration = coreAudioNode.duration;
+                            const pct = (elapsed / duration) * 100;
+
+                            deckSeeker.value = pct;
+                            deckSeeker.style.setProperty('--seek-percent', pct + '%');
+                            
+                            deckElapsedText.innerText = timeFormatMap(elapsed);
+                            deckRemainingText.innerText = "- " + timeFormatMap(duration - elapsed);
+                        };
+
+                        coreAudioNode.onended = () => { nextDeckTrack(); };
+
+
+                        // STUDY WORKSPACE POMODORO COUNTER SYSTEM ENGINE LOGIC
+                        let timerEngineRunning = false;
+                        let timerLoopHandle = null;
+                        let targetDurationSeconds = 1500; // Default 25m
+
+                        const clockDisplay = document.getElementById('countdownClockDisplay');
+                        const timerControlBtn = document.getElementById('btnTimerControl');
+
+                        function setTimerPreset(mins) {
+                            resetTimerCore();
+                            targetDurationSeconds = mins * 60;
+                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":00";
+
+                            document.querySelectorAll('.timer-preset-btn').forEach(btn => btn.classList.remove('active'));
+                            if(mins === 25) document.getElementById('btnPresetStudy').classList.add('active');
+                            if(mins === 5) document.getElementById('btnPresetShort').classList.add('active');
+                            if(mins === 15) document.getElementById('btnPresetLong').classList.add('active');
+                        }
+
+                        function toggleTimerCore() {
+                            if(timerEngineRunning) {
+                                // Pause loop pipeline step execution tracking sequence context map
+                                clearInterval(timerLoopHandle);
+                                timerEngineRunning = false;
+                                timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+                            } else {
+                                timerEngineRunning = true;
+                                timerControlBtn.innerHTML = '<i class="bi bi-pause-fill me-1"></i>Pause';
+                                
+                                timerLoopHandle = setInterval(() => {
+                                    if(targetDurationSeconds <= 0) {
+                                        clearInterval(timerLoopHandle);
+                                        timerEngineRunning = false;
+                                        timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+                                        alert("Study timer session complete! Resetting block intervals.");
+                                        return;
+                                    }
+                                    targetDurationSeconds--;
+                                    
+                                    let mins = Math.floor(targetDurationSeconds / 60);
+                                    let secs = Math.floor(targetDurationSeconds % 60);
+                                    clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+                                }, 1000);
+                            }
+                        }
+
+                        function resetTimerCore() {
+                            clearInterval(timerLoopHandle);
+                            timerEngineRunning = false;
+                            timerControlBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+                            
+                            // Revert back tracking defaults safely
+                            const currentActivePreset = document.querySelector('.timer-preset-btn.active');
+                            if(currentActivePreset === document.getElementById('btnPresetShort')) targetDurationSeconds = 300;
+                            else if(currentActivePreset === document.getElementById('btnPresetLong')) targetDurationSeconds = 900;
+                            else targetDurationSeconds = 1500;
+
+                            let mins = Math.floor(targetDurationSeconds / 60);
+                            clockDisplay.innerText = (mins < 10 ? "0" : "") + mins + ":00";
+                        }
                     </script>
                     <?php
                 }
@@ -1221,26 +1449,24 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     <h3>Manage Fee Schedules</h3>
                     <div class="glass-panel p-4 mb-4">
                         <form method="POST" class="row g-2">
+                            <input type="hidden" name="subject_id" value="<?= $edit_sub['id'] ?? '' ?>">
+                            <div class="col-md-2"><input name="sy" placeholder="SY" class="form-control" value="<?= $edit_sub['sy'] ?? '' ?>" required></div>
+                            <div class="col-md-2"><select name="sem" class="form-select"><option <?= ($edit_sub['sem']??'')=='1st'?'selected':'' ?>>1st</option><option <?= ($edit_sub['sem']??'')=='2nd'?'selected':'' ?>>2nd</option></select></div>
+                            <div class="col-md-2"><input name="course" placeholder="Course" class="form-control" value="<?= $edit_sub['course'] ?? '' ?>" required></div>
+                            <div class="col-md-2"><input name="code" placeholder="Code" class="form-control" value="<?= $edit_sub['subject_code'] ?? '' ?>" required></div>
+                            <div class="col-md-3"><input name="title" placeholder="Title" class="form-control" value="<?= $edit_sub['subject_title'] ?? '' ?>" required></div>
+                            <div class="col-md-1"><input name="units" type="number" placeholder="Units" class="form-control" value="<?= $edit_sub['units'] ?? '' ?>" required></div>
                             <div class="col-md-3">
-                                <label>Target Student</label>
-                                <select name="target_student" class="form-select custom-dark-select">
-                                    <option value="0">-- All Students --</option>
+                                <select name="teacher_id" class="form-select custom-dark-select">
+                                    <option value="0">Unassigned</option>
                                     <?php 
-                                    $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student'")->fetchAll();
-                                    foreach($students as $s) echo "<option value='{$s['id']}'>{$s['lastname']}, {$s['firstname']}</option>";
+                                    $techs = $pdo->query("SELECT id, lastname FROM users WHERE role='teacher'")->fetchAll();
+                                    foreach($techs as $t) echo "<option value='{$t['id']}' ".($edit_sub['teacher_id']??0 == $t['id']?'selected':'').">{$t['lastname']}</option>";
                                     ?>
                                 </select>
                             </div>
-                            <div class="col-md-2"><label>Fee Name</label><input name="fee_name" class="form-control" required></div>
-                            <div class="col-md-2"><label>Type</label><select name="fee_type" class="form-select"><option>Tuition</option><option>Misc</option><option>Lab</option><option>Other</option></select></div>
-                            <div class="col-md-2"><label>Amount</label><input name="amount" type="number" step="0.01" class="form-control" required></div>
-                            <div class="col-md-2"><label>SY/Sem</label>
-                                <div class="input-group">
-                                    <input name="sy" placeholder="SY" class="form-control" required>
-                                    <select name="sem" class="form-select"><option>1st</option><option>2nd</option></select>
-                                </div>
-                            </div>
-                            <div class="col-md-1"><label>&nbsp;</label><button name="add_fee" class="btn btn-orange w-100"><i class="bi bi-plus"></i></button></div>
+                            <div class="col-md-7"><input name="schedule" placeholder="Schedule" class="form-control" value="<?= $edit_sub['schedule'] ?? '' ?>"></div>
+                            <div class="col-md-2"><button name="save_subject" class="btn btn-orange w-100"><?= $edit_sub ? 'Update' : 'Add' ?></button></div>
                         </form></div>
                     
                     <div class="glass-panel p-2 table-responsive">
