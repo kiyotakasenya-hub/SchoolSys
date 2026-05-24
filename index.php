@@ -98,6 +98,12 @@ CREATE TABLE IF NOT EXISTS user_music (
     file_path VARCHAR(255),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS user_playback_state (
+        student_id INT PRIMARY KEY,
+        current_track_id INT,
+        position_seconds FLOAT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -146,6 +152,34 @@ if (isset($_POST['upload_music']) && isset($_FILES['audio_file'])) {
     $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
     $stmt->execute([$_SESSION['user_id'], $title, $filename]);
     echo "success";
+    exit();
+}
+
+// --- SAVE PLAYBACK PROGRESS ---
+if (isset($_POST['save_progress'])) {
+    $track_id = intval($_POST['track_id']);
+    $position = floatval($_POST['position']);
+    $student_id = $_SESSION['user_id'];
+
+    $stmt = $pdo->prepare("
+        INSERT INTO user_playback_state (student_id, current_track_id, position_seconds, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT (student_id) 
+        DO UPDATE SET current_track_id = EXCLUDED.current_track_id, 
+                      position_seconds = EXCLUDED.position_seconds, 
+                      updated_at = CURRENT_TIMESTAMP
+    ");
+    $stmt->execute([$student_id, $track_id, $position]);
+    echo "saved";
+    exit();
+}
+
+// --- FETCH PLAYBACK PROGRESS ---
+if (isset($_GET['get_progress'])) {
+    $stmt = $pdo->prepare("SELECT current_track_id, position_seconds FROM user_playback_state WHERE student_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    header('Content-Type: application/json');
+    echo json_encode($stmt->fetch(PDO::FETCH_ASSOC) ?: []);
     exit();
 }
 
@@ -1811,6 +1845,65 @@ function stopMusicEngine() {
     }
     currentQueueIndex = -1;
 }
+	let lastSavedTime = 0;
+
+// 1. Function to send current timestamp to the server
+function saveCurrentTimestampToServer(trackId, currentTime) {
+    // Only save if the time has changed by more than 2 seconds to avoid overloading your Render server
+    if (Math.abs(currentTime - lastSavedTime) < 2) return; 
+    lastSavedTime = currentTime;
+
+    let formData = new FormData();
+    formData.append('save_progress', '1');
+    formData.append('track_id', trackId);
+    formData.append('position', currentTime);
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    });
+}
+
+// 2. Attach listeners to your existing Audio element
+// Replace 'coreAudioNode' with whatever your HTML5 <audio> variable is named
+if (typeof coreAudioNode !== 'undefined') {
+
+    // Saves progress automatically every few seconds while the song plays
+    coreAudioNode.addEventListener('timeupdate', () => {
+        if (currentActiveTrack) { // Ensure a track is currently loaded
+            saveCurrentTimestampToServer(currentActiveTrack.id, coreAudioNode.currentTime);
+        }
+    });
+
+    // Saves progress immediately if they pause the music
+    coreAudioNode.addEventListener('pause', () => {
+        if (currentActiveTrack) {
+            saveCurrentTimestampToServer(currentActiveTrack.id, coreAudioNode.currentTime);
+        }
+    });
+}
+
+// 3. Function to sync and resume from the database when logging in on a new device
+function restorePlaybackStateFromCloud() {
+    fetch('?get_progress=1')
+        .then(res => res.json())
+        .then(state => {
+            if (state && state.current_track_id) {
+                // Find the song in your playlist queue matching the saved ID
+                const trackToPlay = originalPlaylistQueue.find(t => t.id == state.current_track_id);
+                
+                if (trackToPlay) {
+                    // Load the track into your player
+                    loadTrackIntoEngine(trackToPlay); 
+                    
+                    // Set the player's timestamp back to the exact saved millisecond
+                    coreAudioNode.currentTime = state.position_seconds;
+                    
+                    console.log(`Resumed track at ${state.position_seconds} seconds`);
+                }
+            }
+        });
+}
 
 // --- 2. INDEXEDDB PERSISTENCE LAYER ---
 function fetchCloudPlaylist() {
@@ -2265,6 +2358,11 @@ function bindSpaFormSubmissions() {
 // System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
     fetchCloudPlaylist();
+    bindSpaFormSubmissions();
+});
+document.addEventListener('DOMContentLoaded', () => {
+    fetchCloudPlaylist();
+    setTimeout(restorePlaybackStateFromCloud, 1000); 
     bindSpaFormSubmissions();
 });
 </script>
