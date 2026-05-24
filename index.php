@@ -140,25 +140,23 @@ if (isset($_GET['del_task'])) {
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
 }
-// --- PHYSICAL MUSIC UPLOAD LOGIC ---
-if (isset($_POST['upload_local_music']) && isset($_FILES['audio_file'])) {
-    $title = pathinfo($_FILES['audio_file']['name'], PATHINFO_FILENAME);
-    // Sanitize the filename to prevent server errors
-    $filename = time() . "_" . preg_replace('/[^a-zA-Z0-9_.-]/', '', $_FILES['audio_file']['name']);
-    
-    // Ensure the directory exists
-    if (!is_dir('uploads/music')) { mkdir('uploads/music', 0777, true); }
-    
-    // Move the file from the temporary buffer to the permanent folder
-    if (move_uploaded_file($_FILES['audio_file']['tmp_name'], "uploads/music/" . $filename)) {
-        // Save the reference to the database
-        $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
-        $stmt->execute([$_SESSION['user_id'], $title, $filename]);
-        echo "success";
-    } else {
-        http_response_code(500);
-        echo "Upload failed.";
-    }
+// --- CLOUD MUSIC LOGIC ---
+if (isset($_POST['save_cloud_music'])) {
+    $title = trim($_POST['track_title']);
+    $url = trim($_POST['track_url']);
+
+    $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
+    $stmt->execute([$_SESSION['user_id'], $title, $url]);
+
+    echo "success";
+    exit();
+}
+
+if (isset($_GET['fetch_music'])) {
+    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
+    $stmt->execute([$_SESSION['user_id']]);
+    header('Content-Type: application/json');
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
     exit();
 }
 
@@ -1097,10 +1095,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
 
                                 <div class="flex-grow-1 d-flex flex-column">
-                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Upload Local MP3</h6>
-										<div class="mb-3">
-   										 <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" onchange="uploadLocalFile(this)">
-								</div>
+                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-cloud-arrow-up me-1"></i>Upload to Cloud Player</h6>
+<div class="mb-3">
+    <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" onchange="uploadDirectToCloudinary(this)">
+</div>
 
                                     <div class="playlist-vault-box flex-grow-1 overflow-auto" style="min-height: 150px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
                                         <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
@@ -1859,6 +1857,67 @@ window.fillSubjectDetails = function() {
     }
 };
 
+// --- CLOUDINARY CDN CONNECTOR ---
+function fetchCloudPlaylist() {
+    fetch('?fetch_music=1')
+        .then(res => res.json())
+        .then(data => {
+            originalPlaylistQueue = [];
+            data.forEach(track => {
+                originalPlaylistQueue.push({ 
+                    id: track.id,
+                    title: track.track_title, 
+                    url: track.file_path 
+                });
+            });
+            rebuildActiveQueueChain();
+            syncPlayerUI();
+        });
+}
+
+function uploadDirectToCloudinary(inputNode) {
+    if (!inputNode.files || inputNode.files.length === 0) return;
+
+    const cloudName = 'YOUR_CLOUD_NAME';         // Replace with your Cloud Name
+    const uploadPreset = 'YOUR_UNSIGNED_PRESET'; // Replace with your Unsigned Preset Name
+
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    const file = inputNode.files[0];
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    const titleEl = document.getElementById('trackDeckMetaTitle');
+    if (titleEl) titleEl.innerText = "Syncing to Cloud CDN... Please wait.";
+
+    fetch(uploadUrl, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.secure_url) {
+            saveCloudUrlToDatabase(fileName, data.secure_url);
+            inputNode.value = ""; 
+        } else {
+            throw new Error();
+        }
+    })
+    .catch(() => {
+        if (titleEl) titleEl.innerText = "Upload failed.";
+    });
+}
+
+function saveCloudUrlToDatabase(title, secureUrl) {
+    let formData = new FormData();
+    formData.append('save_cloud_music', '1');
+    formData.append('track_title', title);
+    formData.append('track_url', secureUrl);
+
+    fetch('index.php', { method: 'POST', body: formData })
+    .then(() => {
+        fetchCloudPlaylist();
+    });
+}
 
 // --- 1. CORE AUDIO SYSTEM MATRIX ---
 const coreAudioNode = new Audio();
@@ -2419,6 +2478,7 @@ function bindSpaFormSubmissions() {
     });
 }
 
+// System Boot Initialization Sequence
 // System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
     fetchCloudPlaylist();
