@@ -69,7 +69,7 @@ try {
             receipt_no VARCHAR(50),
             sy VARCHAR(20), 
             sem VARCHAR(20), 
-            pay_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            pay_date TIMESTAMP DEFAULT song_timeSTAMP,
             received_by INT
         );
 
@@ -88,15 +88,15 @@ try {
     student_id INT,
     task_content TEXT,
     status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT song_timeSTAMP
 );
 
 CREATE TABLE IF NOT EXISTS music_sync (
     id SERIAL PRIMARY KEY,
     song_url TEXT,
-    current_time FLOAT DEFAULT 0,
+    song_time FLOAT DEFAULT 0,
     is_playing BOOLEAN DEFAULT FALSE,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT song_timeSTAMP
 );
     ");
 
@@ -112,7 +112,7 @@ try {
 
         $pdo->exec("
             INSERT INTO music_sync
-            (id, song_url, current_time, is_playing)
+            (id, song_url, song_time, is_playing)
             VALUES
             (1, '', 0, FALSE)
         ");
@@ -165,9 +165,9 @@ if (isset($_POST['sync_music'])) {
     $stmt = $pdo->prepare("
         UPDATE music_sync
         SET song_url = ?,
-            current_time = ?,
+            song_time = ?,
             is_playing = $playing,
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = song_timeSTAMP
         WHERE id = 1
     ");
 
@@ -2400,11 +2400,11 @@ async function fetchMusicState() {
         }
 
         if (
-            data.current_time &&
-            Math.abs(player.currentTime - data.current_time) > 2
+            data.song_time &&
+            Math.abs(player.currentTime - data.song_time) > 2
         ) {
 
-            player.currentTime = data.current_time;
+            player.currentTime = data.song_time;
         }
 
         if (data.is_playing === true || data.is_playing == 1) {
