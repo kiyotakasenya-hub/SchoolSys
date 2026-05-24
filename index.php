@@ -89,7 +89,15 @@ try {
             task_content TEXT,
             status VARCHAR(20) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+        ); 
+		
+CREATE TABLE IF NOT EXISTS user_music (
+    id SERIAL PRIMARY KEY,
+    student_id INT,
+    track_title VARCHAR(255),
+    file_path VARCHAR(255),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -125,6 +133,36 @@ if (isset($_GET['del_task'])) {
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
+}
+
+// --- MUSIC API LOGIC ---
+if (isset($_POST['upload_music']) && isset($_FILES['audio_file'])) {
+    $title = pathinfo($_FILES['audio_file']['name'], PATHINFO_FILENAME);
+    $filename = time() . "_" . preg_replace('/[^a-zA-Z0-9_.-]/', '', $_FILES['audio_file']['name']);
+    
+    if (!is_dir('uploads/music')) { mkdir('uploads/music', 0777, true); }
+    move_uploaded_file($_FILES['audio_file']['tmp_name'], "uploads/music/" . $filename);
+    
+    $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
+    $stmt->execute([$_SESSION['user_id'], $title, $filename]);
+    echo "success";
+    exit();
+}
+
+if (isset($_GET['fetch_music'])) {
+    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
+    $stmt->execute([$_SESSION['user_id']]);
+    header('Content-Type: application/json');
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit();
+}
+
+if (isset($_GET['delete_music'])) {
+    // Optional: Add logic here to unlink() the file from the uploads folder to save server space
+    $stmt = $pdo->prepare("DELETE FROM user_music WHERE id = ? AND student_id = ?");
+    $stmt->execute([$_GET['delete_music'], $_SESSION['user_id']]);
+    echo "deleted";
+    exit();
 }
 
 // Fetch current user data if logged in
@@ -1775,62 +1813,47 @@ function stopMusicEngine() {
 }
 
 // --- 2. INDEXEDDB PERSISTENCE LAYER ---
-const DB_NAME = 'CampusCoreMusicDB';
-const STORE_NAME = 'vault_tracks';
-let databaseRef = null;
-
-function initMusicDatabase(callback) {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = function(e) {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-        }
-    };
-    request.onsuccess = function(e) {
-        databaseRef = e.target.result;
-        if (callback) callback();
-    };
-    request.onerror = function(e) { console.error('IndexedDB structural error:', e); };
-}
-
-function persistTrackToDB(fileObject) {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.add({ name: fileObject.name, binaryData: fileObject });
-}
-
-function purgeTrackFromDB(fileName) {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.openCursor().onsuccess = function(e) {
-        const cursor = e.target.result;
-        if (cursor) {
-            if (cursor.value.name === fileName) { cursor.delete(); } 
-            else { cursor.continue(); }
-        }
-    };
-}
-
-function restoreTracksFromDB() {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    store.getAll().onsuccess = function(e) {
-        const tracks = e.target.result || [];
-        originalPlaylistQueue = [];
-        tracks.forEach(track => {
-            const reconstructedUrl = URL.createObjectURL(track.binaryData);
-            const cleanTitle = track.name.replace(/\.[^/.]+$/, "");
-            originalPlaylistQueue.push({ title: cleanTitle, url: reconstructedUrl, filename: track.name });
+function fetchCloudPlaylist() {
+    fetch('?fetch_music=1')
+        .then(res => res.json())
+        .then(data => {
+            originalPlaylistQueue = [];
+            data.forEach(track => {
+                originalPlaylistQueue.push({ 
+                    id: track.id,
+                    title: track.track_title, 
+                    url: 'uploads/music/' + track.file_path 
+                });
+            });
+            rebuildActiveQueueChain();
+            syncPlayerUI();
         });
-        rebuildActiveQueueChain();
-        syncPlayerUI();
-    };
 }
 
+function loadFilesIntoPlaylist(inputNode) {
+    if(!inputNode.files || inputNode.files.length === 0) return;
+    
+    let formData = new FormData();
+    formData.append('upload_music', '1');
+    formData.append('audio_file', inputNode.files[0]); // Uploading one by one for simplicity
+    
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    }).then(res => res.text()).then(response => {
+        fetchCloudPlaylist(); // Refresh the list from the server
+        inputNode.value = ""; 
+    });
+}
+
+function purgeTrackFromVault(targetId) {
+    fetch('?delete_music=' + targetId)
+        .then(res => {
+            fetchCloudPlaylist(); // Refresh the list
+            stopMusicEngine(); // Halt playback if deleting current track
+        });
+
+}
 // --- 3. AUDIO ENGINE LOGIC ---
 function loadFilesIntoPlaylist(inputNode) {
     if(!inputNode.files || inputNode.files.length === 0) return;
@@ -1928,7 +1951,7 @@ function syncPlayerUI() {
 
                 node.innerHTML = `
                     <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
-                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
+                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.id}')"><i class="bi bi-trash"></i></button>
                 `;
                 container.appendChild(node);
             });
@@ -2241,7 +2264,7 @@ function bindSpaFormSubmissions() {
 
 // System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
-    initMusicDatabase(restoreTracksFromDB);
+    fetchCloudPlaylist();
     bindSpaFormSubmissions();
 });
 </script>
