@@ -140,6 +140,36 @@ if (isset($_GET['del_task'])) {
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
 }
+// --- PHYSICAL MUSIC UPLOAD LOGIC ---
+if (isset($_POST['upload_local_music']) && isset($_FILES['audio_file'])) {
+    $title = pathinfo($_FILES['audio_file']['name'], PATHINFO_FILENAME);
+    // Sanitize the filename to prevent server errors
+    $filename = time() . "_" . preg_replace('/[^a-zA-Z0-9_.-]/', '', $_FILES['audio_file']['name']);
+    
+    // Ensure the directory exists
+    if (!is_dir('uploads/music')) { mkdir('uploads/music', 0777, true); }
+    
+    // Move the file from the temporary buffer to the permanent folder
+    if (move_uploaded_file($_FILES['audio_file']['tmp_name'], "uploads/music/" . $filename)) {
+        // Save the reference to the database
+        $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
+        $stmt->execute([$_SESSION['user_id'], $title, $filename]);
+        echo "success";
+    } else {
+        http_response_code(500);
+        echo "Upload failed.";
+    }
+    exit();
+}
+
+// --- FETCH SYNCED MUSIC ---
+if (isset($_GET['fetch_music'])) {
+    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
+    $stmt->execute([$_SESSION['user_id']]);
+    header('Content-Type: application/json');
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit();
+}
 
 // --- MUSIC API LOGIC ---
 if (isset($_POST['upload_music']) && isset($_FILES['audio_file'])) {
@@ -1067,10 +1097,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
 
                                 <div class="flex-grow-1 d-flex flex-column">
-                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
-                                    <div class="mb-3">
-                                        <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
-                                    </div>
+                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Upload Local MP3</h6>
+										<div class="mb-3">
+   										 <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" onchange="uploadLocalFile(this)">
+								</div>
 
                                     <div class="playlist-vault-box flex-grow-1 overflow-auto" style="min-height: 150px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
                                         <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
@@ -1923,19 +1953,53 @@ function fetchCloudPlaylist() {
         });
 }
 
-function loadFilesIntoPlaylist(inputNode) {
-    if(!inputNode.files || inputNode.files.length === 0) return;
+function fetchCloudPlaylist() {
+    fetch('?fetch_music=1')
+        .then(res => res.json())
+        .then(data => {
+            originalPlaylistQueue = [];
+            data.forEach(track => {
+                originalPlaylistQueue.push({ 
+                    id: track.id,
+                    title: track.track_title, 
+                    // Point the URL to where the PHP script saved the physical file
+                    url: 'uploads/music/' + track.file_path 
+                });
+            });
+            rebuildActiveQueueChain();
+            syncPlayerUI();
+        });
+}
+
+// 2. Upload the local file to the server
+function uploadLocalFile(inputNode) {
+    if (!inputNode.files || inputNode.files.length === 0) return;
+    
+    // Change UI to show it's working (MP3s can take a second to upload)
+    const originalLabel = document.getElementById('trackDeckMetaTitle').innerText;
+    document.getElementById('trackDeckMetaTitle').innerText = "Uploading track to server...";
     
     let formData = new FormData();
-    formData.append('upload_music', '1');
-    formData.append('audio_file', inputNode.files[0]); // Uploading one by one for simplicity
+    formData.append('upload_local_music', '1');
+    formData.append('audio_file', inputNode.files[0]); 
     
     fetch('index.php', {
         method: 'POST',
         body: formData
-    }).then(res => res.text()).then(response => {
-        fetchCloudPlaylist(); // Refresh the list from the server
-        inputNode.value = ""; 
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Server rejected the file.");
+        return res.text();
+    })
+    .then(response => {
+        // Refresh the playlist so the newly uploaded file appears
+        fetchCloudPlaylist(); 
+        inputNode.value = ""; // Clear the input box
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById('trackDeckMetaTitle').innerText = "Upload failed. File might be too large.";
+        setTimeout(() => document.getElementById('trackDeckMetaTitle').innerText = originalLabel, 3000);
     });
 }
 
