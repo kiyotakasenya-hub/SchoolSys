@@ -90,6 +90,13 @@ try {
             status VARCHAR(20) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+		CREATE TABLE IF NOT EXISTS system_reminders (
+            id SERIAL PRIMARY KEY,
+            message TEXT,
+            is_active INT DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -378,6 +385,24 @@ $curriculumData = [
 ];
 
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
+	// --- GLOBAL REMINDER ACTIONS ---
+    if (isset($_POST['set_global_reminder'])) {
+        // Deactivate old reminders
+        $pdo->exec("UPDATE system_reminders SET is_active = 0");
+        // Insert new active reminder
+        $stmt = $pdo->prepare("INSERT INTO system_reminders (message, is_active) VALUES (?, 1)");
+        $stmt->execute([$_POST['reminder_message']]);
+        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder successfully broadcasted to all users!</div>";
+        header("Location: ?page=home");
+        exit();
+    }
+    if (isset($_POST['clear_global_reminder'])) {
+        $pdo->exec("UPDATE system_reminders SET is_active = 0");
+        $_SESSION['sys_msg'] = "<div class='alert alert-warning text-dark'>Global daily reminder cleared.</div>";
+        header("Location: ?page=home");
+        exit();
+    }
+	
     if (isset($_GET['delete_user_id'])) {
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$_GET['delete_user_id']]);
         $msg = "<div class='alert alert-danger text-dark'>User account has been permanently removed.</div>";
@@ -832,6 +857,22 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 
             <div class="col-md-10 p-3 p-md-4">
                 <?= $msg ?>
+                
+                <?php
+                // Fetch the active global reminder
+                $remStmt = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+                $activeReminder = $remStmt->fetchColumn();
+                
+                if ($activeReminder): 
+                ?>
+                    <div class="alert shadow-sm mb-4 d-flex align-items-center" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
+                        <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
+                        <div class="text-dark">
+                            <strong class="text-dark">DAILY ANNOUNCEMENT:</strong> <?= htmlspecialchars($activeReminder) ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <?php
                 $page = $_GET['page'] ?? 'home';
                 
@@ -892,10 +933,29 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                         </div>
 
                         <div class="col-md-8">
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <h4 class="fw-semibold">Welcome back, <?= $currentUser['firstname'] ?>!</h4>
                                 <p class="text-white opacity-75 small">Use the dashboard sidebar matrix panel on the left to navigate your operations infrastructure tools.</p>
                             </div>
+                            
+                            <?php if ($_SESSION['role'] == 'admin'): 
+                                // Fetch current reminder to populate the text box
+                                $currentRem = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
+                            ?>
+                                <div class="glass-panel p-4 mb-4" style="border-left: 4px solid #d97736;">
+                                    <h5 class="mb-3 fw-semibold"><i class="bi bi-broadcast me-2"></i>Global Announcer / Daily Reminder</h5>
+                                    <p class="small text-white-50">Set a message here to display a global banner at the top of every user's screen.</p>
+                                    <form method="POST">
+                                        <textarea name="reminder_message" class="form-control mb-3" rows="3" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRem ?: '') ?></textarea>
+                                        <div class="d-flex gap-2">
+                                            <button name="set_global_reminder" class="btn btn-orange"><i class="bi bi-send-fill me-1"></i> Broadcast to All Users</button>
+                                            <?php if ($currentRem): ?>
+                                                <button name="clear_global_reminder" type="submit" formnovalidate class="btn btn-secondary"><i class="bi bi-eraser-fill me-1"></i> Clear Banner</button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php
