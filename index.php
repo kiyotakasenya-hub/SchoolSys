@@ -1981,193 +1981,88 @@ function saveCloudUrlToDatabase(title, secureUrl) {
     });
 }
 
-// --- 1. CORE AUDIO SYSTEM MATRIX ---
+// --- 1. CLOUDINARY AUDIO SYSTEM MATRIX ---
 const coreAudioNode = new Audio();
 let originalPlaylistQueue = [];
 let activePlaylistQueue = [];
 let currentQueueIndex = -1;
 let isShuffleActive = false;
 
-// Helper to kill music instantly
-function stopMusicEngine() {
-    if (coreAudioNode) {
-        coreAudioNode.pause();
-        coreAudioNode.src = '';
-    }
-    currentQueueIndex = -1;
+// Cloudinary Configuration
+const CLOUD_NAME = 'YOUR_CLOUD_NAME'; // REPLACE WITH YOUR CLOUD NAME
+const UPLOAD_PRESET = 'YOUR_UNSIGNED_PRESET'; // REPLACE WITH YOUR PRESET NAME
+
+function fetchCloudPlaylist() {
+    fetch('?fetch_music=1')
+        .then(res => res.json())
+        .then(data => {
+            originalPlaylistQueue = [];
+            data.forEach(track => {
+                originalPlaylistQueue.push({ 
+                    id: track.id,
+                    title: track.track_title, 
+                    url: track.file_path 
+                });
+            });
+            rebuildActiveQueueChain();
+            syncPlayerUI();
+        })
+        .catch(err => console.log("Playlist fetch error:", err));
 }
-	let lastSavedTime = 0;
 
-// 1. Function to send current timestamp to the server
-function saveCurrentTimestampToServer(trackId, currentTime) {
-    // Only save if the time has changed by more than 2 seconds to avoid overloading your Render server
-    if (Math.abs(currentTime - lastSavedTime) < 2) return; 
-    lastSavedTime = currentTime;
+function uploadDirectToCloudinary(inputNode) {
+    if (!inputNode.files || inputNode.files.length === 0) return;
+    const file = inputNode.files[0];
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+    
+    const titleEl = document.getElementById('trackDeckMetaTitle');
+    if (titleEl) titleEl.innerText = "Uploading... Please wait.";
 
+    fetch(uploadUrl, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.secure_url) {
+            saveCloudUrlToDatabase(fileName, data.secure_url);
+            inputNode.value = ""; 
+        } else {
+            alert("Upload failed. Check Cloudinary settings.");
+        }
+    })
+    .catch(() => {
+        if (titleEl) titleEl.innerText = "Upload failed.";
+    });
+}
+
+function saveCloudUrlToDatabase(title, secureUrl) {
     let formData = new FormData();
-    formData.append('save_progress', '1');
-    formData.append('track_id', trackId);
-    formData.append('position', currentTime);
+    formData.append('save_cloud_music', '1');
+    formData.append('track_title', title);
+    formData.append('track_url', secureUrl);
 
-    fetch('index.php', {
-        method: 'POST',
-        body: formData
+    fetch('index.php', { method: 'POST', body: formData })
+    .then(() => {
+        fetchCloudPlaylist();
     });
 }
 
-// 2. Attach listeners to your existing Audio element
-// Replace 'coreAudioNode' with whatever your HTML5 <audio> variable is named
-if (typeof coreAudioNode !== 'undefined') {
-
-    // Saves progress automatically every few seconds while the song plays
-    coreAudioNode.addEventListener('timeupdate', () => {
-        if (currentActiveTrack) { // Ensure a track is currently loaded
-            saveCurrentTimestampToServer(currentActiveTrack.id, coreAudioNode.currentTime);
-        }
-    });
-
-    // Saves progress immediately if they pause the music
-    coreAudioNode.addEventListener('pause', () => {
-        if (currentActiveTrack) {
-            saveCurrentTimestampToServer(currentActiveTrack.id, coreAudioNode.currentTime);
-        }
-    });
-}
-
-// 3. Function to sync and resume from the database when logging in on a new device
 function selectTrackDirectByIndex(idx) {
     if (idx < 0 || idx >= activePlaylistQueue.length) return;
     currentQueueIndex = idx;
-    
     const track = activePlaylistQueue[currentQueueIndex];
-    if (track) {
-        // Feed the Cloudinary URL directly into the HTML5 Audio Engine
-        coreAudioNode.src = track.url;
-        coreAudioNode.load();
-        coreAudioNode.play()
-            .catch(err => console.log("Playback interaction error:", err));
-    }
-    syncPlayerUI();
-}
-        });
-}
-
-// --- 2. INDEXEDDB PERSISTENCE LAYER ---
-function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
-        .then(res => res.json())
-        .then(data => {
-            originalPlaylistQueue = [];
-            data.forEach(track => {
-                originalPlaylistQueue.push({ 
-                    id: track.id,
-                    title: track.track_title, 
-                    url: 'uploads/music/' + track.file_path 
-                });
-            });
-            rebuildActiveQueueChain();
-            syncPlayerUI();
-        });
-}
-
-function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
-        .then(res => res.json())
-        .then(data => {
-            originalPlaylistQueue = [];
-            data.forEach(track => {
-                originalPlaylistQueue.push({ 
-                    id: track.id,
-                    title: track.track_title, 
-                    // Point the URL to where the PHP script saved the physical file
-                    url: 'uploads/music/' + track.file_path 
-                });
-            });
-            rebuildActiveQueueChain();
-            syncPlayerUI();
-        });
-}
-
-// 2. Upload the local file to the server
-function uploadLocalFile(inputNode) {
-    if (!inputNode.files || inputNode.files.length === 0) return;
-    
-    // Change UI to show it's working (MP3s can take a second to upload)
-    const originalLabel = document.getElementById('trackDeckMetaTitle').innerText;
-    document.getElementById('trackDeckMetaTitle').innerText = "Uploading track to server...";
-    
-    let formData = new FormData();
-    formData.append('upload_local_music', '1');
-    formData.append('audio_file', inputNode.files[0]); 
-    
-    fetch('index.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => {
-        if (!res.ok) throw new Error("Server rejected the file.");
-        return res.text();
-    })
-    .then(response => {
-        // Refresh the playlist so the newly uploaded file appears
-        fetchCloudPlaylist(); 
-        inputNode.value = ""; // Clear the input box
-    })
-    .catch(err => {
-        console.error(err);
-        document.getElementById('trackDeckMetaTitle').innerText = "Upload failed. File might be too large.";
-        setTimeout(() => document.getElementById('trackDeckMetaTitle').innerText = originalLabel, 3000);
-    });
-}
-
-function purgeTrackFromVault(targetId) {
-    fetch('?delete_music=' + targetId)
-        .then(res => {
-            fetchCloudPlaylist(); // Refresh the list
-            stopMusicEngine(); // Halt playback if deleting current track
-        });
-
-}
-// --- 3. AUDIO ENGINE LOGIC ---
-function loadFilesIntoPlaylist(inputNode) {
-    if(!inputNode.files || inputNode.files.length === 0) return;
-    for(let i=0; i<inputNode.files.length; i++) {
-        let file = inputNode.files[i];
-        let url = URL.createObjectURL(file);
-        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
-        originalPlaylistQueue.push({ title: cleanTitle, url: url, filename: file.name });
-        persistTrackToDB(file); 
-    }
-    rebuildActiveQueueChain();
-    syncPlayerUI();
-    inputNode.value = ""; 
-}
-
-function purgeTrackFromVault(targetUrl) {
-    const trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
-    if(trackObj) { purgeTrackFromDB(trackObj.filename); } 
-    
-    let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
-    originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
-    
-    if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
-        coreAudioNode.pause();
-        coreAudioNode.src = '';
-        currentQueueIndex = -1;
-    }
-
-    rebuildActiveQueueChain();
-    if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
-        currentQueueIndex--;
-    }
+    coreAudioNode.src = track.url;
+    coreAudioNode.load();
+    coreAudioNode.play().catch(e => console.log(e));
     syncPlayerUI();
 }
 
 function rebuildActiveQueueChain() {
-    if (!isShuffleActive) {
-        activePlaylistQueue = [...originalPlaylistQueue];
-    } else {
-        activePlaylistQueue = [...originalPlaylistQueue];
+    activePlaylistQueue = [...originalPlaylistQueue];
+    if (isShuffleActive) {
         for (let i = activePlaylistQueue.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [activePlaylistQueue[i], activePlaylistQueue[j]] = [activePlaylistQueue[j], activePlaylistQueue[i]];
@@ -2175,63 +2070,27 @@ function rebuildActiveQueueChain() {
     }
 }
 
-// Global UI synchronization engine. Connects the background JS Audio element back to the active page DOM.
 function syncPlayerUI() {
     const container = document.getElementById('deckPlaylistTracksContainer');
     const titleEl = document.getElementById('trackDeckMetaTitle');
-    const playBtn = document.getElementById('btnMasterDeckPlay');
-    const shuffleBtn = document.getElementById('btnDeckShuffle');
-
     if (titleEl) {
-        if (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) {
-            titleEl.innerText = activePlaylistQueue[currentQueueIndex].title;
-        } else {
-            titleEl.innerText = "No Cloud Track Playing";
-        }
+        titleEl.innerText = (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) 
+            ? activePlaylistQueue[currentQueueIndex].title 
+            : "No Cloud Track Playing";
     }
-
-    if (playBtn) {
-        if (currentQueueIndex !== -1 && !coreAudioNode.paused) {
-            playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-        } else {
-            playBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
-        }
-    }
-
-    if (shuffleBtn) {
-        if (isShuffleActive) {
-            shuffleBtn.classList.add('active');
-        } else {
-            shuffleBtn.classList.remove('active');
-        }
-    }
-
     if (container) {
         container.innerHTML = '';
-        if (originalPlaylistQueue.length === 0) {
-            container.innerHTML = '<div class="text-center py-3 text-white-50 small">No cloud music tracks found.</div>';
-        } else {
-            originalPlaylistQueue.forEach((track) => {
-                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-                const currentClass = isCurrent ? 'active fw-bold' : '';
-                
-                const node = document.createElement('div');
-                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
-                
-                // Makes clicking a row play the cloud media stream directly
-                node.onclick = () => selectTrackDirectByIndex(activeIdx);
-                
-                node.innerHTML = `
-                    <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 85%;">
-                        <i class="bi ${isCurrent && !coreAudioNode.paused ? 'bi-waveform text-danger' : 'bi-music-note-beamed text-white-50'}"></i>
-                        <span class="text-white text-truncate small">${track.title}</span>
-                    </div>
-                `;
-                container.appendChild(node);
-            });
-        }
+        originalPlaylistQueue.forEach((track, originalIdx) => {
+            let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+            const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+            const node = document.createElement('div');
+            node.className = `track-item p-2 ${isCurrent ? 'bg-primary' : 'bg-dark'}`;
+            node.onclick = () => selectTrackDirectByIndex(activeIdx);
+            node.innerText = track.title;
+            container.appendChild(node);
+        });
     }
+}
 }
 
 
@@ -2539,8 +2398,9 @@ function bindSpaFormSubmissions() {
 
 // System Boot Initialization Sequence
 // System Boot Initialization Sequence
+// System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
-    fetchCloudPlaylist();
+    fetchCloudPlaylist(); 
     bindSpaFormSubmissions();
 });
 document.addEventListener('DOMContentLoaded', () => {
