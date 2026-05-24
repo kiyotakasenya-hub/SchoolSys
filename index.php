@@ -84,16 +84,41 @@ try {
         );
 
 		CREATE TABLE IF NOT EXISTS tasks (
-            id SERIAL PRIMARY KEY,
-            student_id INT,
-            task_content TEXT,
-            status VARCHAR(20) DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+    id SERIAL PRIMARY KEY,
+    student_id INT,
+    task_content TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS music_sync (
+    id SERIAL PRIMARY KEY,
+    song_url TEXT,
+    current_time FLOAT DEFAULT 0,
+    is_playing BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
     try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
+
+	// Create default music sync row
+try {
+
+    $checkMusic = $pdo->query("SELECT id FROM music_sync WHERE id = 1");
+
+    if (!$checkMusic->fetch()) {
+
+        $pdo->exec("
+            INSERT INTO music_sync
+            (id, song_url, current_time, is_playing)
+            VALUES
+            (1, '', 0, FALSE)
+        ");
+    }
+
+} catch (PDOException $e) { }
 
     // Seed Admin if not exists
     $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); $stmt->execute();
@@ -125,6 +150,43 @@ if (isset($_GET['del_task'])) {
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
+}
+
+// ===============================
+// MUSIC SYNC API
+// ===============================
+
+if (isset($_POST['sync_music'])) {
+
+    $song = $_POST['song'] ?? '';
+    $time = $_POST['time'] ?? 0;
+    $playing = ($_POST['playing'] ?? 0) ? 'true' : 'false';
+
+    $stmt = $pdo->prepare("
+        UPDATE music_sync
+        SET song_url = ?,
+            current_time = ?,
+            is_playing = $playing,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = 1
+    ");
+
+    $stmt->execute([$song, $time]);
+
+    exit('synced');
+}
+
+if (isset($_GET['get_music'])) {
+
+    $stmt = $pdo->query("SELECT * FROM music_sync WHERE id = 1");
+
+    $music = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    header('Content-Type: application/json');
+
+    echo json_encode($music);
+
+    exit();
 }
 
 // Fetch current user data if logged in
@@ -826,6 +888,26 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                         <a href="?page=my_tasks"><i class="bi bi-list-check"></i> My Tasks & Music</a>
                         <a href="?page=my_permit"><i class="bi bi-ticket-perforated"></i> Exam Permit</a>
                     <?php endif; ?>
+						<h4 class="mb-3">Shared Music Room</h4>
+
+    <input
+        type="text"
+        id="songInput"
+        class="form-control mb-3"
+        placeholder="Paste MP3 URL here"
+    >
+
+    <button onclick="loadSong()" class="btn btn-orange mb-3">
+        Play Shared Song
+    </button>
+
+    <audio
+        id="sharedPlayer"
+        controls
+        style="width:100%;"
+    ></audio>
+
+</div>
                     <a href="?action=logout" class="logout-link"><i class="bi bi-power"></i> Logout</a>
                 </div>
             </div>
@@ -2244,6 +2326,108 @@ document.addEventListener('DOMContentLoaded', () => {
     initMusicDatabase(restoreTracksFromDB);
     bindSpaFormSubmissions();
 });
+</script>
+			<script>
+
+const player = document.getElementById('sharedPlayer');
+const songInput = document.getElementById('songInput');
+
+function loadSong() {
+
+    if (!player || !songInput) return;
+
+    const url = songInput.value;
+
+    if (!url) {
+        alert('Please paste an MP3 URL');
+        return;
+    }
+
+    player.src = url;
+
+    player.play();
+
+    syncMusic();
+}
+
+async function syncMusic() {
+
+    if (!player) return;
+
+    const formData = new FormData();
+
+    formData.append('sync_music', 1);
+    formData.append('song', player.src);
+    formData.append('time', player.currentTime);
+    formData.append('playing', !player.paused ? 1 : 0);
+
+    try {
+
+        await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+
+    } catch(err) {
+
+        console.log(err);
+    }
+}
+
+if (player) {
+
+    player.addEventListener('play', syncMusic);
+    player.addEventListener('pause', syncMusic);
+
+    setInterval(syncMusic, 1000);
+}
+
+async function fetchMusicState() {
+
+    if (!player) return;
+
+    try {
+
+        const response = await fetch('?get_music=1');
+
+        const data = await response.json();
+
+        if (!data) return;
+
+        if (data.song_url && player.src !== data.song_url) {
+
+            player.src = data.song_url;
+        }
+
+        if (
+            data.current_time &&
+            Math.abs(player.currentTime - data.current_time) > 2
+        ) {
+
+            player.currentTime = data.current_time;
+        }
+
+        if (data.is_playing === true || data.is_playing == 1) {
+
+            if (player.paused) {
+                player.play();
+            }
+
+        } else {
+
+            if (!player.paused) {
+                player.pause();
+            }
+        }
+
+    } catch(err) {
+
+        console.log(err);
+    }
+}
+
+setInterval(fetchMusicState, 1000);
+
 </script>
 </body>
 </html>
