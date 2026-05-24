@@ -94,14 +94,10 @@ try {
 		CREATE TABLE IF NOT EXISTS system_reminders (
             id SERIAL PRIMARY KEY,
             message TEXT,
-            music_url VARCHAR(255),
             is_active INT DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ");
-
-    // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
-    try { $pdo->exec("ALTER TABLE system_reminders ADD COLUMN music_url VARCHAR(255)"); } catch (PDOException $e) { }
 
     // Seed Admin if not exists
     $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); $stmt->execute();
@@ -325,7 +321,7 @@ $curriculumData = [
     ],
     "BS Business Administration" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
-        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", "u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
+        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
     ],
     "BS Entrepreneurship" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
@@ -342,7 +338,7 @@ $curriculumData = [
         ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures and Algorithms", "u"=>3], ["c"=>"DM", "t"=>"Discrete Mathematics", "u"=>3], ["c"=>"CCS", "t"=>"Calculus for Computer Science", "u"=>3], ["c"=>"LA", "t"=>"Linear Algebra", "u"=>3], ["c"=>"PSCS", "t"=>"Probability and Statistics for CS", "u"=>3], ["c"=>"ARCO", "t"=>"Architecture and Organization", "u"=>3], ["c"=>"OS", "t"=>"Operating Systems", "u"=>3], ["c"=>"ATFL", "t"=>"Automata Theory and Formal Languages", "u"=>3], ["c"=>"SE1", "t"=>"Software Engineering 1", "u"=>3], ["c"=>"SE2", "t"=>"Software Engineering 2", "u"=>3], ["c"=>"DAA", "t"=>"Design and Analysis of Algorithms", "u"=>3], ["c"=>"PL", "t"=>"Programming Languages", "u"=>3], ["c"=>"NC", "t"=>"Networks and Communications", "u"=>3], ["c"=>"CST1", "t"=>"CS Thesis 1", "u"=>3], ["c"=>"CST2", "t"=>"CS Thesis 2", "u"=>3]
     ],
     "BS Information Technology" => [
-        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", "t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
+        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
     ],
     "BS Engineering" => [
         ["c"=>"CA", "t"=>"College Algebra", "u"=>3], ["c"=>"AG", "t"=>"Analytic Geometry", "u"=>3], ["c"=>"SM", "t"=>"Solid Mensuration", "u"=>3], ["c"=>"DC", "t"=>"Differential Calculus", "u"=>3], ["c"=>"IC", "t"=>"Integral Calculus", "u"=>3], ["c"=>"DE", "t"=>"Differential Equations", "u"=>3], ["c"=>"EDA", "t"=>"Engineering Data Analysis", "u"=>3], ["c"=>"GC", "t"=>"General Chemistry", "u"=>3], ["c"=>"UP1", "t"=>"University Physics 1", "u"=>3], ["c"=>"UP2", "t"=>"University Physics 2", "u"=>3], ["c"=>"ED", "t"=>"Engineering Drawings / CAD", "u"=>3], ["c"=>"CF", "t"=>"Computer Fundamentals", "u"=>3], ["c"=>"SRB", "t"=>"Statics of Rigid Bodies", "u"=>3], ["c"=>"DRB", "t"=>"Dynamics of Rigid Bodies", "u"=>3], ["c"=>"MDB", "t"=>"Mechanics of Deformable Bodies", "u"=>3], ["c"=>"EE", "t"=>"Engineering Economics", "u"=>3], ["c"=>"EMGT", "t"=>"Engineering Management", "u"=>3], ["c"=>"TECH", "t"=>"Technopreneurship", "u"=>3],
@@ -376,7 +372,7 @@ $curriculumData = [
         ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3], ["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
         ["c"=>"SOE", "t"=>"Structure of English", "u"=>3], ["c"=>"MAF", "t"=>"Mythology and Folklore", "u"=>3], ["c"=>"SPL", "t"=>"Survey of Philippine Literature", "u"=>3], ["c"=>"LC", "t"=>"Literary Criticism", "u"=>3], ["c"=>"LLMD", "t"=>"Language Learning Materials Development", "u"=>3],
         ["c"=>"MG", "t"=>"Modern Geometry", "u"=>3], ["c"=>"LAL", "t"=>"Linear Algebra", "u"=>3], ["c"=>"AC", "t"=>"Advanced Calculus", "u"=>3], ["c"=>"TRG", "t"=>"Trigonometry", "u"=>3], ["c"=>"AA", "t"=>"Abstract Algebra", "u"=>3], ["c"=>"NT", "t"=>"Number Theory", "u"=>3],
-        ["c"=>"ES", "t"=>"Earth Science", "u"=>3], ["c"=>"MET", "t"=>"Meteorology", "u"=>3], ["c"=>"ORGC", "t"=>"Organic Chemistry", "u"=>3], ["c"=>"INOC", "t"=>"Inorganic Chemistry", "u"=>3], ["c"=>"GAE", "t"=>"Genetics and Evolution", "u"=>3], ["c"=>"MEC", "t"=>"Mechanics", "u"=>3], ["c"=>"WAO", "t"=>"Waves and Optics", "u"=>3],
+        ["c"=>"ES", "t"=>"Earth Science", "u"=>3], ["c"=>"MET", "t"=>"Meteorology", "u"=>3], ["c:"=>"ORGC", "t"=>"Organic Chemistry", "u"=>3], ["c"=>"INOC", "t"=>"Inorganic Chemistry", "u"=>3], ["c"=>"GAE", "t"=>"Genetics and Evolution", "u"=>3], ["c"=>"MEC", "t"=>"Mechanics", "u"=>3], ["c"=>"WAO", "t"=>"Waves and Optics", "u"=>3],
         ["c"=>"AS", "t"=>"Asian Studies", "u"=>3], ["c"=>"WH", "t"=>"World History", "u"=>3], ["c"=>"GEO", "t"=>"Geography", "u"=>3], ["c"=>"MME", "t"=>"Micro/Macroeconomics", "u"=>3], ["c"=>"SCA", "t"=>"Socio-Cultural Anthropology", "u"=>3]
     ],
     "Bachelor of Early Childhood Education" => [
@@ -387,32 +383,12 @@ $curriculumData = [
 
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 	if (isset($_POST['set_global_reminder'])) {
-        // Deactivate old active announcements
+        // Deactivate old reminders
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
-        
-        // Use the existing audio path by default (in case they didn't upload a new file)
-        $music_url = $_POST['existing_music_url'] ?? '';
-
-        // Process new local file upload if provided
-        if (!empty($_FILES['music_file']['name'])) {
-            $audio_name = time() . "_" . basename($_FILES['music_file']['name']);
-            
-            // Ensure target uploads folder exists
-            if (!is_dir('uploads')) { 
-                mkdir('uploads', 0777, true); 
-            }
-            
-            // Save file to the uploads directory
-            if (move_uploaded_file($_FILES['music_file']['tmp_name'], "uploads/" . $audio_name)) {
-                $music_url = "uploads/" . $audio_name;
-            }
-        }
-
-        // Insert new broadcast reminder
-        $stmt = $pdo->prepare("INSERT INTO system_reminders (message, music_url, is_active) VALUES (?, ?, 1)");
-        $stmt->execute([$_POST['reminder_message'], $music_url]);
-        
-        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder and audio file uploaded successfully!</div>";
+        // Insert new active reminder
+        $stmt = $pdo->prepare("INSERT INTO system_reminders (message, is_active) VALUES (?, 1)");
+        $stmt->execute([$_POST['reminder_message']]);
+        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder successfully broadcasted to all users!</div>";
         header("Location: ?page=home");
         exit();
     }
@@ -649,7 +625,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         .modal-footer .btn-secondary { background-color: #5a6268 !important; border: none !important; color: #ffffff !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
         .modal-footer .btn-orange { background-color: #d97736 !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
 
-        /* MUSIC SYSTEM DECK STYLING */
+        /* MUSIC SYSTEM DECK STYLING (Student Workspace) */
         .deck-wrapper {
             background: #1e1e1e !important;
             border-radius: 20px;
@@ -881,22 +857,16 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                 
                 <?php
                 // Fetch the active global reminder
-               $remStmt = $pdo->query("SELECT message, music_url FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
-                $activeReminder = $remStmt->fetch(PDO::FETCH_ASSOC);
+                $remStmt = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+                $activeReminder = $remStmt->fetchColumn();
                 
-                if ($activeReminder && !empty($activeReminder['message'])): 
+                if ($activeReminder): 
                 ?>
-                    <div class="alert shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
-                            <div class="text-dark">
-                                <strong class="text-dark">DAILY ANNOUNCEMENT:</strong> <?= htmlspecialchars($activeReminder['message']) ?>
-                            </div>
+                    <div class="alert shadow-sm mb-4 d-flex align-items-center" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
+                        <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
+                        <div class="text-dark">
+                            <strong class="text-dark">DAILY ANNOUNCEMENT:</strong> <?= htmlspecialchars($activeReminder) ?>
                         </div>
-                        
-                        <?php if (!empty($activeReminder['music_url'])): ?>
-                            <audio src="<?= htmlspecialchars($activeReminder['music_url']) ?>" autoplay loop controls class="shadow-sm" style="height: 35px; border-radius: 20px;"></audio>
-                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -967,31 +937,16 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             
                             <?php if ($_SESSION['role'] == 'admin'): 
                                 // Fetch current reminder to populate the text box
-                               $currentRemData = $pdo->query("SELECT message, music_url FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                               $currentRem = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
                             ?>
                                 <div class="glass-panel p-4 mb-4" style="border-left: 4px solid #d97736;">
                                     <h5 class="mb-3 fw-semibold"><i class="bi bi-broadcast me-2"></i>Global Announcer / Daily Reminder</h5>
-                                    <p class="small text-white-50">Set a daily announcement and upload an accompanying audio track from your computer.</p>
-                                    
-                                    <form method="POST" enctype="multipart/form-data">
-                                        <textarea name="reminder_message" class="form-control mb-3" rows="2" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRemData['message'] ?? '') ?></textarea>
-                                        
-                                        <input type="hidden" name="existing_music_url" value="<?= htmlspecialchars($currentRemData['music_url'] ?? '') ?>">
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label small text-white-50 fw-bold">Upload Music/Audio File (MP3, WAV, M4A):</label>
-                                            <input type="file" name="music_file" class="form-control text-white" accept="audio/*">
-                                            
-                                            <?php if (!empty($currentRemData['music_url'])): ?>
-                                                <div class="small text-warning mt-2">
-                                                    <i class="bi bi-music-note-beamed me-1"></i> Currently active track: <strong><?= htmlspecialchars(basename($currentRemData['music_url'])) ?></strong>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        
+                                    <p class="small text-white-50">Set a message here to display a global banner at the top of every user's screen.</p>
+                                    <form method="POST">
+                                        <textarea name="reminder_message" class="form-control mb-3" rows="3" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRem ?: '') ?></textarea>
                                         <div class="d-flex gap-2">
                                             <button name="set_global_reminder" class="btn btn-orange"><i class="bi bi-send-fill me-1"></i> Broadcast to All Users</button>
-                                            <?php if (!empty($currentRemData)): ?>
+                                            <?php if ($currentRem): ?>
                                                 <button name="clear_global_reminder" type="submit" formnovalidate class="btn btn-secondary"><i class="bi bi-eraser-fill me-1"></i> Clear Banner</button>
                                             <?php endif; ?>
                                         </div>
@@ -1052,7 +1007,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             </div>
                         </div>
 
-                        <!-- EMBEDDED MUSIC PLAYER -->
                         <div class="col-lg-6 mb-4">
                             <div class="glass-panel p-4 h-100 d-flex flex-column" id="workspaceMusicPlayer">
                                 <h5 class="mb-4 fw-semibold"><i class="bi bi-boombox me-2"></i>Audio Deck</h5>
