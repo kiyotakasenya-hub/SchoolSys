@@ -2181,15 +2181,15 @@ function syncPlayerUI() {
     const titleEl = document.getElementById('trackDeckMetaTitle');
     const playBtn = document.getElementById('btnMasterDeckPlay');
     const shuffleBtn = document.getElementById('btnDeckShuffle');
-    
+
     if (titleEl) {
         if (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) {
             titleEl.innerText = activePlaylistQueue[currentQueueIndex].title;
         } else {
-            titleEl.innerText = "No Local File Loaded";
+            titleEl.innerText = "No Cloud Track Playing";
         }
     }
-    
+
     if (playBtn) {
         if (currentQueueIndex !== -1 && !coreAudioNode.paused) {
             playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
@@ -2206,33 +2206,34 @@ function syncPlayerUI() {
         }
     }
 
-    if(container) {
+    if (container) {
         container.innerHTML = '';
-        if(originalPlaylistQueue.length === 0) {
-            container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
+        if (originalPlaylistQueue.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-white-50 small">No cloud music tracks found.</div>';
         } else {
             originalPlaylistQueue.forEach((track) => {
-    let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-    const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-    const currentClass = isCurrent ? 'active fw-bold' : '';
-    
-    const node = document.createElement('div');
-    node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
-    
-    // Updates the click listener to use the updated selectTrackDirectByIndex function
-    node.onclick = () => selectTrackDirectByIndex(activeIdx);
-    
-    node.innerHTML = `
-        <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 85%;">
-            <i class="bi ${isCurrent && !coreAudioNode.paused ? 'bi-waveform text-danger' : 'bi-music-note-beamed text-white-50'}"></i>
-            <span class="text-white text-truncate small">${track.title}</span>
-        </div>
-    `;
-    container.appendChild(node);
-});
+                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+                const currentClass = isCurrent ? 'active fw-bold' : '';
+                
+                const node = document.createElement('div');
+                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+                
+                // Makes clicking a row play the cloud media stream directly
+                node.onclick = () => selectTrackDirectByIndex(activeIdx);
+                
+                node.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 85%;">
+                        <i class="bi ${isCurrent && !coreAudioNode.paused ? 'bi-waveform text-danger' : 'bi-music-note-beamed text-white-50'}"></i>
+                        <span class="text-white text-truncate small">${track.title}</span>
+                    </div>
+                `;
+                container.appendChild(node);
+            });
         }
     }
 }
+
 
 function fireTrackPlaybackByIndex(targetIdx) {
     if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
