@@ -1877,36 +1877,43 @@ function fetchCloudPlaylist() {
 
 function uploadDirectToCloudinary(inputNode) {
     if (!inputNode.files || inputNode.files.length === 0) return;
-
-    const cloudName = 'YOUR_CLOUD_NAME';         // Replace with your Cloud Name
-    const uploadPreset = 'YOUR_UNSIGNED_PRESET'; // Replace with your Unsigned Preset Name
-
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    
     const file = inputNode.files[0];
     const fileName = file.name.replace(/\.[^/.]+$/, ""); 
-
+    
+    // Hard-coding these for testing to rule out variable scope issues
+    const cloudName = 'ujgupy7e'; 
+    const uploadPreset = 'dzuqgi8aa'; 
+    
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
+    
+    // DEBUG: Print what we are sending to the console
+    console.log("Uploading file:", file.name);
+    console.log("Preset used:", uploadPreset);
+    console.log("Cloud Name:", cloudName);
 
-    const titleEl = document.getElementById('trackDeckMetaTitle');
-    if (titleEl) titleEl.innerText = "Syncing to Cloud CDN... Please wait.";
-
-    fetch(uploadUrl, { method: 'POST', body: formData })
+    fetch(uploadUrl, {
+        method: 'POST',
+        body: formData
+    })
     .then(res => res.json())
     .then(data => {
+        console.log("Cloudinary Response:", data); // Check this in console!
         if (data.secure_url) {
             saveCloudUrlToDatabase(fileName, data.secure_url);
             inputNode.value = ""; 
         } else {
-            throw new Error();
+            alert("Upload failed. Error: " + (data.error?.message || "Unknown error"));
         }
     })
-    .catch(() => {
-        if (titleEl) titleEl.innerText = "Upload failed.";
+    .catch(err => {
+        console.error("Fetch Error:", err);
     });
 }
-
 function saveCloudUrlToDatabase(title, secureUrl) {
     let formData = new FormData();
     formData.append('save_cloud_music', '1');
