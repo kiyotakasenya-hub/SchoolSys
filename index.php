@@ -144,6 +144,13 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         $files = $_FILES['audio_upload'];
         for ($i = 0; $i < count($files['name']); $i++) {
             if (!empty($files['name'][$i])) {
+                
+                // Check if PHP threw an internal upload error (like exceeding file size)
+                if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                    $_SESSION['sys_msg'] = "<div class='alert alert-danger text-dark'>Upload Failed! PHP Error Code: " . $files['error'][$i] . " (Check your php.ini limits)</div>";
+                    continue;
+                }
+
                 $file_name = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", basename($files['name'][$i]));
                 $target_file = $upload_dir . $file_name;
                 $clean_title = pathinfo($files['name'][$i], PATHINFO_FILENAME);
@@ -151,6 +158,9 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
                 if (move_uploaded_file($files['tmp_name'][$i], $target_file)) {
                     $stmt = $pdo->prepare("INSERT INTO user_audio (student_id, track_title, file_name) VALUES (?, ?, ?)");
                     $stmt->execute([$_SESSION['user_id'], $clean_title, $file_name]);
+                    $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Audio uploaded successfully!</div>";
+                } else {
+                    $_SESSION['sys_msg'] = "<div class='alert alert-danger text-dark'>Failed to move the file to the uploads folder. Check folder permissions!</div>";
                 }
             }
         }
@@ -167,6 +177,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
             $filepath = 'uploads/audio/' . $audio['file_name'];
             if (file_exists($filepath)) { unlink($filepath); }
             $pdo->prepare("DELETE FROM user_audio WHERE id = ?")->execute([$_GET['del_audio']]);
+            $_SESSION['sys_msg'] = "<div class='alert alert-danger text-dark'>Audio track deleted.</div>";
         }
         $redirect_page = $_GET['page'] ?? 'my_tasks';
         header("Location: ?page=" . $redirect_page); exit();
