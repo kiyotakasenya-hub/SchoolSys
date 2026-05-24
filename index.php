@@ -2035,24 +2035,20 @@ if (typeof coreAudioNode !== 'undefined') {
 }
 
 // 3. Function to sync and resume from the database when logging in on a new device
-function restorePlaybackStateFromCloud() {
-    fetch('?get_progress=1')
-        .then(res => res.json())
-        .then(state => {
-            if (state && state.current_track_id) {
-                // Find the song in your playlist queue matching the saved ID
-                const trackToPlay = originalPlaylistQueue.find(t => t.id == state.current_track_id);
-                
-                if (trackToPlay) {
-                    // Load the track into your player
-                    loadTrackIntoEngine(trackToPlay); 
-                    
-                    // Set the player's timestamp back to the exact saved millisecond
-                    coreAudioNode.currentTime = state.position_seconds;
-                    
-                    console.log(`Resumed track at ${state.position_seconds} seconds`);
-                }
-            }
+function selectTrackDirectByIndex(idx) {
+    if (idx < 0 || idx >= activePlaylistQueue.length) return;
+    currentQueueIndex = idx;
+    
+    const track = activePlaylistQueue[currentQueueIndex];
+    if (track) {
+        // Feed the Cloudinary URL directly into the HTML5 Audio Engine
+        coreAudioNode.src = track.url;
+        coreAudioNode.load();
+        coreAudioNode.play()
+            .catch(err => console.log("Playback interaction error:", err));
+    }
+    syncPlayerUI();
+}
         });
 }
 
@@ -2216,23 +2212,24 @@ function syncPlayerUI() {
             container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
         } else {
             originalPlaylistQueue.forEach((track) => {
-                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-                const currentClass = isCurrent ? 'active fw-bold' : '';
-
-                const node = document.createElement('div');
-                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
-                node.onclick = (e) => {
-                    if(e.target.closest('.btn-purge-track')) return;
-                    fireTrackPlaybackByIndex(activeIdx);
-                };
-
-                node.innerHTML = `
-                    <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
-                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.id}')"><i class="bi bi-trash"></i></button>
-                `;
-                container.appendChild(node);
-            });
+    let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+    const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+    const currentClass = isCurrent ? 'active fw-bold' : '';
+    
+    const node = document.createElement('div');
+    node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+    
+    // Updates the click listener to use the updated selectTrackDirectByIndex function
+    node.onclick = () => selectTrackDirectByIndex(activeIdx);
+    
+    node.innerHTML = `
+        <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 85%;">
+            <i class="bi ${isCurrent && !coreAudioNode.paused ? 'bi-waveform text-danger' : 'bi-music-note-beamed text-white-50'}"></i>
+            <span class="text-white text-truncate small">${track.title}</span>
+        </div>
+    `;
+    container.appendChild(node);
+});
         }
     }
 }
@@ -2247,20 +2244,19 @@ function fireTrackPlaybackByIndex(targetIdx) {
 }
 
 function toggleDeckPlayback() {
-    if(activePlaylistQueue.length === 0) return;
-    if(currentQueueIndex === -1) {
-        fireTrackPlaybackByIndex(0);
+    if (currentQueueIndex === -1 && activePlaylistQueue.length > 0) {
+        selectTrackDirectByIndex(0);
         return;
     }
-
-    if(coreAudioNode.paused) {
-        coreAudioNode.play();
-    } else {
-        coreAudioNode.pause();
+    if (currentQueueIndex !== -1) {
+        if (coreAudioNode.paused) {
+            coreAudioNode.play().catch(e => {});
+        } else {
+            coreAudioNode.pause();
+        }
+        syncPlayerUI();
     }
-    syncPlayerUI();
-}
-
+	
 function nextDeckTrack() {
     if(activePlaylistQueue.length === 0) return;
     let idx = currentQueueIndex + 1;
