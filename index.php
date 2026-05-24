@@ -89,21 +89,7 @@ try {
             task_content TEXT,
             status VARCHAR(20) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ); 
-		
-CREATE TABLE IF NOT EXISTS user_music (
-    id SERIAL PRIMARY KEY,
-    student_id INT,
-    track_title VARCHAR(255),
-    file_path TEXT,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE IF NOT EXISTS user_playback_state (
-        student_id INT PRIMARY KEY,
-        current_track_id INT,
-        position_seconds FLOAT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+        );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -139,92 +125,6 @@ if (isset($_GET['del_task'])) {
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
-}
-// --- CLOUD MUSIC LOGIC ---
-if (isset($_POST['save_cloud_music'])) {
-    $title = trim($_POST['track_title']);
-    $url = trim($_POST['track_url']);
-
-    $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
-    $stmt->execute([$_SESSION['user_id'], $title, $url]);
-
-    echo "success";
-    exit();
-}
-
-if (isset($_GET['fetch_music'])) {
-    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
-    $stmt->execute([$_SESSION['user_id']]);
-    header('Content-Type: application/json');
-    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-    exit();
-}
-
-// --- FETCH SYNCED MUSIC ---
-if (isset($_GET['fetch_music'])) {
-    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
-    $stmt->execute([$_SESSION['user_id']]);
-    header('Content-Type: application/json');
-    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-    exit();
-}
-
-// --- MUSIC API LOGIC ---
-if (isset($_POST['upload_music']) && isset($_FILES['audio_file'])) {
-    $title = pathinfo($_FILES['audio_file']['name'], PATHINFO_FILENAME);
-    $filename = time() . "_" . preg_replace('/[^a-zA-Z0-9_.-]/', '', $_FILES['audio_file']['name']);
-    
-    if (!is_dir('uploads/music')) { mkdir('uploads/music', 0777, true); }
-    move_uploaded_file($_FILES['audio_file']['tmp_name'], "uploads/music/" . $filename);
-    
-    $stmt = $pdo->prepare("INSERT INTO user_music (student_id, track_title, file_path) VALUES (?, ?, ?)");
-    $stmt->execute([$_SESSION['user_id'], $title, $filename]);
-    echo "success";
-    exit();
-}
-
-// --- SAVE PLAYBACK PROGRESS ---
-if (isset($_POST['save_progress'])) {
-    $track_id = intval($_POST['track_id']);
-    $position = floatval($_POST['position']);
-    $student_id = $_SESSION['user_id'];
-
-    $stmt = $pdo->prepare("
-        INSERT INTO user_playback_state (student_id, current_track_id, position_seconds, updated_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT (student_id) 
-        DO UPDATE SET current_track_id = EXCLUDED.current_track_id, 
-                      position_seconds = EXCLUDED.position_seconds, 
-                      updated_at = CURRENT_TIMESTAMP
-    ");
-    $stmt->execute([$student_id, $track_id, $position]);
-    echo "saved";
-    exit();
-}
-
-// --- FETCH PLAYBACK PROGRESS ---
-if (isset($_GET['get_progress'])) {
-    $stmt = $pdo->prepare("SELECT current_track_id, position_seconds FROM user_playback_state WHERE student_id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    header('Content-Type: application/json');
-    echo json_encode($stmt->fetch(PDO::FETCH_ASSOC) ?: []);
-    exit();
-}
-
-if (isset($_GET['fetch_music'])) {
-    $stmt = $pdo->prepare("SELECT * FROM user_music WHERE student_id = ? ORDER BY uploaded_at ASC");
-    $stmt->execute([$_SESSION['user_id']]);
-    header('Content-Type: application/json');
-    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-    exit();
-}
-
-if (isset($_GET['delete_music'])) {
-    // Optional: Add logic here to unlink() the file from the uploads folder to save server space
-    $stmt = $pdo->prepare("DELETE FROM user_music WHERE id = ? AND student_id = ?");
-    $stmt->execute([$_GET['delete_music'], $_SESSION['user_id']]);
-    echo "deleted";
-    exit();
 }
 
 // Fetch current user data if logged in
@@ -1095,10 +995,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
 
                                 <div class="flex-grow-1 d-flex flex-column">
-                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-cloud-arrow-up me-1"></i>Upload to Cloud Player</h6>
-<div class="mb-3">
-    <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" onchange="uploadDirectToCloudinary(this)">
-</div>
+                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
+                                    <div class="mb-3">
+                                        <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
+                                    </div>
 
                                     <div class="playlist-vault-box flex-grow-1 overflow-auto" style="min-height: 150px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
                                         <div id="deckPlaylistTracksContainer" class="d-flex flex-column gap-2">
@@ -1394,7 +1294,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             <button name="create_staff" class="btn btn-orange w-100">Register Staff</button>
                         </form>
                     </div>
-				
+
                     <script>
                         function toggleStaffCourse() {
                             var role = document.getElementById('staffRoleSelect').value;
@@ -1857,219 +1757,120 @@ window.fillSubjectDetails = function() {
     }
 };
 
-// --- CLOUDINARY CDN CONNECTOR ---
-function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
-        .then(res => res.json())
-        .then(data => {
-            originalPlaylistQueue = [];
-            data.forEach(track => {
-                originalPlaylistQueue.push({ 
-                    id: track.id,
-                    title: track.track_title, 
-                    url: track.file_path 
-                });
-            });
-            rebuildActiveQueueChain();
-            syncPlayerUI();
-        });
-}
 
-function uploadDirectToCloudinary(inputNode) {
-    if (!inputNode.files || inputNode.files.length === 0) return;
-    
-    const file = inputNode.files[0];
-    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
-    
-    // Hard-coding these for testing to rule out variable scope issues
-    const cloudName = 'ujgupy7e'; 
-    const uploadPreset = 'dzuqgi8aa'; 
-    
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    
-    // DEBUG: Print what we are sending to the console
-    console.log("Uploading file:", file.name);
-    console.log("Preset used:", uploadPreset);
-    console.log("Cloud Name:", cloudName);
-
-    fetch(uploadUrl, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Cloudinary Response:", data); // Check this in console!
-        if (data.secure_url) {
-            saveCloudUrlToDatabase(fileName, data.secure_url);
-            inputNode.value = ""; 
-        } else {
-            alert("Upload failed. Error: " + (data.error?.message || "Unknown error"));
-        }
-    })
-    .catch(err => {
-        console.error("Fetch Error:", err);
-    });
-}
-function saveCloudUrlToDatabase(title, secureUrl) {
-    let formData = new FormData();
-    formData.append('save_cloud_music', '1');
-    formData.append('track_title', title);
-    formData.append('track_url', secureUrl);
-
-    fetch('index.php', { method: 'POST', body: formData })
-    .then(() => {
-        fetchCloudPlaylist();
-    });
-}
-
-// --- CLOUDINARY CDN CONNECTOR ---
-function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
-        .then(res => res.json())
-        .then(data => {
-            originalPlaylistQueue = [];
-            data.forEach(track => {
-                originalPlaylistQueue.push({ 
-                    id: track.id,
-                    title: track.track_title, 
-                    url: track.file_path 
-                });
-            });
-            rebuildActiveQueueChain();
-            syncPlayerUI();
-        });
-}
-
-function uploadDirectToCloudinary(inputNode) {
-    if (!inputNode.files || inputNode.files.length === 0) return;
-    
-    const cloudName = 'dzuqgi8aa';         // Put your Cloud Name here
-    const uploadPreset = 'ujgupy7e'; // Put your Unsigned Preset here
-    
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
-    const file = inputNode.files[0];
-    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    
-    const titleEl = document.getElementById('trackDeckMetaTitle');
-    if (titleEl) titleEl.innerText = "Syncing to Cloud CDN... Please wait.";
-
-    fetch(uploadUrl, { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(data => {
-        if (data.secure_url) {
-            saveCloudUrlToDatabase(fileName, data.secure_url);
-            inputNode.value = ""; 
-        } else {
-            throw new Error();
-        }
-    })
-    .catch(() => {
-        if (titleEl) titleEl.innerText = "Upload failed.";
-    });
-}
-
-function saveCloudUrlToDatabase(title, secureUrl) {
-    let formData = new FormData();
-    formData.append('save_cloud_music', '1');
-    formData.append('track_title', title);
-    formData.append('track_url', secureUrl);
-
-    fetch('index.php', { method: 'POST', body: formData })
-    .then(() => {
-        fetchCloudPlaylist();
-    });
-}
-
-// --- 1. CLOUDINARY AUDIO SYSTEM MATRIX ---
+// --- 1. CORE AUDIO SYSTEM MATRIX ---
 const coreAudioNode = new Audio();
 let originalPlaylistQueue = [];
 let activePlaylistQueue = [];
 let currentQueueIndex = -1;
 let isShuffleActive = false;
 
-// Cloudinary Configuration
-const CLOUD_NAME = 'YOUR_CLOUD_NAME'; // REPLACE WITH YOUR CLOUD NAME
-const UPLOAD_PRESET = 'YOUR_UNSIGNED_PRESET'; // REPLACE WITH YOUR PRESET NAME
-
-function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
-        .then(res => res.json())
-        .then(data => {
-            originalPlaylistQueue = [];
-            data.forEach(track => {
-                originalPlaylistQueue.push({ 
-                    id: track.id,
-                    title: track.track_title, 
-                    url: track.file_path 
-                });
-            });
-            rebuildActiveQueueChain();
-            syncPlayerUI();
-        })
-        .catch(err => console.log("Playlist fetch error:", err));
+// Helper to kill music instantly
+function stopMusicEngine() {
+    if (coreAudioNode) {
+        coreAudioNode.pause();
+        coreAudioNode.src = '';
+    }
+    currentQueueIndex = -1;
 }
 
-function uploadDirectToCloudinary(inputNode) {
-    if (!inputNode.files || inputNode.files.length === 0) return;
-    const file = inputNode.files[0];
-    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    
-    const titleEl = document.getElementById('trackDeckMetaTitle');
-    if (titleEl) titleEl.innerText = "Uploading... Please wait.";
+// --- 2. INDEXEDDB PERSISTENCE LAYER ---
+const DB_NAME = 'CampusCoreMusicDB';
+const STORE_NAME = 'vault_tracks';
+let databaseRef = null;
 
-    fetch(uploadUrl, { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(data => {
-        if (data.secure_url) {
-            saveCloudUrlToDatabase(fileName, data.secure_url);
-            inputNode.value = ""; 
-        } else {
-            alert("Upload failed. Check Cloudinary settings.");
+function initMusicDatabase(callback) {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = function(e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
         }
-    })
-    .catch(() => {
-        if (titleEl) titleEl.innerText = "Upload failed.";
-    });
+    };
+    request.onsuccess = function(e) {
+        databaseRef = e.target.result;
+        if (callback) callback();
+    };
+    request.onerror = function(e) { console.error('IndexedDB structural error:', e); };
 }
 
-function saveCloudUrlToDatabase(title, secureUrl) {
-    let formData = new FormData();
-    formData.append('save_cloud_music', '1');
-    formData.append('track_title', title);
-    formData.append('track_url', secureUrl);
-
-    fetch('index.php', { method: 'POST', body: formData })
-    .then(() => {
-        fetchCloudPlaylist();
-    });
+function persistTrackToDB(fileObject) {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.add({ name: fileObject.name, binaryData: fileObject });
 }
 
-function selectTrackDirectByIndex(idx) {
-    if (idx < 0 || idx >= activePlaylistQueue.length) return;
-    currentQueueIndex = idx;
-    const track = activePlaylistQueue[currentQueueIndex];
-    coreAudioNode.src = track.url;
-    coreAudioNode.load();
-    coreAudioNode.play().catch(e => console.log(e));
+function purgeTrackFromDB(fileName) {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.openCursor().onsuccess = function(e) {
+        const cursor = e.target.result;
+        if (cursor) {
+            if (cursor.value.name === fileName) { cursor.delete(); } 
+            else { cursor.continue(); }
+        }
+    };
+}
+
+function restoreTracksFromDB() {
+    if (!databaseRef) return;
+    const transaction = databaseRef.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    store.getAll().onsuccess = function(e) {
+        const tracks = e.target.result || [];
+        originalPlaylistQueue = [];
+        tracks.forEach(track => {
+            const reconstructedUrl = URL.createObjectURL(track.binaryData);
+            const cleanTitle = track.name.replace(/\.[^/.]+$/, "");
+            originalPlaylistQueue.push({ title: cleanTitle, url: reconstructedUrl, filename: track.name });
+        });
+        rebuildActiveQueueChain();
+        syncPlayerUI();
+    };
+}
+
+// --- 3. AUDIO ENGINE LOGIC ---
+function loadFilesIntoPlaylist(inputNode) {
+    if(!inputNode.files || inputNode.files.length === 0) return;
+    for(let i=0; i<inputNode.files.length; i++) {
+        let file = inputNode.files[i];
+        let url = URL.createObjectURL(file);
+        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
+        originalPlaylistQueue.push({ title: cleanTitle, url: url, filename: file.name });
+        persistTrackToDB(file); 
+    }
+    rebuildActiveQueueChain();
+    syncPlayerUI();
+    inputNode.value = ""; 
+}
+
+function purgeTrackFromVault(targetUrl) {
+    const trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
+    if(trackObj) { purgeTrackFromDB(trackObj.filename); } 
+    
+    let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
+    originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
+    
+    if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
+        coreAudioNode.pause();
+        coreAudioNode.src = '';
+        currentQueueIndex = -1;
+    }
+
+    rebuildActiveQueueChain();
+    if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
+        currentQueueIndex--;
+    }
     syncPlayerUI();
 }
 
 function rebuildActiveQueueChain() {
-    activePlaylistQueue = [...originalPlaylistQueue];
-    if (isShuffleActive) {
+    if (!isShuffleActive) {
+        activePlaylistQueue = [...originalPlaylistQueue];
+    } else {
+        activePlaylistQueue = [...originalPlaylistQueue];
         for (let i = activePlaylistQueue.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [activePlaylistQueue[i], activePlaylistQueue[j]] = [activePlaylistQueue[j], activePlaylistQueue[i]];
@@ -2077,29 +1878,63 @@ function rebuildActiveQueueChain() {
     }
 }
 
+// Global UI synchronization engine. Connects the background JS Audio element back to the active page DOM.
 function syncPlayerUI() {
     const container = document.getElementById('deckPlaylistTracksContainer');
     const titleEl = document.getElementById('trackDeckMetaTitle');
+    const playBtn = document.getElementById('btnMasterDeckPlay');
+    const shuffleBtn = document.getElementById('btnDeckShuffle');
+    
     if (titleEl) {
-        titleEl.innerText = (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) 
-            ? activePlaylistQueue[currentQueueIndex].title 
-            : "No Cloud Track Playing";
+        if (currentQueueIndex !== -1 && activePlaylistQueue[currentQueueIndex]) {
+            titleEl.innerText = activePlaylistQueue[currentQueueIndex].title;
+        } else {
+            titleEl.innerText = "No Local File Loaded";
+        }
     }
-    if (container) {
-        container.innerHTML = '';
-        originalPlaylistQueue.forEach((track, originalIdx) => {
-            let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
-            const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
-            const node = document.createElement('div');
-            node.className = `track-item p-2 ${isCurrent ? 'bg-primary' : 'bg-dark'}`;
-            node.onclick = () => selectTrackDirectByIndex(activeIdx);
-            node.innerText = track.title;
-            container.appendChild(node);
-        });
+    
+    if (playBtn) {
+        if (currentQueueIndex !== -1 && !coreAudioNode.paused) {
+            playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        } else {
+            playBtn.innerHTML = '<i class="bi bi-play-fill" style="margin-left: 3px;"></i>';
+        }
     }
-}
-}
 
+    if (shuffleBtn) {
+        if (isShuffleActive) {
+            shuffleBtn.classList.add('active');
+        } else {
+            shuffleBtn.classList.remove('active');
+        }
+    }
+
+    if(container) {
+        container.innerHTML = '';
+        if(originalPlaylistQueue.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-white-50 small">No local files added yet.</div>';
+        } else {
+            originalPlaylistQueue.forEach((track) => {
+                let activeIdx = activePlaylistQueue.findIndex(t => t.url === track.url);
+                const isCurrent = activeIdx === currentQueueIndex && currentQueueIndex !== -1;
+                const currentClass = isCurrent ? 'active fw-bold' : '';
+
+                const node = document.createElement('div');
+                node.className = `track-item d-flex justify-content-between align-items-center ${currentClass}`;
+                node.onclick = (e) => {
+                    if(e.target.closest('.btn-purge-track')) return;
+                    fireTrackPlaybackByIndex(activeIdx);
+                };
+
+                node.innerHTML = `
+                    <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
+                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
+                `;
+                container.appendChild(node);
+            });
+        }
+    }
+}
 
 function fireTrackPlaybackByIndex(targetIdx) {
     if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
@@ -2111,19 +1946,20 @@ function fireTrackPlaybackByIndex(targetIdx) {
 }
 
 function toggleDeckPlayback() {
-    if (currentQueueIndex === -1 && activePlaylistQueue.length > 0) {
-        selectTrackDirectByIndex(0);
+    if(activePlaylistQueue.length === 0) return;
+    if(currentQueueIndex === -1) {
+        fireTrackPlaybackByIndex(0);
         return;
     }
-    if (currentQueueIndex !== -1) {
-        if (coreAudioNode.paused) {
-            coreAudioNode.play().catch(e => {});
-        } else {
-            coreAudioNode.pause();
-        }
-        syncPlayerUI();
+
+    if(coreAudioNode.paused) {
+        coreAudioNode.play();
+    } else {
+        coreAudioNode.pause();
     }
-	
+    syncPlayerUI();
+}
+
 function nextDeckTrack() {
     if(activePlaylistQueue.length === 0) return;
     let idx = currentQueueIndex + 1;
@@ -2404,15 +2240,8 @@ function bindSpaFormSubmissions() {
 }
 
 // System Boot Initialization Sequence
-// System Boot Initialization Sequence
-// System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
-    fetchCloudPlaylist(); 
-    bindSpaFormSubmissions();
-});
-document.addEventListener('DOMContentLoaded', () => {
-    fetchCloudPlaylist();
-    setTimeout(restorePlaybackStateFromCloud, 1000); 
+    initMusicDatabase(restoreTracksFromDB);
     bindSpaFormSubmissions();
 });
 </script>
