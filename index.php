@@ -387,13 +387,36 @@ $curriculumData = [
 
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 	if (isset($_POST['set_global_reminder'])) {
+        // Deactivate old active announcements
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
+        
+        // Use the existing audio path by default (in case they didn't upload a new file)
+        $music_url = $_POST['existing_music_url'] ?? '';
+
+        // Process new local file upload if provided
+        if (!empty($_FILES['music_file']['name'])) {
+            $audio_name = time() . "_" . basename($_FILES['music_file']['name']);
+            
+            // Ensure target uploads folder exists
+            if (!is_dir('uploads')) { 
+                mkdir('uploads', 0777, true); 
+            }
+            
+            // Save file to the uploads directory
+            if (move_uploaded_file($_FILES['music_file']['tmp_name'], "uploads/" . $audio_name)) {
+                $music_url = "uploads/" . $audio_name;
+            }
+        }
+
+        // Insert new broadcast reminder
         $stmt = $pdo->prepare("INSERT INTO system_reminders (message, music_url, is_active) VALUES (?, ?, 1)");
-        $stmt->execute([$_POST['reminder_message'], $_POST['music_url']]);
-        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder and audio successfully broadcasted!</div>";
+        $stmt->execute([$_POST['reminder_message'], $music_url]);
+        
+        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder and audio file uploaded successfully!</div>";
         header("Location: ?page=home");
         exit();
     }
+    
     if (isset($_POST['clear_global_reminder'])) {
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
         $_SESSION['sys_msg'] = "<div class='alert alert-warning text-dark'>Global daily reminder cleared.</div>";
@@ -948,11 +971,23 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             ?>
                                 <div class="glass-panel p-4 mb-4" style="border-left: 4px solid #d97736;">
                                     <h5 class="mb-3 fw-semibold"><i class="bi bi-broadcast me-2"></i>Global Announcer / Daily Reminder</h5>
-                                    <p class="small text-white-50">Set a message and an optional audio link to display at the top of every user's screen.</p>
-                                    <form method="POST">
-                                        <textarea name="reminder_message" class="form-control mb-2" rows="2" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRemData['message'] ?? '') ?></textarea>
+                                    <p class="small text-white-50">Set a daily announcement and upload an accompanying audio track from your computer.</p>
+                                    
+                                    <form method="POST" enctype="multipart/form-data">
+                                        <textarea name="reminder_message" class="form-control mb-3" rows="2" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRemData['message'] ?? '') ?></textarea>
                                         
-                                        <input type="url" name="music_url" class="form-control mb-3" placeholder="Optional: Enter a direct link to an MP3 or audio file (e.g. https://example.com/music.mp3)" value="<?= htmlspecialchars($currentRemData['music_url'] ?? '') ?>">
+                                        <input type="hidden" name="existing_music_url" value="<?= htmlspecialchars($currentRemData['music_url'] ?? '') ?>">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label small text-white-50 fw-bold">Upload Music/Audio File (MP3, WAV, M4A):</label>
+                                            <input type="file" name="music_file" class="form-control text-white" accept="audio/*">
+                                            
+                                            <?php if (!empty($currentRemData['music_url'])): ?>
+                                                <div class="small text-warning mt-2">
+                                                    <i class="bi bi-music-note-beamed me-1"></i> Currently active track: <strong><?= htmlspecialchars(basename($currentRemData['music_url'])) ?></strong>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                         
                                         <div class="d-flex gap-2">
                                             <button name="set_global_reminder" class="btn btn-orange"><i class="bi bi-send-fill me-1"></i> Broadcast to All Users</button>
