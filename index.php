@@ -868,7 +868,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                     <div class="alert shadow-sm mb-4 d-flex align-items-center" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
                         <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
                         <div class="text-dark">
-                            <strong class="text-dark">DAILY ANNOUNCEMENT:</strong> <?= htmlspecialchars($activeReminder) ?>
+                            <strong class="text-dark">DAILY REMINDER:</strong> <?= htmlspecialchars($activeReminder) ?>
                         </div>
                     </div>
                 <?php endif; ?>
