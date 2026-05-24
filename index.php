@@ -172,6 +172,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
         $stmt = $pdo->prepare("SELECT file_name FROM user_audio WHERE id = ? AND student_id = ?");
         $stmt->execute([$_GET['del_audio'], $_SESSION['user_id']]);
         $audio = $stmt->fetch();
+
+		if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+    $_SESSION['sys_msg'] = "<div class='alert alert-danger text-dark'>Upload Failed! PHP Error Code: " . $files['error'][$i] . " (Check your php.ini limits)</div>";
+    continue;
+}
         
         if ($audio) {
             $filepath = 'uploads/audio/' . $audio['file_name'];
