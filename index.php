@@ -90,15 +90,31 @@ try {
             status VARCHAR(20) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+CREATE TABLE IF NOT EXISTS music_tracks (
+    id SERIAL PRIMARY KEY,
+    track_title VARCHAR(255),
+    track_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
     ");
 
-	if (isset($_GET['fetch_music'])) {
+	// --- SUPABASE DATA BRIDGE ---
+// 1. Fetching Music
+if (isset($_GET['fetch_music'])) {
     header('Content-Type: application/json');
-    $stmt = $pdo->query("SELECT * FROM your_music_table_name ORDER BY id DESC"); // Make sure this table name matches yours
+    $stmt = $pdo->query("SELECT * FROM music_tracks ORDER BY id DESC");
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
     exit;
 }
 
+// 2. Saving Music URL
+if (isset($_POST['save_cloud_music'])) {
+    $stmt = $pdo->prepare("INSERT INTO music_tracks (track_title, track_url) VALUES (?, ?)");
+    $stmt->execute([$_POST['track_title'], $_POST['track_url']]);
+    echo json_encode(['status' => 'success']);
+    exit;
+}
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
     try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
 
@@ -1766,84 +1782,44 @@ window.fillSubjectDetails = function() {
 };
 
 
-// --- 1. SUPABASE INTEGRATED AUDIO MATRIX ---
+// --- NEW CLOUD AUDIO MATRIX ---
+const supabase = supabase.createClient('https://eyefygbewbdivufcyzvy.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZWZ5Z2Jld2JkaXZ1ZmN5enZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MTEwNTIsImV4cCI6MjA5NTE4NzA1Mn0.c9tYrKFFO1ZTavKvRlc5jsDus-mOfgxUHnEnaI4ZVPk');
 const coreAudioNode = new Audio();
 let originalPlaylistQueue = [];
 let activePlaylistQueue = [];
 let currentQueueIndex = -1;
 
-// INITIALIZE SUPABASE
-// Copy your URL and Anon Key from Supabase Project Settings > API
-const SUPABASE_URL = 'https://eyefygbewbdivufcyzvy.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZWZ5Z2Jld2JkaXZ1ZmN5enZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MTEwNTIsImV4cCI6MjA5NTE4NzA1Mn0.c9tYrKFFO1ZTavKvRlc5jsDus-mOfgxUHnEnaI4ZVPk';
-const supabase = supabase.createClient(https://eyefygbewbdivufcyzvy.supabase.co, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZWZ5Z2Jld2JkaXZ1ZmN5enZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MTEwNTIsImV4cCI6MjA5NTE4NzA1Mn0.c9tYrKFFO1ZTavKvRlc5jsDus-mOfgxUHnEnaI4ZVPk);
-
 async function uploadToSupabase(inputNode) {
-    if (!inputNode.files || inputNode.files.length === 0) return;
-    
     const file = inputNode.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { data, error } = await supabase.storage.from('music').upload(`${Date.now()}_${file.name}`, file);
     
-    const titleEl = document.getElementById('trackDeckMetaTitle');
-    if (titleEl) titleEl.innerText = "Uploading to Cloud...";
+    if (error) return alert("Upload failed: " + error.message);
 
-    // 1. Upload to Supabase Storage Bucket 'music'
-    const { data, error } = await supabase.storage
-        .from('music')
-        .upload(fileName, file);
-
-    if (error) {
-        console.error("Supabase Error:", error);
-        if (titleEl) titleEl.innerText = "Upload failed.";
-        return;
-    }
-
-    // 2. Get Public URL
-    const { data: publicUrlData } = supabase.storage
-        .from('music')
-        .getPublicUrl(fileName);
-
-    // 3. Save URL to your PostgreSQL Database via your existing backend
-    saveSupabaseUrlToDatabase(file.name.replace(/\.[^/.]+$/, ""), publicUrlData.publicUrl);
-}
-
-function saveSupabaseUrlToDatabase(title, publicUrl) {
+    const { data: publicUrlData } = supabase.storage.from('music').getPublicUrl(`${Date.now()}_${file.name}`);
+    
+    // Save to your database
     let formData = new FormData();
     formData.append('save_cloud_music', '1');
-    formData.append('track_title', title);
-    formData.append('track_url', publicUrl);
+    formData.append('track_title', file.name);
+    formData.append('track_url', publicUrlData.publicUrl);
 
     fetch('index.php', { method: 'POST', body: formData })
-    .then(() => {
-        const titleEl = document.getElementById('trackDeckMetaTitle');
-        if (titleEl) titleEl.innerText = "Upload Complete!";
-        fetchCloudPlaylist(); // Refreshes the list from DB
-    });
+        .then(() => fetchCloudPlaylist());
 }
 
 function fetchCloudPlaylist() {
-    console.log("Attempting to fetch playlist..."); // Add this
-    
     fetch('index.php?fetch_music=1')
         .then(res => res.json())
         .then(data => {
-            console.log("Server response:", data); // Add this
-            
-            if (data.length === 0) {
-                console.warn("Server returned an empty list.");
-            }
-            
-            originalPlaylistQueue = data.map(track => ({
-                id: track.id,
-                title: track.track_title,
-                url: track.track_url // Ensure this column name matches your DB
-            }));
-            activePlaylistQueue = [...originalPlaylistQueue];
+            originalPlaylistQueue = data.map(t => ({ title: t.track_title, url: t.track_url }));
             syncPlayerUI();
-        })
-        .catch(err => console.error("Fetch error:", err));
+        });
 }
+
+// Call this on load instead of the old function
+document.addEventListener('DOMContentLoaded', () => {
+    fetchCloudPlaylist();
+});
 
 function fireTrackPlaybackByIndex(targetIdx) {
     if(targetIdx < 0 || targetIdx >= activePlaylistQueue.length) return;
