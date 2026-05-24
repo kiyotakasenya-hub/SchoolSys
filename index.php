@@ -1394,7 +1394,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             <button name="create_staff" class="btn btn-orange w-100">Register Staff</button>
                         </form>
                     </div>
-
+				
                     <script>
                         function toggleStaffCourse() {
                             var role = document.getElementById('staffRoleSelect').value;
@@ -1889,6 +1889,68 @@ function uploadDirectToCloudinary(inputNode) {
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
 
+    const titleEl = document.getElementById('trackDeckMetaTitle');
+    if (titleEl) titleEl.innerText = "Syncing to Cloud CDN... Please wait.";
+
+    fetch(uploadUrl, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.secure_url) {
+            saveCloudUrlToDatabase(fileName, data.secure_url);
+            inputNode.value = ""; 
+        } else {
+            throw new Error();
+        }
+    })
+    .catch(() => {
+        if (titleEl) titleEl.innerText = "Upload failed.";
+    });
+}
+
+function saveCloudUrlToDatabase(title, secureUrl) {
+    let formData = new FormData();
+    formData.append('save_cloud_music', '1');
+    formData.append('track_title', title);
+    formData.append('track_url', secureUrl);
+
+    fetch('index.php', { method: 'POST', body: formData })
+    .then(() => {
+        fetchCloudPlaylist();
+    });
+}
+
+// --- CLOUDINARY CDN CONNECTOR ---
+function fetchCloudPlaylist() {
+    fetch('?fetch_music=1')
+        .then(res => res.json())
+        .then(data => {
+            originalPlaylistQueue = [];
+            data.forEach(track => {
+                originalPlaylistQueue.push({ 
+                    id: track.id,
+                    title: track.track_title, 
+                    url: track.file_path 
+                });
+            });
+            rebuildActiveQueueChain();
+            syncPlayerUI();
+        });
+}
+
+function uploadDirectToCloudinary(inputNode) {
+    if (!inputNode.files || inputNode.files.length === 0) return;
+    
+    const cloudName = 'dzuqgi8aa';         // Put your Cloud Name here
+    const uploadPreset = 'ujgupy7e'; // Put your Unsigned Preset here
+    
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    const file = inputNode.files[0];
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); 
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    
     const titleEl = document.getElementById('trackDeckMetaTitle');
     if (titleEl) titleEl.innerText = "Syncing to Cloud CDN... Please wait.";
 
