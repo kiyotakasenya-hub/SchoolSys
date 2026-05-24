@@ -90,6 +90,14 @@ try {
             status VARCHAR(20) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS user_audio (
+            id SERIAL PRIMARY KEY,
+            student_id INT,
+            track_title VARCHAR(255),
+            file_name VARCHAR(255),
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
@@ -125,6 +133,44 @@ if (isset($_GET['del_task'])) {
         ->execute([$_GET['del_task'], $_SESSION['user_id']]);
     $redirect_page = $_GET['page'] ?? 'my_tasks';
     header("Location: ?page=" . $redirect_page); exit();
+}
+
+// --- AUDIO SYSTEM ACTION HANDLERS ---
+if (isset($_SESSION['user_id']) && $_SESSION['role'] == 'student') {
+    if (isset($_FILES['audio_upload'])) {
+        $upload_dir = 'uploads/audio/';
+        if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
+        
+        $files = $_FILES['audio_upload'];
+        for ($i = 0; $i < count($files['name']); $i++) {
+            if (!empty($files['name'][$i])) {
+                $file_name = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", basename($files['name'][$i]));
+                $target_file = $upload_dir . $file_name;
+                $clean_title = pathinfo($files['name'][$i], PATHINFO_FILENAME);
+                
+                if (move_uploaded_file($files['tmp_name'][$i], $target_file)) {
+                    $stmt = $pdo->prepare("INSERT INTO user_audio (student_id, track_title, file_name) VALUES (?, ?, ?)");
+                    $stmt->execute([$_SESSION['user_id'], $clean_title, $file_name]);
+                }
+            }
+        }
+        $redirect_page = $_POST['page'] ?? 'my_tasks';
+        header("Location: ?page=" . $redirect_page); exit();
+    }
+
+    if (isset($_GET['del_audio'])) {
+        $stmt = $pdo->prepare("SELECT file_name FROM user_audio WHERE id = ? AND student_id = ?");
+        $stmt->execute([$_GET['del_audio'], $_SESSION['user_id']]);
+        $audio = $stmt->fetch();
+        
+        if ($audio) {
+            $filepath = 'uploads/audio/' . $audio['file_name'];
+            if (file_exists($filepath)) { unlink($filepath); }
+            $pdo->prepare("DELETE FROM user_audio WHERE id = ?")->execute([$_GET['del_audio']]);
+        }
+        $redirect_page = $_GET['page'] ?? 'my_tasks';
+        header("Location: ?page=" . $redirect_page); exit();
+    }
 }
 
 // Fetch current user data if logged in
@@ -317,7 +363,7 @@ $curriculumData = [
     ],
     "BS Business Administration" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
-        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", "u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
+        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", u=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
     ],
     "BS Entrepreneurship" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
@@ -339,7 +385,7 @@ $curriculumData = [
     "BS Engineering" => [
         ["c"=>"CA", "t"=>"College Algebra", "u"=>3], ["c"=>"AG", "t"=>"Analytic Geometry", "u"=>3], ["c"=>"SM", "t"=>"Solid Mensuration", "u"=>3], ["c"=>"DC", "t"=>"Differential Calculus", "u"=>3], ["c"=>"IC", "t"=>"Integral Calculus", "u"=>3], ["c"=>"DE", "t"=>"Differential Equations", "u"=>3], ["c"=>"EDA", "t"=>"Engineering Data Analysis", "u"=>3], ["c"=>"GC", "t"=>"General Chemistry", "u"=>3], ["c"=>"UP1", "t"=>"University Physics 1", "u"=>3], ["c"=>"UP2", "t"=>"University Physics 2", "u"=>3], ["c"=>"ED", "t"=>"Engineering Drawings / CAD", "u"=>3], ["c"=>"CF", "t"=>"Computer Fundamentals", "u"=>3], ["c"=>"SRB", "t"=>"Statics of Rigid Bodies", "u"=>3], ["c"=>"DRB", "t"=>"Dynamics of Rigid Bodies", "u"=>3], ["c"=>"MDB", "t"=>"Mechanics of Deformable Bodies", "u"=>3], ["c"=>"EE", "t"=>"Engineering Economics", "u"=>3], ["c"=>"EMGT", "t"=>"Engineering Management", "u"=>3], ["c"=>"TECH", "t"=>"Technopreneurship", "u"=>3],
         ["c"=>"SURV", "t"=>"Surveying (Civil Track)", "u"=>3], ["c"=>"ST", "t"=>"Structural Theory (Civil Track)", "u"=>3], ["c"=>"ME", "t"=>"Materials Engineer (Civil Track)", "u"=>3], ["c"=>"FM", "t"=>"Fluid Mechanics (Civil Track)", "u"=>3], ["c"=>"HYD", "t"=>"Hydraulics (Civil Track)", "u"=>3], ["c"=>"GTE", "t"=>"Geotechnical Engineering (Civil Track)", "u"=>3], ["c"=>"CSD", "t"=>"Concrete and Steel Design (Civil Track)", "u"=>3],
-        ["c"=>"TH1", "t"=>"Thermodynamics 1 (Mech Track)", "u"=>3], ["c"=>"TH2", "t"=>"Thermodynamics 2 (Mech Track)", "u"=>3], ["c"=>"FMA", "t"=>"Fluid Machinery (Mech Track)", "u"=>3], ["c"=>"HT", "t"=>"Heat Transfer (Mech Track)", "u"=>3], ["c"=>"MD1", "t"=>"Machine Design 1 (Mech Track)", "u"=>3], ["c"=>"MD2", "t"=>"Machine Design 2 (Mech Track)", "u"=>3], ["c"=>"RAC", "t"=>"Refrigeration and Air Conditioning (Mech Track)", "u"=>3], ["c"=>"PPE", "t"=>"Power Plant Engineering (Mech Track)", "u"=>3],
+        ["c"=>"TH1", "t"=>"Thermodynamics 1 (Mech Track)", "u"=>3], ["c"=>"TH2", t:"Thermodynamics 2 (Mech Track)", "u"=>3], ["c"=>"FMA", "t"=>"Fluid Machinery (Mech Track)", "u"=>3], ["c"=>"HT", "t"=>"Heat Transfer (Mech Track)", "u"=>3], ["c"=>"MD1", "t"=>"Machine Design 1 (Mech Track)", "u"=>3], ["c"=>"MD2", t"=>"Machine Design 2 (Mech Track)", "u"=>3], ["c"=>"RAC", "t"=>"Refrigeration and Air Conditioning (Mech Track)", "u"=>3], ["c"=>"PPE", "t"=>"Power Plant Engineering (Mech Track)", "u"=>3],
         ["c"=>"EC1", "t"=>"Electrical Circuits 1 (Elec Track)", "u"=>3], ["c"=>"EC2", "t"=>"Electrical Circuits 2 (Elec Track)", "u"=>3], ["c"=>"ELM", "t"=>"Electromagnetics (Elec Track)", "u"=>3], ["c"=>"EMA1", "t"=>"Electrical Machines 1 (Elec Track)", "u"=>3], ["c"=>"EMA2", "t"=>"Electrical Machines 2 (Elec Track)", "u"=>3], ["c"=>"PSA", "t"=>"Power System Analysis (Elec Track)", "u"=>3], ["c"=>"ELC", "t"=>"Electronic Circuits (Elec Track)", "u"=>3], ["c"=>"CSDE", "t"=>"Control Systems Design (Elec Track)", "u"=>3]
     ],
     "BS Architecture" => [
@@ -995,9 +1041,13 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
 
                                 <div class="flex-grow-1 d-flex flex-column">
-                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-folder-plus me-1"></i>Import Audio Files</h6>
+                                    <h6 class="small fw-semibold text-white-50 mb-2"><i class="bi bi-cloud-arrow-up me-1"></i>Import Audio Files</h6>
                                     <div class="mb-3">
-                                        <input type="file" id="localAudioPicker" class="form-control form-control-sm" accept="audio/*" multiple onchange="loadFilesIntoPlaylist(this)">
+                                        <form method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                            <input type="hidden" name="page" value="my_tasks">
+                                            <input type="file" name="audio_upload[]" class="form-control form-control-sm" accept="audio/*" multiple required>
+                                            <button type="submit" class="btn btn-sm btn-orange">Upload</button>
+                                        </form>
                                     </div>
 
                                     <div class="playlist-vault-box flex-grow-1 overflow-auto" style="min-height: 150px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
@@ -1760,10 +1810,30 @@ window.fillSubjectDetails = function() {
 
 // --- 1. CORE AUDIO SYSTEM MATRIX ---
 const coreAudioNode = new Audio();
+
+// --- 2. CLOUD AUDIO PERSISTENCE LAYER ---
 let originalPlaylistQueue = [];
 let activePlaylistQueue = [];
 let currentQueueIndex = -1;
 let isShuffleActive = false;
+
+<?php
+if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] == 'student') {
+    $audio_stmt = $pdo->prepare("SELECT id, track_title, file_name FROM user_audio WHERE student_id = ? ORDER BY uploaded_at ASC");
+    $audio_stmt->execute([$_SESSION['user_id']]);
+    $tracks = $audio_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($tracks as $t) {
+        $url = 'uploads/audio/' . $t['file_name'];
+        echo "originalPlaylistQueue.push({ id: {$t['id']}, title: '" . addslashes($t['track_title']) . "', url: '$url' });\n";
+    }
+}
+?>
+
+function restoreTracksFromDB() {
+    rebuildActiveQueueChain();
+    syncPlayerUI();
+}
 
 // Helper to kill music instantly
 function stopMusicEngine() {
@@ -1774,98 +1844,7 @@ function stopMusicEngine() {
     currentQueueIndex = -1;
 }
 
-// --- 2. INDEXEDDB PERSISTENCE LAYER ---
-const DB_NAME = 'CampusCoreMusicDB';
-const STORE_NAME = 'vault_tracks';
-let databaseRef = null;
-
-function initMusicDatabase(callback) {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = function(e) {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-        }
-    };
-    request.onsuccess = function(e) {
-        databaseRef = e.target.result;
-        if (callback) callback();
-    };
-    request.onerror = function(e) { console.error('IndexedDB structural error:', e); };
-}
-
-function persistTrackToDB(fileObject) {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.add({ name: fileObject.name, binaryData: fileObject });
-}
-
-function purgeTrackFromDB(fileName) {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.openCursor().onsuccess = function(e) {
-        const cursor = e.target.result;
-        if (cursor) {
-            if (cursor.value.name === fileName) { cursor.delete(); } 
-            else { cursor.continue(); }
-        }
-    };
-}
-
-function restoreTracksFromDB() {
-    if (!databaseRef) return;
-    const transaction = databaseRef.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    store.getAll().onsuccess = function(e) {
-        const tracks = e.target.result || [];
-        originalPlaylistQueue = [];
-        tracks.forEach(track => {
-            const reconstructedUrl = URL.createObjectURL(track.binaryData);
-            const cleanTitle = track.name.replace(/\.[^/.]+$/, "");
-            originalPlaylistQueue.push({ title: cleanTitle, url: reconstructedUrl, filename: track.name });
-        });
-        rebuildActiveQueueChain();
-        syncPlayerUI();
-    };
-}
-
 // --- 3. AUDIO ENGINE LOGIC ---
-function loadFilesIntoPlaylist(inputNode) {
-    if(!inputNode.files || inputNode.files.length === 0) return;
-    for(let i=0; i<inputNode.files.length; i++) {
-        let file = inputNode.files[i];
-        let url = URL.createObjectURL(file);
-        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
-        originalPlaylistQueue.push({ title: cleanTitle, url: url, filename: file.name });
-        persistTrackToDB(file); 
-    }
-    rebuildActiveQueueChain();
-    syncPlayerUI();
-    inputNode.value = ""; 
-}
-
-function purgeTrackFromVault(targetUrl) {
-    const trackObj = originalPlaylistQueue.find(t => t.url === targetUrl);
-    if(trackObj) { purgeTrackFromDB(trackObj.filename); } 
-    
-    let activeIdx = activePlaylistQueue.findIndex(t => t.url === targetUrl);
-    originalPlaylistQueue = originalPlaylistQueue.filter(t => t.url !== targetUrl);
-    
-    if(activeIdx === currentQueueIndex && currentQueueIndex !== -1) {
-        coreAudioNode.pause();
-        coreAudioNode.src = '';
-        currentQueueIndex = -1;
-    }
-
-    rebuildActiveQueueChain();
-    if(currentQueueIndex !== -1 && activeIdx < currentQueueIndex) {
-        currentQueueIndex--;
-    }
-    syncPlayerUI();
-}
-
 function rebuildActiveQueueChain() {
     if (!isShuffleActive) {
         activePlaylistQueue = [...originalPlaylistQueue];
@@ -1928,7 +1907,7 @@ function syncPlayerUI() {
 
                 node.innerHTML = `
                     <div class="text-truncate ps-1 small" style="max-width:200px;"><i class="bi bi-music-note me-2 opacity-50"></i>${track.title}</div>
-                    <button class="btn btn-sm text-danger btn-purge-track p-1" onclick="purgeTrackFromVault('${track.url}')"><i class="bi bi-trash"></i></button>
+                    <a href="?page=my_tasks&del_audio=${track.id}" class="btn btn-sm text-danger btn-purge-track p-1"><i class="bi bi-trash"></i></a>
                 `;
                 container.appendChild(node);
             });
@@ -2241,7 +2220,7 @@ function bindSpaFormSubmissions() {
 
 // System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
-    initMusicDatabase(restoreTracksFromDB);
+    restoreTracksFromDB();
     bindSpaFormSubmissions();
 });
 </script>
