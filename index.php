@@ -94,13 +94,14 @@ try {
 		CREATE TABLE IF NOT EXISTS system_reminders (
             id SERIAL PRIMARY KEY,
             message TEXT,
+            music_url VARCHAR(255),
             is_active INT DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ");
 
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
-    try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
+    try { $pdo->exec("ALTER TABLE system_reminders ADD COLUMN music_url VARCHAR(255)"); } catch (PDOException $e) { }
 
     // Seed Admin if not exists
     $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); $stmt->execute();
@@ -385,14 +386,11 @@ $curriculumData = [
 ];
 
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
-	// --- GLOBAL REMINDER ACTIONS ---
-    if (isset($_POST['set_global_reminder'])) {
-        // Deactivate old reminders
+	if (isset($_POST['set_global_reminder'])) {
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
-        // Insert new active reminder
-        $stmt = $pdo->prepare("INSERT INTO system_reminders (message, is_active) VALUES (?, 1)");
-        $stmt->execute([$_POST['reminder_message']]);
-        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder successfully broadcasted to all users!</div>";
+        $stmt = $pdo->prepare("INSERT INTO system_reminders (message, music_url, is_active) VALUES (?, ?, 1)");
+        $stmt->execute([$_POST['reminder_message'], $_POST['music_url']]);
+        $_SESSION['sys_msg'] = "<div class='alert alert-success text-dark'>Global daily reminder and audio successfully broadcasted!</div>";
         header("Location: ?page=home");
         exit();
     }
@@ -860,16 +858,22 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                 
                 <?php
                 // Fetch the active global reminder
-                $remStmt = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
-                $activeReminder = $remStmt->fetchColumn();
+               $remStmt = $pdo->query("SELECT message, music_url FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+                $activeReminder = $remStmt->fetch(PDO::FETCH_ASSOC);
                 
-                if ($activeReminder): 
+                if ($activeReminder && !empty($activeReminder['message'])): 
                 ?>
-                    <div class="alert shadow-sm mb-4 d-flex align-items-center" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
-                        <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
-                        <div class="text-dark">
-                            <strong class="text-dark">DAILY REMINDER:</strong> <?= htmlspecialchars($activeReminder) ?>
+                    <div class="alert shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3" style="background: rgba(255, 193, 7, 0.9); border: 1px solid #ffc107; border-radius: 8px;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-megaphone-fill fs-4 me-3 text-dark"></i>
+                            <div class="text-dark">
+                                <strong class="text-dark">DAILY ANNOUNCEMENT:</strong> <?= htmlspecialchars($activeReminder['message']) ?>
+                            </div>
                         </div>
+                        
+                        <?php if (!empty($activeReminder['music_url'])): ?>
+                            <audio src="<?= htmlspecialchars($activeReminder['music_url']) ?>" autoplay loop controls class="shadow-sm" style="height: 35px; border-radius: 20px;"></audio>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -940,16 +944,19 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             
                             <?php if ($_SESSION['role'] == 'admin'): 
                                 // Fetch current reminder to populate the text box
-                                $currentRem = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
+                               $currentRemData = $pdo->query("SELECT message, music_url FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
                             ?>
                                 <div class="glass-panel p-4 mb-4" style="border-left: 4px solid #d97736;">
                                     <h5 class="mb-3 fw-semibold"><i class="bi bi-broadcast me-2"></i>Global Announcer / Daily Reminder</h5>
-                                    <p class="small text-white-50">Set a message here to display a global banner at the top of every user's screen.</p>
+                                    <p class="small text-white-50">Set a message and an optional audio link to display at the top of every user's screen.</p>
                                     <form method="POST">
-                                        <textarea name="reminder_message" class="form-control mb-3" rows="3" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRem ?: '') ?></textarea>
+                                        <textarea name="reminder_message" class="form-control mb-2" rows="2" placeholder="Type your daily reminder or announcement here..." required><?= htmlspecialchars($currentRemData['message'] ?? '') ?></textarea>
+                                        
+                                        <input type="url" name="music_url" class="form-control mb-3" placeholder="Optional: Enter a direct link to an MP3 or audio file (e.g. https://example.com/music.mp3)" value="<?= htmlspecialchars($currentRemData['music_url'] ?? '') ?>">
+                                        
                                         <div class="d-flex gap-2">
                                             <button name="set_global_reminder" class="btn btn-orange"><i class="bi bi-send-fill me-1"></i> Broadcast to All Users</button>
-                                            <?php if ($currentRem): ?>
+                                            <?php if (!empty($currentRemData)): ?>
                                                 <button name="clear_global_reminder" type="submit" formnovalidate class="btn btn-secondary"><i class="bi bi-eraser-fill me-1"></i> Clear Banner</button>
                                             <?php endif; ?>
                                         </div>
