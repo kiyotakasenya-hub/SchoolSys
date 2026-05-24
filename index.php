@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS user_music (
     id SERIAL PRIMARY KEY,
     student_id INT,
     track_title VARCHAR(255),
-    file_path VARCHAR(255),
+    file_path TEXT,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS user_playback_state (
