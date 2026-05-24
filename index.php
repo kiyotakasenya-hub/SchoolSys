@@ -1295,7 +1295,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             <button name="create_staff" class="btn btn-orange w-100">Register Staff</button>
                         </form>
                     </div>
-
+				
                     <script>
                         function toggleStaffCourse() {
                             var role = document.getElementById('staffRoleSelect').value;
@@ -1769,7 +1769,7 @@ let currentQueueIndex = -1;
 // Copy your URL and Anon Key from Supabase Project Settings > API
 const SUPABASE_URL = 'https://eyefygbewbdivufcyzvy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZWZ5Z2Jld2JkaXZ1ZmN5enZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MTEwNTIsImV4cCI6MjA5NTE4NzA1Mn0.c9tYrKFFO1ZTavKvRlc5jsDus-mOfgxUHnEnaI4ZVPk';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = supabase.createClient(https://eyefygbewbdivufcyzvy.supabase.co, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZWZ5Z2Jld2JkaXZ1ZmN5enZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MTEwNTIsImV4cCI6MjA5NTE4NzA1Mn0.c9tYrKFFO1ZTavKvRlc5jsDus-mOfgxUHnEnaI4ZVPk);
 
 async function uploadToSupabase(inputNode) {
     if (!inputNode.files || inputNode.files.length === 0) return;
@@ -2132,10 +2132,13 @@ function bindSpaFormSubmissions() {
     });
 }
 
-// System Boot Initialization Sequence
 document.addEventListener('DOMContentLoaded', () => {
-   fetchCloudPlaylist();
+    // 1. Fetch playlist from your database immediately
+    fetchCloudPlaylist();
+    // 2. Bind your SPA navigation/forms
     bindSpaFormSubmissions();
+    console.log("Music Engine Initialized with Supabase");
+});
 });
 </script>
 </body>
