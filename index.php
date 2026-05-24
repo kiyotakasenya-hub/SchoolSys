@@ -92,6 +92,13 @@ try {
         );
     ");
 
+	if (isset($_GET['fetch_music'])) {
+    header('Content-Type: application/json');
+    $stmt = $pdo->query("SELECT * FROM your_music_table_name ORDER BY id DESC"); // Make sure this table name matches yours
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
     // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
     try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
 
@@ -1816,17 +1823,26 @@ function saveSupabaseUrlToDatabase(title, publicUrl) {
 }
 
 function fetchCloudPlaylist() {
-    fetch('?fetch_music=1')
+    console.log("Attempting to fetch playlist..."); // Add this
+    
+    fetch('index.php?fetch_music=1')
         .then(res => res.json())
         .then(data => {
+            console.log("Server response:", data); // Add this
+            
+            if (data.length === 0) {
+                console.warn("Server returned an empty list.");
+            }
+            
             originalPlaylistQueue = data.map(track => ({
                 id: track.id,
                 title: track.track_title,
-                url: track.file_path
+                url: track.track_url // Ensure this column name matches your DB
             }));
             activePlaylistQueue = [...originalPlaylistQueue];
             syncPlayerUI();
-        });
+        })
+        .catch(err => console.error("Fetch error:", err));
 }
 
 function fireTrackPlaybackByIndex(targetIdx) {
