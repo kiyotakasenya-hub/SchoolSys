@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS music_sync (
     song_url TEXT,
     song_time FLOAT DEFAULT 0,
     is_playing BOOLEAN DEFAULT FALSE,
-    updated_at TIMESTAMP DEFAULT song_timeSTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
     ");
 
