@@ -99,6 +99,9 @@ try {
         );
     ");
 
+    // DYNAMIC AUTO-PATCHER: Forces missing columns into existing tables without deleting data
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN course VARCHAR(150)"); } catch (PDOException $e) { }
+
     // Seed Admin if not exists
     $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'admin'"); $stmt->execute();
     if (!$stmt->fetch()) {
@@ -321,7 +324,7 @@ $curriculumData = [
     ],
     "BS Business Administration" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
-        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
+        ["c"=>"POM", "t"=>"Principles of Marketing", "u"=>3], ["c"=>"MM", "t"=>"Marketing Management", "u"=>3], ["c"=>"OM", "t"=>"Operations Management", "u"=>3], ["c"=>"BRM", "t"=>"Business Research Methods", "u"=>3], ["c"=>"FM", "t"=>"Financial Management", "u"=>3], ["c"=>"PS", "t"=>"Pricing Strategy", "u"=>3], ["c"=>"CB", "t"=>"Consumer Behavior", "u"=>3], ["c"=>"PROS", "t"=>"Professional Salesmanship", "u"=>3], ["c"=>"BSIM", "t"=>"Business Simulation", "u"=>3], ["c"=>"BINT", "t"=>"Practicum/Internship", "u"=>6]
     ],
     "BS Entrepreneurship" => [
         ["c"=>"CBB1", "t"=>"Information Technology in Business", "u"=>3], ["c"=>"CBB2", "t"=>"Microeconomics", "u"=>3], ["c"=>"CBB3", "t"=>"Business Law (Obligations and Contracts)", "u"=>3], ["c"=>"CBB4", "t"=>"Income Taxation", "u"=>3], ["c"=>"CBB5", "t"=>"Strategic Management", "u"=>3], ["c"=>"CBB6", "t"=>"Good Governance and Social Responsibility", "u"=>3], ["c"=>"CBB7", "t"=>"Total Quality Management", "u"=>3], ["c"=>"CBB8", "t"=>"Human Resource Management", "u"=>3],
@@ -338,7 +341,7 @@ $curriculumData = [
         ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures and Algorithms", "u"=>3], ["c"=>"DM", "t"=>"Discrete Mathematics", "u"=>3], ["c"=>"CCS", "t"=>"Calculus for Computer Science", "u"=>3], ["c"=>"LA", "t"=>"Linear Algebra", "u"=>3], ["c"=>"PSCS", "t"=>"Probability and Statistics for CS", "u"=>3], ["c"=>"ARCO", "t"=>"Architecture and Organization", "u"=>3], ["c"=>"OS", "t"=>"Operating Systems", "u"=>3], ["c"=>"ATFL", "t"=>"Automata Theory and Formal Languages", "u"=>3], ["c"=>"SE1", "t"=>"Software Engineering 1", "u"=>3], ["c"=>"SE2", "t"=>"Software Engineering 2", "u"=>3], ["c"=>"DAA", "t"=>"Design and Analysis of Algorithms", "u"=>3], ["c"=>"PL", "t"=>"Programming Languages", "u"=>3], ["c"=>"NC", "t"=>"Networks and Communications", "u"=>3], ["c"=>"CST1", "t"=>"CS Thesis 1", "u"=>3], ["c"=>"CST2", "t"=>"CS Thesis 2", "u"=>3]
     ],
     "BS Information Technology" => [
-        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
+        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", "t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
     ],
     "BS Engineering" => [
         ["c"=>"CA", "t"=>"College Algebra", "u"=>3], ["c"=>"AG", "t"=>"Analytic Geometry", "u"=>3], ["c"=>"SM", "t"=>"Solid Mensuration", "u"=>3], ["c"=>"DC", "t"=>"Differential Calculus", "u"=>3], ["c"=>"IC", "t"=>"Integral Calculus", "u"=>3], ["c"=>"DE", "t"=>"Differential Equations", "u"=>3], ["c"=>"EDA", "t"=>"Engineering Data Analysis", "u"=>3], ["c"=>"GC", "t"=>"General Chemistry", "u"=>3], ["c"=>"UP1", "t"=>"University Physics 1", "u"=>3], ["c"=>"UP2", "t"=>"University Physics 2", "u"=>3], ["c"=>"ED", "t"=>"Engineering Drawings / CAD", "u"=>3], ["c"=>"CF", "t"=>"Computer Fundamentals", "u"=>3], ["c"=>"SRB", "t"=>"Statics of Rigid Bodies", "u"=>3], ["c"=>"DRB", "t"=>"Dynamics of Rigid Bodies", "u"=>3], ["c"=>"MDB", "t"=>"Mechanics of Deformable Bodies", "u"=>3], ["c"=>"EE", "t"=>"Engineering Economics", "u"=>3], ["c"=>"EMGT", "t"=>"Engineering Management", "u"=>3], ["c"=>"TECH", "t"=>"Technopreneurship", "u"=>3],
@@ -369,10 +372,10 @@ $curriculumData = [
         ["c"=>"ETE", "t"=>"Enhanced Teaching of English", "u"=>3], ["c"=>"TMM", "t"=>"Teaching Mathematics in Primary Grades", "u"=>3], ["c"=>"PEP", "t"=>"Pagtuturo ng Edukasyon sa Pagpapakatao", "u"=>3], ["c"=>"TSS", "t"=>"Teaching Social Studies", "u"=>3], ["c"=>"TSC", "t"=>"Teaching Science", "u"=>3], ["c"=>"TMAP", "t"=>"Teaching Music, Arts, PE, and Health", "u"=>3], ["c"=>"REE", "t"=>"Research in Elementary Education", "u"=>3]
     ],
     "Bachelor in Secondary Education" => [
-        ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3],["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
+        ["c"=>"CAL", "t"=>"Child and Adolescent Learners and Learning Principles", "u"=>3], ["c"=>"TTP", "t"=>"The Teaching Profession", "u"=>3], ["c"=>"TTC", "t"=>"The Teacher and the Community", "u"=>3], ["c"=>"FSIE", "t"=>"Foundations of Special and Inclusive Education", "u"=>3], ["c"=>"FLCT", "t"=>"Facilitating Learner-Centered Teaching", "u"=>3], ["c"=>"AOL1", "t"=>"Assessment of Learning 1", "u"=>3], ["c"=>"AOL2", "t"=>"Assessment of Learning 2", "u"=>3], ["c"=>"TTL1", "t"=>"Technology for Teaching and Learning 1", "u"=>3], ["c"=>"FS1", "t"=>"Field Study 1", "u"=>3], ["c"=>"FS2", "t"=>"Field Study 2", "u"=>3], ["c"=>"PT", "t"=>"Practice Teaching", "u"=>6],
         ["c"=>"SOE", "t"=>"Structure of English", "u"=>3], ["c"=>"MAF", "t"=>"Mythology and Folklore", "u"=>3], ["c"=>"SPL", "t"=>"Survey of Philippine Literature", "u"=>3], ["c"=>"LC", "t"=>"Literary Criticism", "u"=>3], ["c"=>"LLMD", "t"=>"Language Learning Materials Development", "u"=>3],
         ["c"=>"MG", "t"=>"Modern Geometry", "u"=>3], ["c"=>"LAL", "t"=>"Linear Algebra", "u"=>3], ["c"=>"AC", "t"=>"Advanced Calculus", "u"=>3], ["c"=>"TRG", "t"=>"Trigonometry", "u"=>3], ["c"=>"AA", "t"=>"Abstract Algebra", "u"=>3], ["c"=>"NT", "t"=>"Number Theory", "u"=>3],
-        ["c"=>"ES", "t"=>"Earth Science", "u"=>3], ["c"=>"MET", "t"=>"Meteorology", "u"=>3], ["c:"=>"ORGC", "t"=>"Organic Chemistry", "u"=>3], ["c"=>"INOC", "t"=>"Inorganic Chemistry", "u"=>3], ["c"=>"GAE", "t"=>"Genetics and Evolution", "u"=>3], ["c"=>"MEC", "t"=>"Mechanics", "u"=>3], ["c"=>"WAO", "t"=>"Waves and Optics", "u"=>3],
+        ["c"=>"ES", "t"=>"Earth Science", "u"=>3], ["c"=>"MET", "t"=>"Meteorology", "u"=>3], ["c"=>"ORGC", "t"=>"Organic Chemistry", "u"=>3], ["c"=>"INOC", "t"=>"Inorganic Chemistry", "u"=>3], ["c"=>"GAE", "t"=>"Genetics and Evolution", "u"=>3], ["c"=>"MEC", "t"=>"Mechanics", "u"=>3], ["c"=>"WAO", "t"=>"Waves and Optics", "u"=>3],
         ["c"=>"AS", "t"=>"Asian Studies", "u"=>3], ["c"=>"WH", "t"=>"World History", "u"=>3], ["c"=>"GEO", "t"=>"Geography", "u"=>3], ["c"=>"MME", "t"=>"Micro/Macroeconomics", "u"=>3], ["c"=>"SCA", "t"=>"Socio-Cultural Anthropology", "u"=>3]
     ],
     "Bachelor of Early Childhood Education" => [
@@ -382,7 +385,8 @@ $curriculumData = [
 ];
 
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
-	if (isset($_POST['set_global_reminder'])) {
+	// --- GLOBAL REMINDER ACTIONS ---
+    if (isset($_POST['set_global_reminder'])) {
         // Deactivate old reminders
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
         // Insert new active reminder
@@ -392,7 +396,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         header("Location: ?page=home");
         exit();
     }
-    
     if (isset($_POST['clear_global_reminder'])) {
         $pdo->exec("UPDATE system_reminders SET is_active = 0");
         $_SESSION['sys_msg'] = "<div class='alert alert-warning text-dark'>Global daily reminder cleared.</div>";
@@ -625,7 +628,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
         .modal-footer .btn-secondary { background-color: #5a6268 !important; border: none !important; color: #ffffff !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
         .modal-footer .btn-orange { background-color: #d97736 !important; padding: 10px 24px !important; font-size: 0.95rem !important; border-radius: 6px !important; }
 
-        /* MUSIC SYSTEM DECK STYLING (Student Workspace) */
+        /* MUSIC SYSTEM DECK STYLING */
         .deck-wrapper {
             background: #1e1e1e !important;
             border-radius: 20px;
@@ -872,7 +875,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 
                 <?php
                 $page = $_GET['page'] ?? 'home';
-                
+	
                // --- HOME DASHBOARD ---
                 if ($page == 'home') {
                     ?>
@@ -937,7 +940,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             
                             <?php if ($_SESSION['role'] == 'admin'): 
                                 // Fetch current reminder to populate the text box
-                               $currentRem = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
+                                $currentRem = $pdo->query("SELECT message FROM system_reminders WHERE is_active = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
                             ?>
                                 <div class="glass-panel p-4 mb-4" style="border-left: 4px solid #d97736;">
                                     <h5 class="mb-3 fw-semibold"><i class="bi bi-broadcast me-2"></i>Global Announcer / Daily Reminder</h5>
@@ -954,7 +957,6 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                                 </div>
                             <?php endif; ?>
                         </div>
-                    </div>
                     <?php
                 }
                 // --- MY TASKS & WORKSPACE DASHBOARD ---
@@ -1007,6 +1009,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                             </div>
                         </div>
 
+                        <!-- EMBEDDED MUSIC PLAYER -->
                         <div class="col-lg-6 mb-4">
                             <div class="glass-panel p-4 h-100 d-flex flex-column" id="workspaceMusicPlayer">
                                 <h5 class="mb-4 fw-semibold"><i class="bi bi-boombox me-2"></i>Audio Deck</h5>
