@@ -1496,7 +1496,7 @@ a:hover { color: #b8622b; }
                                 <th>Student</th>
                                 <th>Total Assessment</th>
                                 <th>Paid</th>
-                                <th>Exact Balance</th>
+                                <th>Balance</th>
                             </tr>
                         </thead>
                         <tbody>
