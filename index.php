@@ -1486,26 +1486,55 @@ a:hover { color: #b8622b; }
                 </div>
             <?php
             }
-            elseif ($page == 'finance_billing' && $_SESSION['role'] == 'finance') {
+           elseif ($page == 'finance_billing' && $_SESSION['role'] == 'finance') {
                 echo "<h3>Student Payable Fees & Balance</h3>";
             ?>
-                <div class="glass-panel p-2 table-responsive"><table class='table mb-0'><thead class='table-dark'><tr><th>Student</th><th>Total Assessment</th><th>Paid</th><th>Balance</th></tr></thead>
+                <div class="glass-panel p-2 table-responsive">
+                    <table class='table mb-0'>
+                        <thead class='table-dark'>
+                            <tr>
+                                <th>Student</th>
+                                <th>Total Assessment</th>
+                                <th>Paid</th>
+                                <th>Exact Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 <?php
                 $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student'")->fetchAll();
                 foreach($students as $b) {
+                    // 1. Get automated/global fees from fee_schedules
                     $load_stmt = $pdo->prepare("SELECT SUM(amount) FROM fee_schedules WHERE student_id = ? OR student_id IS NULL");
                     $load_stmt->execute([$b['id']]);
-                    $assessment = $load_stmt->fetchColumn() ?: 0;
+                    $auto_assessment = $load_stmt->fetchColumn() ?: 0;
 
+                    // 2. Get manual cashier fees from student_fees
+                    $manual_stmt = $pdo->prepare("SELECT SUM(total_amount) FROM student_fees WHERE student_id = ?");
+                    $manual_stmt->execute([$b['id']]);
+                    $manual_assessment = $manual_stmt->fetchColumn() ?: 0;
+
+                    // Combine them for the true total
+                    $total_assessment = $auto_assessment + $manual_assessment;
+
+                    // 3. Get all verified payments made by the student
                     $pay_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_id = ?");
                     $pay_stmt->execute([$b['id']]);
-                    $paid = $pay_stmt->fetchColumn();
+                    $paid = $pay_stmt->fetchColumn() ?: 0;
 
-                    $balance = $assessment - $paid;
-                    echo "<tr><td>{$b['lastname']}, {$b['firstname']}</td><td>₱".number_format($assessment,2) . "</td><td class='text-success'>₱".number_format($paid,2)."</td><td class='fw-bold' style='color:#ff6b6b;'>₱".number_format($balance,2)."</td></tr>";
+                    // 4. Calculate exact balance
+                    $balance = $total_assessment - $paid;
+                    
+                    echo "<tr>
+                            <td>{$b['lastname']}, {$b['firstname']}</td>
+                            <td>₱".number_format($total_assessment, 2)."</td>
+                            <td class='text-success'>₱".number_format($paid, 2)."</td>
+                            <td class='fw-bold' style='color:#ff6b6b;'>₱".number_format($balance, 2)."</td>
+                          </tr>";
                 }
                 ?>
-                </table></div>
+                        </tbody>
+                    </table>
+                </div>
             <?php
             }
 
