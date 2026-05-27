@@ -83,6 +83,16 @@ try {
             student_id INT
         );
 
+		CREATE TABLE IF NOT EXISTS student_fees (
+    		id SERIAL PRIMARY KEY,
+   			student_id INT REFERENCES users(id),
+    		fee_description VARCHAR(255),
+    		total_amount DECIMAL(10,2),
+    		amount_paid DECIMAL(10,2) DEFAULT 0.00,
+    		balance DECIMAL(10,2),
+   			status VARCHAR(20) DEFAULT 'unpaid' -- Can be 'unpaid', 'partial', or 'paid'
+);
+
 		CREATE TABLE IF NOT EXISTS tasks (
             id SERIAL PRIMARY KEY,
             student_id INT,
@@ -190,6 +200,16 @@ if (isset($_POST['register_user'])) {
     }
 }
 
+// Assuming $pdo is your database connection
+$student_id = $_POST['student_id'];
+$description = $_POST['fee_description'];
+$total_amount = $_POST['total_amount'];
+
+$stmt = $pdo->prepare("INSERT INTO student_fees (student_id, fee_description, total_amount, balance) VALUES (?, ?, ?, ?)");
+$stmt->execute([$student_id, $description, $total_amount, $total_amount]);
+
+echo "Fee manually added successfully!";
+
 // UNIFIED PERSONAL PROFILE & PASSWORD UPDATE ACTION HANDLER
 if (isset($_POST['user_update_own_profile'])) {
     $photo_query = "";
@@ -255,6 +275,32 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'cashier') {
         $msg = "<div class='alert alert-danger text-dark'>Payment record has been removed.</div>";
     }
 }
+
+$fee_id = $_POST['fee_id'];
+$payment_amount = $_POST['payment_amount']; // Amount handed to the cashier
+
+// 1. Fetch current fee details
+$stmt = $pdo->prepare("SELECT total_amount, amount_paid FROM student_fees WHERE id = ?");
+$stmt->execute([$fee_id]);
+$fee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// 2. Calculate new totals
+$new_amount_paid = $fee['amount_paid'] + $payment_amount;
+$new_balance = $fee['total_amount'] - $new_amount_paid;
+
+// 3. Determine new status
+if ($new_balance <= 0) {
+    $status = 'paid';
+    $new_balance = 0; // Prevent negative balances if they overpay
+} else {
+    $status = 'partial';
+}
+
+// 4. Update the database
+$updateStmt = $pdo->prepare("UPDATE student_fees SET amount_paid = ?, balance = ?, status = ? WHERE id = ?");
+$updateStmt->execute([$new_amount_paid, $new_balance, $status, $fee_id]);
+
+echo "Payment recorded! Remaining balance: $" . number_format($new_balance, 2);
 
 // TEACHER ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'teacher') {
