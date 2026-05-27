@@ -242,7 +242,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'cashier') {
     if (isset($_POST['cashier_add_expense'])) {
         $stmt = $pdo->prepare("INSERT INTO student_fees (student_id, fee_description, total_amount, balance, status) VALUES (?, ?, ?, ?, 'unpaid')");
         $stmt->execute([$_POST['student_id'], $_POST['fee_description'], $_POST['total_amount'], $_POST['total_amount']]);
-        $msg = "<div class='alert alert-success text-dark'>Manual expense added successfully.</div>";
+        $msg = "<div class='alert alert-success text-dark'>added successfully.</div>";
     }
 
     // Process Manual Payment & Status
@@ -850,7 +850,7 @@ a:hover { color: #b8622b; }
                     <a href="?page=finance_fees"><i class="bi bi-cash-coin"></i> Fee Schedules</a>
                     <a href="?page=finance_billing"><i class="bi bi-receipt-cutoff"></i> Student Billing/Balance</a>
                 <?php elseif($_SESSION['role'] == 'cashier'): ?>
-                    <a href="?page=cashier_billing"><i class="bi bi-wallet2"></i> Manual Expenses</a>
+                    <a href="?page=cashier_billing"><i class="bi bi-wallet2"></i> Tuitions Fee</a>
                     <a href="?page=cashier_payments"><i class="bi bi-cash"></i> Process Payments</a>
                     <a href="?page=cashier_reports"><i class="bi bi-graph-up"></i> Collection Reports</a>
                 <?php elseif($_SESSION['role'] == 'student'): ?>
@@ -1173,11 +1173,11 @@ a:hover { color: #b8622b; }
 
             // --- CASHIER PAGES ---
             elseif ($page == 'cashier_billing' && $_SESSION['role'] == 'cashier') {
-                echo "<h3>Student Payables & Manual Expenses</h3>";
+                echo "<h3>Student Payables</h3>";
                 $students = $pdo->query("SELECT id, firstname, lastname FROM users WHERE role='student' ORDER BY lastname ASC")->fetchAll();
                 ?>
                 <div class="glass-panel p-4 mb-4">
-                    <h5>Manually Add Expense</h5>
+                    <h5>Add Expense</h5>
                     <form method="POST" class="row g-3">
                         <div class="col-md-4">
                             <label>Select Student</label>
@@ -1227,7 +1227,7 @@ a:hover { color: #b8622b; }
             <?php
             }
             elseif ($page == 'cashier_payments' && $_SESSION['role'] == 'cashier') {
-                echo "<h3>Process Manual Payments</h3>";
+                echo "<h3>Process Payments</h3>";
                 $unpaid_fees = $pdo->query("SELECT f.*, u.firstname, u.lastname FROM student_fees f JOIN users u ON f.student_id = u.id WHERE f.status != 'paid' ORDER BY u.lastname ASC")->fetchAll();
             ?>
                 <div class="glass-panel p-4 mb-4">
