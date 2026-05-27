@@ -850,7 +850,7 @@ a:hover { color: #b8622b; }
                     <a href="?page=finance_fees"><i class="bi bi-cash-coin"></i> Fee Schedules</a>
                     <a href="?page=finance_billing"><i class="bi bi-receipt-cutoff"></i> Student Billing/Balance</a>
                 <?php elseif($_SESSION['role'] == 'cashier'): ?>
-                    <a href="?page=cashier_billing"><i class="bi bi-wallet2"></i> Tuitions Fee</a>
+                    <a href="?page=cashier_billing"><i class="bi bi-wallet2"></i> Tuition Fee</a>
                     <a href="?page=cashier_payments"><i class="bi bi-cash"></i> Process Payments</a>
                     <a href="?page=cashier_reports"><i class="bi bi-graph-up"></i> Collection Reports</a>
                 <?php elseif($_SESSION['role'] == 'student'): ?>
