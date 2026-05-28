@@ -1111,6 +1111,25 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
+/* Ensure the body has a background image or gradient for the glass to interact with */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Example gradient */
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+/* The Glass Class */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
+    backdrop-filter: blur(10px);           /* The blur effect */
+    -webkit-backdrop-filter: blur(10px);   /* Required for Safari */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;                   /* Rounded edges look best with glass */
+    padding: 30px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    color: white;                          /* White text usually looks best on glass */
+}
+
 /* GLOBAL THEME */
 body {
     font-family: 'Poppins', sans-serif;
