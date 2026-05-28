@@ -281,12 +281,30 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'cashier') {
 
 // TEACHER ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'teacher') {
+    // 1. Existing Grade Update Action
     if (isset($_POST['update_grades'])) {
         foreach($_POST['grades'] as $enrollment_id => $data) {
             $stmt = $pdo->prepare("UPDATE enrollments SET prelim=?, midterm=?, final=?, remarks=? WHERE id=?");
             $stmt->execute([$data['p'], $data['m'], $data['f'], $data['r'], $enrollment_id]);
         }
         $msg = "<div class='alert alert-success text-dark'>Grades updated successfully.</div>";
+    }
+
+    // 2. New Action: Claim a Subject Freely
+    if (isset($_POST['claim_subject'])) {
+        $subject_id = $_POST['claim_subject_id'];
+        $stmt = $pdo->prepare("UPDATE subjects SET teacher_id = ? WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id'], $subject_id]);
+        $msg = "<div class='alert alert-success text-dark'>Subject successfully claimed and added to your schedule!</div>";
+    }
+
+    // 3. New Action: Unclaim a Subject
+    if (isset($_GET['unclaim_id'])) {
+        $subject_id = $_GET['unclaim_id'];
+        // Ensure they can only unclaim their own subjects
+        $stmt = $pdo->prepare("UPDATE subjects SET teacher_id = NULL WHERE id = ? AND teacher_id = ?");
+        $stmt->execute([$subject_id, $_SESSION['user_id']]);
+        $msg = "<div class='alert alert-warning text-dark'>Subject has been removed from your classes.</div>";
     }
 }
 
@@ -1395,60 +1413,58 @@ a:hover { color: #b8622b; }
             }
 
             // --- TEACHER PAGES ---
-            elseif ($page == 'teacher_classes' && $_SESSION['role'] == 'teacher') {
-                echo "<h3>My Assigned Classes</h3>";
-                $classes = $pdo->prepare("SELECT * FROM subjects WHERE teacher_id = ?");
-                $classes->execute([$_SESSION['user_id']]);
-                echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Code</th><th>Title</th><th>Course</th><th>Schedule</th></tr></thead>";
-                foreach($classes->fetchAll() as $c) echo "<tr><td>{$c['subject_code']}</td><td>{$c['subject_title']}</td><td>{$c['course']}</td><td>{$c['schedule']}</td></tr>";
-                echo "</table></div>";
-            }
-            elseif ($page == 'teacher_grades' && $_SESSION['role'] == 'teacher') {
-                echo "<h3>Grade Encoding</h3>";
-                $q = $pdo->prepare("SELECT e.*, u.firstname, u.lastname, s.subject_title, s.course FROM enrollments e JOIN users u ON e.student_id = u.id JOIN subjects s ON e.subject_id = s.id WHERE s.teacher_id = ? ORDER BY s.course ASC, u.lastname ASC");
-                $q->execute([$_SESSION['user_id']]);
-                $list = $q->fetchAll(PDO::FETCH_ASSOC);
+            // --- TEACHER PAGES ---
+elseif ($page == 'teacher_classes' && $_SESSION['role'] == 'teacher') {
+    echo "<h3>My Claimed Classes</h3>";
+    $classes = $pdo->prepare("SELECT * FROM subjects WHERE teacher_id = ? ORDER BY sy DESC, sem DESC, subject_title ASC");
+    $classes->execute([$_SESSION['user_id']]);
+    $my_classes = $classes->fetchAll();
+    
+    if (empty($my_classes)) {
+        echo "<div class='alert alert-info text-dark'>You haven't chosen or claimed any subjects yet. Browse the available catalog below to pick your subjects freely!</div>";
+    } else {
+        echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>School Year / Sem</th><th>Subject Code</th><th>Subject Title</th><th>Course/Dept</th><th>Schedule</th><th>Action</th></tr></thead><tbody>";
+        foreach($my_classes as $c) {
+            echo "<tr>
+                <td>{$c['sy']} - {$c['sem']}</td>
+                <td><span class='badge bg-secondary'>{$c['subject_code']}</span></td>
+                <td><strong>{$c['subject_title']}</strong></td>
+                <td>{$c['course']}</td>
+                <td>{$c['schedule']}</td>
+                <td>
+                    <a href='?page=teacher_classes&unclaim_id={$c['id']}' class='btn btn-sm btn-danger text-white' onclick='return confirm(\"Are you sure you want to drop/unclaim this subject?\");'>Unclaim Class</a>
+                </td>
+            </tr>";
+        }
+        echo "</tbody></table></div>";
+    }
 
-                if (empty($list)) {
-                    echo "<div class='alert alert-info text-dark mt-3'>No students enrolled in your subjects.</div>";
-                } else {
-            ?>
-                    <form method="POST">
-                    <?php
-                    $current_course = null;
-                    foreach($list as $s):
-                        if ($current_course !== $s['course']):
-                            if ($current_course !== null) echo "</tbody></table></div>";
-                            $current_course = $s['course'];
-                    ?>
-                            <div class="mt-4 mb-2 p-2 rounded shadow-sm" style="background: rgba(217, 119, 54, 0.8);">
-                                <i class="bi bi-mortarboard-fill"></i>
-                                <strong>COURSE: <?= strtoupper($current_course ?: 'GENERAL / UNSET') ?></strong>
-                            </div>
-                            <div class="glass-panel p-2 table-responsive">
-                                <table class="table mb-0">
-                                    <thead class="table-dark">
-                                        <tr><th>Student Name</th><th>Subject</th><th style="width: 100px;">P</th><th style="width: 100px;">M</th><th style="width: 100px;">F</th><th>Remarks</th></tr>
-                                    </thead>
-                                    <tbody>
-                    <?php endif; ?>
-                                    <tr>
-                                        <td><strong><?= $s['lastname'].", ".$s['firstname'] ?></strong></td>
-                                        <td><small><?= $s['subject_title'] ?></small></td>
-                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][p]' value='<?= $s['prelim'] ?>' class='form-control form-control-sm'></td>
-                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][m]' value='<?= $s['midterm'] ?>' class='form-control form-control-sm'></td>
-                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][f]' value='<?= $s['final'] ?>' class='form-control form-control-sm'></td>
-                                        <td><input type='text' name='grades[<?= $s['id'] ?>][r]' value='<?= $s['remarks'] ?>' class='form-control form-control-sm'></td>
-                                    </tr>
-                    <?php endforeach;
-                    if ($current_course !== null) echo "</tbody></table></div>";
-                    ?>
-                        <div class="mt-3"><button name="update_grades" class="btn btn-success shadow"><i class="bi bi-check-circle"></i> Save All Grades</button></div>
+    // Section for choosing subjects freely
+    echo "<h3 class='mt-5'>Available Subjects to Choose From</h3>";
+    $available = $pdo->query("SELECT * FROM subjects WHERE teacher_id IS NULL ORDER BY sy DESC, sem DESC, course ASC, subject_title ASC")->fetchAll();
+    
+    if (empty($available)) {
+        echo "<div class='alert alert-info text-dark mt-2'>No unassigned subjects available at the moment. All created classes currently have a teacher assigned.</div>";
+    } else {
+        echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>School Year / Sem</th><th>Subject Code</th><th>Subject Title</th><th>Course/Dept</th><th>Schedule</th><th>Action</th></tr></thead><tbody>";
+        foreach($available as $a) {
+            echo "<tr>
+                <td>{$a['sy']} - {$a['sem']}</td>
+                <td><span class='badge bg-orange text-dark'>{$a['subject_code']}</span></td>
+                <td><strong>{$a['subject_title']}</strong></td>
+                <td>{$a['course']}</td>
+                <td>{$a['schedule']}</td>
+                <td>
+                    <form method='POST' style='margin:0; display:inline;'>
+                        <input type='hidden' name='claim_subject_id' value='{$a['id']}'>
+                        <button type='submit' name='claim_subject' class='btn btn-sm btn-success text-white'>Claim Subject</button>
                     </form>
-            <?php
-                }
-            }
-
+                </td>
+            </tr>";
+        }
+        echo "</tbody></table></div>";
+    }
+}
             // --- FINANCE PAGES ---
             elseif ($page == 'finance_load' && $_SESSION['role'] == 'finance') {
                 echo "<h3>Student Loads</h3>";
