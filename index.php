@@ -281,30 +281,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'cashier') {
 
 // TEACHER ACTIONS
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'teacher') {
-    // 1. Existing Grade Update Action
     if (isset($_POST['update_grades'])) {
         foreach($_POST['grades'] as $enrollment_id => $data) {
             $stmt = $pdo->prepare("UPDATE enrollments SET prelim=?, midterm=?, final=?, remarks=? WHERE id=?");
             $stmt->execute([$data['p'], $data['m'], $data['f'], $data['r'], $enrollment_id]);
         }
         $msg = "<div class='alert alert-success text-dark'>Grades updated successfully.</div>";
-    }
-
-    // 2. New Action: Claim a Subject Freely
-    if (isset($_POST['claim_subject'])) {
-        $subject_id = $_POST['claim_subject_id'];
-        $stmt = $pdo->prepare("UPDATE subjects SET teacher_id = ? WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id'], $subject_id]);
-        $msg = "<div class='alert alert-success text-dark'>Subject successfully claimed and added to your schedule!</div>";
-    }
-
-    // 3. New Action: Unclaim a Subject
-    if (isset($_GET['unclaim_id'])) {
-        $subject_id = $_GET['unclaim_id'];
-        // Ensure they can only unclaim their own subjects
-        $stmt = $pdo->prepare("UPDATE subjects SET teacher_id = NULL WHERE id = ? AND teacher_id = ?");
-        $stmt->execute([$subject_id, $_SESSION['user_id']]);
-        $msg = "<div class='alert alert-warning text-dark'>Subject has been removed from your classes.</div>";
     }
 }
 
@@ -355,7 +337,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'finance') {
     }
 }
 
-// ADMIN ACTIONS (Including Global Curriculum Engine for Teachers)
+// ADMIN ACTIONS & DATA DEFINITIONS
 $curriculumData = [
     "Universal Standard Subjects" => [
         ["c"=>"GE-MMW", "t"=>"Mathematics in the Modern World", "u"=>3], ["c"=>"GE-PC", "t"=>"Purposive Communication", "u"=>3], ["c"=>"GE-STS", "t"=>"Science, Technology, and Society", "u"=>3], ["c"=>"GE-CW", "t"=>"Contemporary World", "u"=>3], ["c"=>"GE-AA", "t"=>"Art Appreciation", "u"=>3], ["c"=>"GE-UTS", "t"=>"Understanding the Self", "u"=>3], ["c"=>"GE-RPH", "t"=>"Readings in Philippine History", "u"=>3], ["c"=>"GE-ETH", "t"=>"Ethics", "u"=>3], ["c"=>"RIZAL", "t"=>"Life and Works of Rizal", "u"=>3], ["c"=>"NSTP1", "t"=>"National Service Training Program 1", "u"=>3], ["c"=>"NSTP2", "t"=>"National Service Training Program 2", "u"=>3], ["c"=>"PE1", "t"=>"PE 1 (Fitness/Wellness)", "u"=>2], ["c"=>"PE2", "t"=>"PE 2 (Rhythmic Activities)", "u"=>2], ["c"=>"PE3", "t"=>"PE 3 (Individual/Dual Sports)", "u"=>2], ["c"=>"PE4", "t"=>"PE 4 (Team Sports)", "u"=>2]
@@ -381,7 +363,7 @@ $curriculumData = [
         ["c"=>"MMPT", "t"=>"Macro/Micro Perspective of Tourism & Hospitality", "u"=>3], ["c"=>"TPG", "t"=>"Tourism Policy and Governance", "u"=>3], ["c"=>"TTO", "t"=>"Tour and Travel Operations", "u"=>3], ["c"=>"GCG", "t"=>"Global Culture and Geography", "u"=>3], ["c"=>"TMGT", "t"=>"Transportation Management", "u"=>3], ["c"=>"FOO", "t"=>"Front Office Operations", "u"=>3], ["c"=>"KE", "t"=>"Kitchen Essentials", "u"=>3], ["c"=>"FBSO", "t"=>"Food & Beverage Service Operations", "u"=>3], ["c"=>"AO", "t"=>"Accommodation Operations", "u"=>3], ["c"=>"BCM", "t"=>"Banquet and Catering Management", "u"=>3], ["c"=>"EVM", "t"=>"Event Management", "u"=>3], ["c"=>"THP", "t"=>"Tourism/Hospitality Practicum", "u"=>6]
     ],
     "BS Computer Science" => [
-        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures and Algorithms", "u"=>3], ["c"=>"DM", "t"=>"Discrete Mathematics", "u"=>3], ["c"=>"CCS", "t"=>"Calculus for Computer Science", "u"=>3], ["c"=>"LA", "t"=>"Linear Algebra", "u"=>3], ["c"=>"PSCS", "t"=>"Probability and Statistics for CS", "u"=>3], ["c"=>"ARCO", "t"=>"Architecture and Organization", "u"=>3], ["c"=>"OS", "t"=>"Operating Systems", "u"=>3], ["c"=>"ATFL", "t"=>"Automata Theory and Formal Languages", "u"=>3], ["c"=>"SE1", "t"=>"Software Engineering 1", "u"=>3], ["c"=>"SE2", "t"=>"Software Engineering 2", "u"=>3], ["c"=>"DAA", "t"=>"Design and Analysis of Algorithms", "u"=>3], ["c"=>"PL", "t"=>"Programming Languages", "u"=>3], ["c"=>"NC", "t"=>"Networks and Communications", "u"=>3], ["c"=>"CST1", "t"=>"CS Thesis 1", "u"=>3], ["c"=>"CST2", "t"=>"CS Thesis 2", "u"=>3]
+        ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures and Algorithms", "u"=>3], ["c"=>"DM", "t"=>"Discrete Mathematics", "u"=>3], ["c"=>"CCS", "t"=>"Calculus for Computer Science", u:3], ["c"=>"LA", "t"=>"Linear Algebra", "u"=>3], ["c"=>"PSCS", "t"=>"Probability and Statistics for CS", "u"=>3], ["c"=>"ARCO", "t"=>"Architecture and Organization", "u"=>3], ["c"=>"OS", "t"=>"Operating Systems", "u"=>3], ["c"=>"ATFL", "t"=>"Automata Theory and Formal Languages", "u"=>3], ["c"=>"SE1", "t"=>"Software Engineering 1", "u"=>3], ["c"=>"SE2", "t"=>"Software Engineering 2", "u"=>3], ["c"=>"DAA", "t"=>"Design and Analysis of Algorithms", "u"=>3], ["c"=>"PL", "t"=>"Programming Languages", "u"=>3], ["c"=>"NC", "t"=>"Networks and Communications", "u"=>3], ["c"=>"CST1", "t"=>"CS Thesis 1", "u"=>3], ["c"=>"CST2", "t"=>"CS Thesis 2", "u"=>3]
     ],
     "BS Information Technology" => [
         ["c"=>"ITC", "t"=>"Introduction to Computing", "u"=>3], ["c"=>"CP1", "t"=>"Computer Programming 1", "u"=>3], ["c"=>"CP2", "t"=>"Computer Programming 2", "u"=>3], ["c"=>"DSA", "t"=>"Data Structures", "u"=>3], ["c"=>"SIA", "t"=>"System Integration and Architecture", "u"=>3], ["c"=>"NET1", "t"=>"Networking 1", "u"=>3], ["c"=>"NET2", "t"=>"Networking 2", "u"=>3], ["c"=>"DBMS1", "t"=>"Database Management Systems 1", "u"=>3], ["c"=>"DBMS2", "t"=>"Database Management Systems 2", "u"=>3], ["c"=>"WST", "t"=>"Web Systems and Technologies", "u"=>3], ["c"=>"IM", "t"=>"Information Management", "u"=>3], ["c"=>"SAM", "t"=>"Systems Administration and Maintenance", "u"=>3], ["c"=>"IAS", "t"=>"Information Assurance and Security", "u"=>3], ["c"=>"CAP1", "t"=>"Capstone Project 1", "u"=>3], ["c"=>"CAP2", "t"=>"Capstone Project 2", "u"=>3], ["c"=>"ITINT", "t"=>"IT Internship", "u"=>6]
@@ -393,8 +375,7 @@ $curriculumData = [
         ["c"=>"EC1", "t"=>"Electrical Circuits 1 (Elec Track)", "u"=>3], ["c"=>"EC2", "t"=>"Electrical Circuits 2 (Elec Track)", "u"=>3], ["c"=>"ELM", "t"=>"Electromagnetics (Elec Track)", "u"=>3], ["c"=>"EMA1", "t"=>"Electrical Machines 1 (Elec Track)", "u"=>3], ["c"=>"EMA2", "t"=>"Electrical Machines 2 (Elec Track)", "u"=>3], ["c"=>"PSA", "t"=>"Power System Analysis (Elec Track)", "u"=>3], ["c"=>"ELC", "t"=>"Electronic Circuits (Elec Track)", "u"=>3], ["c"=>"CSDE", "t"=>"Control Systems Design (Elec Track)", "u"=>3]
     ],
     "BS Architecture" => [
-        ["c"=>"AD1", "t"=>"Architectural Design 1", "u"=>3], ["c"=>"AD2", "t"=>"Architectural Design 2", "u"=>3], ["c"=>"AD3", "t"=>"Architectural Design 3", "u"=>3], ["c"=>"AD4", "t"=>"Architectural Design 4", "u"=>3], ["c"=>"AD5", "t"=>"Architectural Design 5", "u"=>3], ["c"=>"AD6", "t"=>"Architectural Design 6", "u"=>3], ["c"=>"AD7", "t"=>"Architectural Design 7", "u"=>3], ["c"=>"AD8", "t"=>"Architectural Design 8", "u"=>3], ["c"=>"AD9", "t"=>"Architectural Design 9", "u"=>3], ["c"=>"AD10", "t"=>"Architectural Design 10", "u"=>3], ["c"=>"GRA1", "t"=>"Graphics 1", "u"=>3], ["c"=>"GRA2", "t"=>"Graphics 2", "u"=>3], ["c"=>"VT1", "t"=>"Visual Techniques 1", "u"=>3], ["c"=>"VT2", "t"=>"Visual Techniques 2", "u"=>3], ["c"=>"VT3", "t"=>"Visual Techniques 3", "u"=>3], ["c"=>"HOA1", "t"=>"History of Architecture 1", "u"=>3], ["c"=>"HOA2", "t"=>"History of Architecture 2", "u"=>3], ["c"=>"HOA3", "t"=>"History of Architecture 3", "u"=>3], ["c"=>"TOA1", "t"=>"Theory of Architecture 1", "u"=>3], ["c"=>"TOA2", "t"=>"Theory of 
-        Architecture 2", "u"=>3], ["c"=>"BT1", "t"=>"Building Technology 1", "u"=>3], ["c"=>"BT2", "t"=>"Building Technology 2", "u"=>3], ["c"=>"BT3", "t"=>"Building Technology 3", "u"=>3], ["c"=>"BT4", "t"=>"Building Technology 4", "u"=>3], ["c"=>"BT5", "t"=>"Building Technology 5", "u"=>3], ["c"=>"BU1", "t"=>"Building Utilities 1", "u"=>3], ["c"=>"BU2", "t"=>"Building Utilities 2", "u"=>3], ["c"=>"BU3", "t"=>"Building Utilities 3", "u"=>3], ["c"=>"AST", "t"=>"Architectural Structures", "u"=>3], ["c"=>"PP", "t"=>"Professional Practice", "u"=>3], ["c"=>"ATH1", "t"=>"Architectural Thesis 1", "u"=>3], ["c"=>"ATH2", "t"=>"Architectural Thesis 2", "u"=>3]
+        ["c"=>"AD1", "t"=>"Architectural Design 1", "u"=>3], ["c"=>"AD2", "t"=>"Architectural Design 2", "u"=>3], ["c"=>"AD3", "t"=>"Architectural Design 3", "u"=>3], ["c"=>"AD4", "t"=>"Architectural Design 4", "u"=>3], ["c"=>"AD5", "t"=>"Architectural Design 5", "u"=>3], ["c"=>"AD6", "t"=>"Architectural Design 6", "u"=>3], ["c"=>"AD7", "t"=>"Architectural Design 7", "u"=>3], ["c"=>"AD8", "t"=>"Architectural Design 8", "u"=>3], ["c"=>"AD9", "t"=>"Architectural Design 9", "u"=>3], ["c"=>"AD10", "t"=>"Architectural Design 10", "u"=>3], ["c"=>"GRA1", "t"=>"Graphics 1", "u"=>3], ["c"=>"GRA2", "t"=>"Graphics 2", "u"=>3], ["c"=>"VT1", "t"=>"Visual Techniques 1", "u"=>3], ["c"=>"VT2", "t"=>"Visual Techniques 2", "u"=>3], ["c"=>"VT3", "t"=>"Visual Techniques 3", "u"=>3], ["c"=>"HOA1", "t"=>"History of Architecture 1", "u"=>3], ["c"=>"HOA2", "t"=>"History of Architecture 2", "u"=>3], ["c"=>"HOA3", "t"=>"History of Architecture 3", "u"=>3], ["c"=>"TOA1", "t"=>"Theory of Architecture 1", "u"=>3], ["c"=>"TOA2", "t"=>"Theory of Architecture 2", "u"=>3], ["c"=>"BT1", "t"=>"Building Technology 1", "u"=>3], ["c"=>"BT2", "t"=>"Building Technology 2", "u"=>3], ["c"=>"BT3", "t"=>"Building Technology 3", "u"=>3], ["c"=>"BT4", "t"=>"Building Technology 4", "u"=>3], ["c"=>"BT5", "t"=>"Building Technology 5", "u"=>3], ["c"=>"BU1", "t"=>"Building Utilities 1", "u"=>3], ["c"=>"BU2", "t"=>"Building Utilities 2", "u"=>3], ["c"=>"BU3", "t"=>"Building Utilities 3", "u"=>3], ["c"=>"AST", "t"=>"Architectural Structures", "u"=>3], ["c"=>"PP", "t"=>"Professional Practice", "u"=>3], ["c"=>"ATH1", "t"=>"Architectural Thesis 1", "u"=>3], ["c"=>"ATH2", "t"=>"Architectural Thesis 2", "u"=>3]
     ],
     "BS Nursing" => [
         ["c"=>"ANP", "t"=>"Anatomy and Physiology", "u"=>3], ["c"=>"MB", "t"=>"Microchemistry and Biochemistry", "u"=>3], ["c"=>"MP", "t"=>"Microbiology and Parasitology", "u"=>3], ["c"=>"TFN", "t"=>"Theoretical Foundations of Nursing", "u"=>3], ["c"=>"HA", "t"=>"Health Assessment", "u"=>3], ["c"=>"CHN1", "t"=>"Community Health Nursing 1", "u"=>3], ["c"=>"CHN2", "t"=>"Community Health Nursing 2", "u"=>3], ["c"=>"PHM", "t"=>"Pharmacology", "u"=>3], ["c"=>"NDT", "t"=>"Nutrition and Diet Therapy", "u"=>3], ["c"=>"CMCF", "t"=>"Care of Mother, Child, and Family", "u"=>3], ["c"=>"CAAHS", "t"=>"Care of Adults with Altered Health States", "u"=>3], ["c"=>"MHPN", "t"=>"Mental Health and Psychiatric Nursing", "u"=>3], ["c"=>"NR1", "t"=>"Nursing Research 1", "u"=>3], ["c"=>"NR2", "t"=>"Nursing Research 2", "u"=>3], ["c"=>"EDN", "t"=>"Emergency and Disaster Nursing", "u"=>3], ["c"=>"RLE", "t"=>"Related Learning Experience (Hospital Duty)", "u"=>6]
@@ -427,6 +408,276 @@ $curriculumData = [
         ["c"=>"FECE", "t"=>"Foundations of Early Childhood Education", "u"=>3], ["c"=>"CAMD", "t"=>"Creative Arts, Music, and Drama", "u"=>3], ["c"=>"LLD", "t"=>"Language and Literacy Development", "u"=>3], ["c"=>"SME", "t"=>"Science and Math in Early Childhood", "u"=>3], ["c"=>"GCB", "t"=>"Guiding Children's Behavior", "u"=>3], ["c"=>"HSN", "t"=>"Health, Safety, and Nutrition", "u"=>3], ["c"=>"IEEC", "t"=>"Inclusive Education in Early Childhood", "u"=>3], ["c"=>"CGD", "t"=>"Child Growth and Development", "u"=>3]
     ]
 ];
+];
+
+// --- COMPREHENSIVE CURRICULA EXPLORER DATA ---
+$curricula = [
+    "Business, Management, and Accountancy" => [
+        "BS Business Administration (BSBA)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Business Enterprise", "Business Organization & Management", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Microeconomics", "Human Resource Management", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Macroeconomics", "Marketing Management", "Operations Management", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Financial Management", "Business Laws (Obligations & Contracts)", "Business Statistics", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "International Business & Trade", "Income Taxation", "Strategic Management", "Major Elective 1"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Business Research Methods", "Total Quality Management", "Corporate Social Responsibility", "Major Elective 2"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Business Research Thesis", "Logistics & Supply Chain Management", "Management Information Systems", "Major Elective 3"],
+                "2nd Sem" => ["Business Internship / Practicum (Minimum 600 hours)"]
+            ]
+        ],
+        "BS Entrepreneurship" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Entrepreneurial Mindset", "Introduction to Computing", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Business Opportunity Identification", "Accounting for Entrepreneurs", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Market Research & Consumer Behavior", "Business Plan Preparation 1", "Principles of Marketing", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Financial Management for Small Business", "Business Plan Preparation 2", "Operations Management", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Enterprise Simulation 1 (Business Implementation)", "Innovation & Product Development", "Business Laws & Taxation"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Enterprise Simulation 2 (Business Growth)", "E-Commerce & Digital Marketing", "Supply Chain Management"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Business Integration & Franchising", "Corporate Entrepreneurship", "Social Entrepreneurship"],
+                "2nd Sem" => ["On-the-Job Training / Business Incubation & Graduation Evaluation"]
+            ]
+        ],
+        "BS Legal Management" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Law", "Principles of Management", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Constitutional Law", "Financial Accounting", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Law on Obligations & Contracts", "Human Resource Management", "Business Economics", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Partnership & Corporation Law", "Marketing Management", "Legal Research & Writing", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Labor Laws and Legislation", "Income Taxation", "Criminal Law (Business Perspective)", "Financial Management"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Administrative Law & Public Officers", "Business and Transfer Taxes", "Negotiable Instruments Law", "Business Research Methods"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Intellectual Property Law", "Sales, Agency, & Credit Transactions", "Legal Ethics & Corporate Governance", "Thesis Defense"],
+                "2nd Sem" => ["Legal & Corporate Internship / Practicum"]
+            ]
+        ],
+        "BS Tourism / Hospitality Management" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Macro Perspective of Tourism & Hospitality", "Risk Management in Tourism", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Micro Perspective of Tourism & Hospitality", "Kitchen Essentials & Food Production", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Front Office Operations", "Tourism and Hospitality Marketing", "Multicultural Diversity in the Workplace", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Food & Beverage Service Operations", "Foreign Language 1", "Tourism Technology & E-Commerce", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Tour Guiding & Escorting", "Catering & Banquet Operations", "Foreign Language 2", "Sustainable Tourism"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Research in Tourism/Hospitality", "Transport Management", "Events & MICE Management", "Applied Business Tools"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Operations Management in Tourism", "Legal Aspects in Tourism & Hospitality", "Thesis Presentation"],
+                "2nd Sem" => ["Tourism / Hospitality Practicum (Hotel or Travel Agency Internship) (Minimum 600 hours)"]
+            ]
+        ]
+    ],
+    "STEM & Technology" => [
+        "BS Computer Science (BSCS)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Computer Science", "Computer Programming 1", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Computer Programming 2", "Discrete Structures 1", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Object-Oriented Programming", "Data Structures & Algorithms", "Discrete Structures 2", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Design & Analysis of Algorithms", "Architecture & Organization", "Automata Theory", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Software Engineering 1", "Operating Systems", "Networks & Communications", "CS Elective 1 (e.g., Data Science)"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Software Engineering 2", "Database Management Systems", "CS Thesis 1", "CS Elective 2 (e.g., Machine Learning)"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["CS Thesis 2 (Defense)", "Programming Languages", "Artificial Intelligence", "CS Elective 3", "Social & Professional Issues"],
+                "2nd Sem" => ["Computer Science Practicum / Industry Internship"]
+            ]
+        ],
+        "BS Civil Engineering (BSCE)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Chemistry for Engineers", "Calculus 1", "Engineering Drawings", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Understanding the Self (Minor)", "Physics for Engineers", "Calculus 2", "Computer-Aided Drafting", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Calculus 3", "Differential Equations", "Engineering Mechanics (Statics)", "PE 3"],
+                "2nd Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Mechanics of Deformable Bodies", "Engineering Economics", "Surveying 1", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Structural Theory", "Fluid Mechanics", "Geology for Civil Engineers", "Highway & Railroad Engineering"],
+                "2nd Sem" => ["GE Elective 2 (Minor)", "Design of Reinforced Concrete", "Geotechnical Engineering (Soil Mechanics)", "Hydrology", "Surveying 2"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["GE Elective 3 (Minor)", "Foundation Engineering", "Design of Steel Structures", "Construction Method & Project Management", "CE Capstone Project 1"],
+                "2nd Sem" => ["CE Capstone Project 2 (Defense)", "Construction Occupational Safety", "CE Laws, Contracts & Ethics", "CE OJT / Internship"]
+            ]
+        ],
+        "BS Mechanical Engineering (BSME)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Chemistry for Engineers", "Calculus 1", "Mechanical Engineering Orientation", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Understanding the Self (Minor)", "Physics for Engineers", "Calculus 2", "Computer-Aided Drafting for ME", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Calculus 3", "Differential Equations", "Statics of Rigid Bodies", "PE 3"],
+                "2nd Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Dynamics of Rigid Bodies", "Thermodynamics 1", "Strength of Materials", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Thermodynamics 2", "Fluid Mechanics", "Machine Elements 1", "Engineering Materials"],
+                "2nd Sem" => ["GE Elective 2 (Minor)", "Heat Transfer", "Fluid Machinery", "Machine Design 1", "Mechanical Engineering Lab 1"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["GE Elective 3 (Minor)", "Refrigeration Systems", "Power Plant Engineering", "Machine Design 2", "ME Capstone Project 1"],
+                "2nd Sem" => ["ME Capstone Project 2", "Air Conditioning Systems", "ME Laws, Ethics & Economics", "ME Plant Internship / OJT"]
+            ]
+        ],
+        "BS Electrical Engineering (BSEE)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Chemistry for Engineers", "Calculus 1", "Introduction to Electrical Engineering", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Understanding the Self (Minor)", "Physics for Engineers", "Calculus 2", "Electrical Drafting", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Calculus 3", "Differential Equations", "Electrical Circuits 1", "PE 3"],
+                "2nd Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Electrical Circuits 2", "Electronic Devices & Circuits", "Electromagnetics", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Electrical Machines 1", "Industrial Electronics", "Logic Circuits & Switching Theory", "Engineering Economics"],
+                "2nd Sem" => ["GE Elective 2 (Minor)", "Electrical Machines 2", "Electrical Power Systems 1", "Control Systems", "EE Laboratory 1"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["GE Elective 3 (Minor)", "Power Plant Design", "Electrical Systems Design", "EE Capstone Project 1", "EE Laws, Contracts & Ethics"],
+                "2nd Sem" => ["EE Capstone Project 2", "Illumination Engineering", "Numerical Methods", "EE Industry OJT / Practice"]
+            ]
+        ],
+        "BS Architecture (BS Archi)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Architectural Design 1 (Graphics 1)", "Visual Techniques 1", "History of Architecture 1", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Understanding the Self (Minor)", "Architectural Design 2 (Graphics 2)", "Visual Techniques 2", "History of Architecture 2", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Architectural Design 3", "Theory of Architecture 1", "Building Materials", "Architectural Physics", "PE 3"],
+                "2nd Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Architectural Design 4", "Theory of Architecture 2", "Building Construction 1", "Structural Conceptualization", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Architectural Design 5", "Building Construction 2", "Building Utilities 1 (Plumbing/Electrical)", "History of Architecture 3"],
+                "2nd Sem" => ["GE Elective 2 (Minor)", "Architectural Design 6", "Building Construction 3", "Building Utilities 2 (Mechanical)", "CADD for Architecture"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["GE Elective 3 (Minor)", "Architectural Design 7", "Building Utilities 3 (Acoustics & Lighting)", "Housing & Human Settlements", "Research Methods for Architecture"],
+                "2nd Sem" => ["Architectural Design 8", "Urban Design", "Planning 1", "Specification Writing & Estimating", "Special Architecture Topics"]
+            ],
+            "Year 5" => [
+                "1st Sem" => ["Architectural Design 9 (Thesis Research & Proposal)", "Professional Practice 1", "Planning 2", "Construction Management"],
+                "2nd Sem" => ["Architectural Design 10 (Final Thesis Presentation & Defense)", "Professional Practice 2", "Architectural Practicum Integration"]
+            ]
+        ],
+        "BS Nursing (BSN)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Anatomy & Physiology", "Biochemistry", "Theoretical Foundations in Nursing", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Understanding the Self (Minor)", "Science, Technology, and Society (Minor)", "Microbiology & Parasitology", "Health Assessment (Lecture/Lab)", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Art Appreciation (Minor)", "Ethics (Minor)", "Community Health Nursing 1", "Pharmacology", "Nutrition & Diet Therapy", "PE 3"],
+                "2nd Sem" => ["The Contemporary World (Minor)", "The Life and Works of Rizal (Minor)", "Care of Mother, Child, and Family (Lecture & Hospital RLE)", "Nursing Informatics", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 1 (Minor)", "Care of Clients with Problems in Oxygenation, Fluid & Electrolyte Balance, Cellular Aberrations (Hospital RLE)", "Nursing Research 1"],
+                "2nd Sem" => ["GE Elective 2 (Minor)", "Care of Clients with Maladaptive Patterns of Behavior (Psychiatric Nursing)", "Community Health Nursing 2", "Nursing Research 2 (Defense)"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["GE Elective 3 (Minor)", "Care of Clients in Acute, Intensive, and Emergency Settings", "Nursing Leadership & Management", "Disaster Nursing"],
+                "2nd Sem" => ["Intensive Hospital Practicum (Clinical Internship / RLE Rotations)", "Nursing Competency Appraisal (Mock Board Exam Review)"]
+            ]
+        ],
+        "BS Psychology" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Psychology", "Psychological Statistics", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Developmental Psychology", "Biological Psychology", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Theories of Personality", "Cognitive Psychology", "Experimental Psychology (Lecture/Lab)", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Psychological Assessment 1", "Abnormal Psychology", "Social Psychology", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Psychological Assessment 2", "Industrial/Organizational Psychology", "Research Methods in Psychology 1", "Positive Psychology"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Research Methods in Psychology 2 (Thesis Defense)", "Field Methods in Psychology", "Clinical Psychology", "Group Dynamics"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Current Trends in Psychology", "Psychopharmacology", "Counseling & Psychotherapy", "Special Topics in Psychology"],
+                "2nd Sem" => ["Psychology Practicum / Internship (Split clinical, industrial, and educational settings - 150+ hours)"]
+            ]
+        ]
+    ],
+    "Arts & Social Sciences" => [
+        "AB Political Science (AB PolSci)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Political Science", "Philippine Government and Politics", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Introduction to Political Theory", "Fundamentals of Public Administration", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Ancient & Medieval Political Thought", "Comparative Politics", "Political Methodology 1", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Modern Political Thought", "International Relations & Global Politics", "Political Methodology 2", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Politics and Governance of Southeast Asia", "Philippine Foreign Relations", "Political Science Research 1", "Public Policy Analysis"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Political Science Research 2 (Thesis Defense)", "Local Governance and Development", "International Law & Organizations", "Human Rights Law"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Special Topics in Political Science", "Seminar in Philippine Political Issues", "Political Parties and Interest Groups"],
+                "2nd Sem" => ["Political Science Practicum / Field Internship (Government agency, NGO, or law office)"]
+            ]
+        ],
+        "BA Fine Arts / Multimedia Arts (BMMA)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Introduction to Multimedia Arts", "Drawing Frameworks", "Color Theory", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "2D Design Principles", "Digital Photography", "Typography & Layout", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Visual Communication", "Graphic Design 1", "2D Animation Production", "Digital Filmmaking", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Scriptwriting & Storyboarding", "Graphic Design 2", "3D Modeling & Rigging", "Web Design & Development", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "3D Animation Production", "Post-Production & Video Editing", "Sound Design & Audio Engineering", "Multimedia Arts Elective 1"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Interactive Media Design", "Multimedia Research Methods", "Motion Graphics", "Multimedia Arts Elective 2"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Multimedia Capstone Project 1 (Proposal & Pre-production)", "Media Entrepreneurship", "Portfolio Development Seminar"],
+                "2nd Sem" => ["Multimedia Capstone Project 2 (Final Defense & Gallery Exhibit)", "Multimedia Production Internship / OJT"]
+            ]
+        ]
+    ],
+    "Education" => [
+        "Bachelor of Early Childhood Education (BECEd)" => [
+            "Year 1" => [
+                "1st Sem" => ["Purposive Communication (Minor)", "Math in the Modern World (Minor)", "Understanding the Self (Minor)", "Child Development", "Foundations of Early Childhood Education", "PE 1", "NSTP 1"],
+                "2nd Sem" => ["Readings in Philippine History (Minor)", "Art Appreciation (Minor)", "Science, Technology, and Society (Minor)", "Play and Developmentally Appropriate Practices", "Infant and Toddler Care", "PE 2", "NSTP 2"]
+            ],
+            "Year 2" => [
+                "1st Sem" => ["Ethics (Minor)", "The Contemporary World (Minor)", "Creative Arts, Music, and Movement for Young Children", "Language and Literacy Development", "Inclusive Education in Early Childhood", "PE 3"],
+                "2nd Sem" => ["The Life and Works of Rizal (Minor)", "GE Elective 1 (Minor)", "Health, Nutrition, and Safety in ECE", "Assessment of Children’s Development", "Science and Math in ECE", "PE 4"]
+            ],
+            "Year 3" => [
+                "1st Sem" => ["GE Elective 2 (Minor)", "Curriculum Models and Programs in ECE", "Family, School, and Community Partnerships", "Field Study 1 (Early Childhood Settings)"],
+                "2nd Sem" => ["GE Elective 3 (Minor)", "Research in Early Childhood Education 1", "Management and Administration of ECE Programs", "Field Study 2 (Assisting the Classroom Teacher)"]
+            ],
+            "Year 4" => [
+                "1st Sem" => ["Research in Early Childhood Education 2 (Thesis Defense)", "Trends and Issues in Early Childhood Education", "Guiding Children’s Behavior"],
+                "2nd Sem" => ["ECE Teaching Internship / Continuous Practice Teaching (Full-time preschool/kindergarten assignment)"]
+            ]
+        ]
+    ]
+];
+
 if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
     // --- GLOBAL REMINDER ACTIONS ---
     if (isset($_POST['set_global_reminder'])) {
@@ -850,6 +1101,7 @@ a:hover { color: #b8622b; }
                 </div>
                 <a href="?page=home"><i class="bi bi-house"></i> Home</a>
                 <?php if($_SESSION['role'] == 'admin'): ?>
+                    <a href="?page=curricula"><i class="bi bi-journal-richtext"></i> Curricula Explorer</a>
                     <a href="?page=approvals"><i class="bi bi-person-check"></i> User Approvals</a>
                     <a href="?page=create_staff"><i class="bi bi-person-plus"></i> Create Staff</a>
                 <?php elseif($_SESSION['role'] == 'records'): ?>
@@ -859,6 +1111,7 @@ a:hover { color: #b8622b; }
                     <a href="?page=teacher_classes"><i class="bi bi-journal-bookmark"></i> My Classes</a>
                     <a href="?page=teacher_grades"><i class="bi bi-pencil-square"></i> Encoding of Grades</a>
                 <?php elseif($_SESSION['role'] == 'dean'): ?>
+                    <a href="?page=curricula"><i class="bi bi-journal-richtext"></i> Curricula Explorer</a>
                     <a href="?page=dean_courses"><i class="bi bi-mortarboard"></i> Courses & Subjects</a>
                     <a href="?page=dean_registered_students"><i class="bi bi-person-lines-fill"></i> Registered Students</a>
                     <a href="?page=dean_enrollment"><i class="bi bi-people"></i> Enrolled Students</a>
@@ -872,6 +1125,7 @@ a:hover { color: #b8622b; }
                     <a href="?page=cashier_payments"><i class="bi bi-cash"></i> Process Payments</a>
                     <a href="?page=cashier_reports"><i class="bi bi-graph-up"></i> Collection Reports</a>
                 <?php elseif($_SESSION['role'] == 'student'): ?>
+                    <a href="?page=curricula"><i class="bi bi-journal-richtext"></i> Program Curricula</a>
                     <a href="?page=my_subjects"><i class="bi bi-book"></i> My Subjects / Enroll</a>
                     <a href="?page=my_grades"><i class="bi bi-award"></i> My Grades</a>
                     <a href="?page=my_billing"><i class="bi bi-wallet2"></i> Accounts & Balance</a>
@@ -973,6 +1227,74 @@ a:hover { color: #b8622b; }
                         </div>
                         <?php endif; ?>
                     </div>
+                </div>
+            <?php
+            }
+
+            // --- CURRICULA EXPLORER DASHBOARD (NEW) ---
+            elseif ($page == 'curricula' && ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'dean' || $_SESSION['role'] == 'student')) {
+            ?>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-semibold"><i class="bi bi-journal-bookmark-fill me-2"></i>Academic Programs & Curricula</h3>
+                    <span class="badge px-3 py-2" style="background-color: #d97736;"><?php echo count($curricula, COUNT_RECURSIVE); ?> Courses Found</span>
+                </div>
+
+                <ul class="nav nav-tabs mb-4 custom-tabs" id="departmentTabs" role="tablist" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <?php $deptIdx = 0; foreach (array_keys($curricula) as $department): ?>
+                        <li class="nav-item">
+                            <a class="nav-link text-white <?php echo $deptIdx === 0 ? 'active fw-bold' : ''; ?>" 
+                               style="<?php echo $deptIdx === 0 ? 'background: rgba(217, 119, 54, 0.2); border-color: rgba(255,255,255,0.1); border-bottom-color: transparent;' : 'border-color: transparent;'; ?>"
+                               id="tab-<?php echo $deptIdx; ?>" data-bs-toggle="tab" 
+                               href="#dept-<?php echo $deptIdx; ?>" role="tab">
+                               <?php echo htmlspecialchars($department); ?>
+                            </a>
+                        </li>
+                    <?php $deptIdx++; endforeach; ?>
+                </ul>
+
+                <div class="tab-content" id="departmentTabsContent">
+                    <?php $deptIdx = 0; foreach ($curricula as $department => $programs): ?>
+                        <div class="tab-pane fade <?php echo $deptIdx === 0 ? 'show active' : ''; ?>" id="dept-<?php echo $deptIdx; ?>" role="tabpanel">
+                            <div class="row">
+                                <?php $progIdx = 0; foreach ($programs as $programName => $years): ?>
+                                    <div class="col-12 mb-4">
+                                        <div class="glass-panel border-start border-4" style="border-left-color: #d97736 !important;">
+                                            <div class="p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse-<?php echo $deptIdx . '-' . $progIdx; ?>" style="cursor: pointer; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0;">
+                                                <h5 class="m-0 text-white fw-bold"><?php echo htmlspecialchars($programName); ?></h5>
+                                                <i class="bi bi-chevron-down text-white-50"></i>
+                                            </div>
+                                            <div class="collapse <?= $progIdx === 0 ? 'show' : '' ?>" id="collapse-<?php echo $deptIdx . '-' . $progIdx; ?>">
+                                                <div class="p-3">
+                                                    <div class="row g-3">
+                                                        <?php foreach ($years as $yearLabel => $semesters): ?>
+                                                            <div class="col-md-6 col-lg-6">
+                                                                <div class="p-3 h-100" style="background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                                                    <h6 class="fw-bold mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.1) !important; color: #d97736;"><?php echo htmlspecialchars($yearLabel); ?></h6>
+                                                                    <?php foreach ($semesters as $semLabel => $courses): ?>
+                                                                        <div class="mb-3">
+                                                                            <span class="badge bg-secondary mb-2"><?php echo htmlspecialchars($semLabel); ?></span>
+                                                                            <ul class="list-unstyled small ps-2 mb-0">
+                                                                                <?php foreach ($courses as $course): ?>
+                                                                                    <li class="mb-1 d-flex align-items-start text-white-50">
+                                                                                        <i class="bi bi-dot me-1 text-white"></i>
+                                                                                        <span><?php echo htmlspecialchars($course); ?></span>
+                                                                                    </li>
+                                                                                <?php endforeach; ?>
+                                                                            </ul>
+                                                                        </div>
+                                                                    <?php endforeach; ?>
+                                                                </div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php $progIdx++; endforeach; ?>
+                            </div>
+                        </div>
+                    <?php $deptIdx++; endforeach; ?>
                 </div>
             <?php
             }
@@ -1370,7 +1692,7 @@ a:hover { color: #b8622b; }
                         </select>
                         <div id="staffCourseContainer" class="mb-3">
                             <select name="course" id="staffCourseSelect" class="form-select custom-dark-select">
-                                <option value="">-- Assign a Course to Auto-Generate Subjects --</option>
+                                <option value="" disabled selected>Select Course / Assign a Course</option>
                                 <option value="Universal Standard Subjects">Universal Standard Subjects</option>
                                 <option value="BS Accountancy">Bachelor of Science in Accountancy (BSA)</option>
                                 <option value="BS Business Administration">BS Business Administration</option>
@@ -1413,58 +1735,60 @@ a:hover { color: #b8622b; }
             }
 
             // --- TEACHER PAGES ---
-            // --- TEACHER PAGES ---
-elseif ($page == 'teacher_classes' && $_SESSION['role'] == 'teacher') {
-    echo "<h3>My Claimed Classes</h3>";
-    $classes = $pdo->prepare("SELECT * FROM subjects WHERE teacher_id = ? ORDER BY sy DESC, sem DESC, subject_title ASC");
-    $classes->execute([$_SESSION['user_id']]);
-    $my_classes = $classes->fetchAll();
-    
-    if (empty($my_classes)) {
-        echo "<div class='alert alert-info text-dark'>You haven't chosen or claimed any subjects yet. Browse the available catalog below to pick your subjects freely!</div>";
-    } else {
-        echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>School Year / Sem</th><th>Subject Code</th><th>Subject Title</th><th>Course/Dept</th><th>Schedule</th><th>Action</th></tr></thead><tbody>";
-        foreach($my_classes as $c) {
-            echo "<tr>
-                <td>{$c['sy']} - {$c['sem']}</td>
-                <td><span class='badge bg-secondary'>{$c['subject_code']}</span></td>
-                <td><strong>{$c['subject_title']}</strong></td>
-                <td>{$c['course']}</td>
-                <td>{$c['schedule']}</td>
-                <td>
-                    <a href='?page=teacher_classes&unclaim_id={$c['id']}' class='btn btn-sm btn-danger text-white' onclick='return confirm(\"Are you sure you want to drop/unclaim this subject?\");'>Unclaim Class</a>
-                </td>
-            </tr>";
-        }
-        echo "</tbody></table></div>";
-    }
+            elseif ($page == 'teacher_classes' && $_SESSION['role'] == 'teacher') {
+                echo "<h3>My Assigned Classes</h3>";
+                $classes = $pdo->prepare("SELECT * FROM subjects WHERE teacher_id = ?");
+                $classes->execute([$_SESSION['user_id']]);
+                echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>Code</th><th>Title</th><th>Course</th><th>Schedule</th></tr></thead>";
+                foreach($classes->fetchAll() as $c) echo "<tr><td>{$c['subject_code']}</td><td>{$c['subject_title']}</td><td>{$c['course']}</td><td>{$c['schedule']}</td></tr>";
+                echo "</table></div>";
+            }
+            elseif ($page == 'teacher_grades' && $_SESSION['role'] == 'teacher') {
+                echo "<h3>Grade Encoding</h3>";
+                $q = $pdo->prepare("SELECT e.*, u.firstname, u.lastname, s.subject_title, s.course FROM enrollments e JOIN users u ON e.student_id = u.id JOIN subjects s ON e.subject_id = s.id WHERE s.teacher_id = ? ORDER BY s.course ASC, u.lastname ASC");
+                $q->execute([$_SESSION['user_id']]);
+                $list = $q->fetchAll(PDO::FETCH_ASSOC);
 
-    // Section for choosing subjects freely
-    echo "<h3 class='mt-5'>Available Subjects to Choose From</h3>";
-    $available = $pdo->query("SELECT * FROM subjects WHERE teacher_id IS NULL ORDER BY sy DESC, sem DESC, course ASC, subject_title ASC")->fetchAll();
-    
-    if (empty($available)) {
-        echo "<div class='alert alert-info text-dark mt-2'>No unassigned subjects available at the moment. All created classes currently have a teacher assigned.</div>";
-    } else {
-        echo "<div class='glass-panel p-2 table-responsive'><table class='table mb-0'><thead class='table-dark'><tr><th>School Year / Sem</th><th>Subject Code</th><th>Subject Title</th><th>Course/Dept</th><th>Schedule</th><th>Action</th></tr></thead><tbody>";
-        foreach($available as $a) {
-            echo "<tr>
-                <td>{$a['sy']} - {$a['sem']}</td>
-                <td><span class='badge bg-orange text-dark'>{$a['subject_code']}</span></td>
-                <td><strong>{$a['subject_title']}</strong></td>
-                <td>{$a['course']}</td>
-                <td>{$a['schedule']}</td>
-                <td>
-                    <form method='POST' style='margin:0; display:inline;'>
-                        <input type='hidden' name='claim_subject_id' value='{$a['id']}'>
-                        <button type='submit' name='claim_subject' class='btn btn-sm btn-success text-white'>Claim Subject</button>
+                if (empty($list)) {
+                    echo "<div class='alert alert-info text-dark mt-3'>No students enrolled in your subjects.</div>";
+                } else {
+            ?>
+                    <form method="POST">
+                    <?php
+                    $current_course = null;
+                    foreach($list as $s):
+                        if ($current_course !== $s['course']):
+                            if ($current_course !== null) echo "</tbody></table></div>";
+                            $current_course = $s['course'];
+                    ?>
+                            <div class="mt-4 mb-2 p-2 rounded shadow-sm" style="background: rgba(217, 119, 54, 0.8);">
+                                <i class="bi bi-mortarboard-fill"></i>
+                                <strong>COURSE: <?= strtoupper($current_course ?: 'GENERAL / UNSET') ?></strong>
+                            </div>
+                            <div class="glass-panel p-2 table-responsive">
+                                <table class="table mb-0">
+                                    <thead class="table-dark">
+                                        <tr><th>Student Name</th><th>Subject</th><th style="width: 100px;">P</th><th style="width: 100px;">M</th><th style="width: 100px;">F</th><th>Remarks</th></tr>
+                                    </thead>
+                                    <tbody>
+                    <?php endif; ?>
+                                    <tr>
+                                        <td><strong><?= $s['lastname'].", ".$s['firstname'] ?></strong></td>
+                                        <td><small><?= $s['subject_title'] ?></small></td>
+                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][p]' value='<?= $s['prelim'] ?>' class='form-control form-control-sm'></td>
+                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][m]' value='<?= $s['midterm'] ?>' class='form-control form-control-sm'></td>
+                                        <td><input type='number' step='0.1' name='grades[<?= $s['id'] ?>][f]' value='<?= $s['final'] ?>' class='form-control form-control-sm'></td>
+                                        <td><input type='text' name='grades[<?= $s['id'] ?>][r]' value='<?= $s['remarks'] ?>' class='form-control form-control-sm'></td>
+                                    </tr>
+                    <?php endforeach;
+                    if ($current_course !== null) echo "</tbody></table></div>";
+                    ?>
+                        <div class="mt-3"><button name="update_grades" class="btn btn-success shadow"><i class="bi bi-check-circle"></i> Save All Grades</button></div>
                     </form>
-                </td>
-            </tr>";
-        }
-        echo "</tbody></table></div>";
-    }
-}
+            <?php
+                }
+            }
+
             // --- FINANCE PAGES ---
             elseif ($page == 'finance_load' && $_SESSION['role'] == 'finance') {
                 echo "<h3>Student Loads</h3>";
@@ -1811,6 +2135,7 @@ elseif ($page == 'teacher_classes' && $_SESSION['role'] == 'teacher') {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+<script>
 // --- AUTOMATIC CURRICULUM UI POPULATOR ---
 window.curriculumData = {
     "Universal Standard Subjects": [
@@ -1849,8 +2174,7 @@ window.curriculumData = {
         {c:"EC1", t:"Electrical Circuits 1 (Elec Track)", u:3}, {c:"EC2", t:"Electrical Circuits 2 (Elec Track)", u:3}, {c:"ELM", t:"Electromagnetics (Elec Track)", u:3}, {c:"EMA1", t:"Electrical Machines 1 (Elec Track)", u:3}, {c:"EMA2", t:"Electrical Machines 2 (Elec Track)", u:3}, {c:"PSA", t:"Power System Analysis (Elec Track)", u:3}, {c:"ELC", t:"Electronic Circuits (Elec Track)", u:3}, {c:"CSDE", t:"Control Systems Design (Elec Track)", u:3}
     ],
     "BS Architecture": [
-        {c:"AD1", t:"Architectural Design 1", u:3}, {c:"AD2", t:"Architectural Design 2", u:3}, {c:"AD3", t:"Architectural Design 3", u:3}, {c:"AD4", t:"Architectural Design 4", u:3}, {c:"AD5", t:"Architectural Design 5", u:3}, {c:"AD6", t:"Architectural Design 6", u:3}, {c:"AD7", t:"Architectural Design 7", u:3}, {c:"AD8", t:"Architectural Design 8", u:3}, {c:"AD9", t:"Architectural Design 9", u:3}, {c:"AD10", t:"Architectural Design 10", u:3}, {c:"GRA1", t:"Graphics 1", u:3}, {c:"GRA2", t:"Graphics 2", u:3}, {c:"VT1", t:"Visual Techniques 1", u:3}, {c:"VT2", t:"Visual Techniques 2", u:3}, {c:"VT3", t:"Visual Techniques 3", u:3}, {c:"HOA1", t:"History of Architecture 1", u:3}, {c:"HOA2", t:"History of Architecture 2", u:3}, {c:"HOA3", t:"History of Architecture 3", u:3}, {c:"TOA1", t:"Theory of Architecture 1", u:3}, {c:"TOA2", t:"Theory of 
-        Architecture 2", u:3}, {c:"BT1", t:"Building Technology 1", u:3}, {c:"BT2", t:"Building Technology 2", u:3}, {c:"BT3", t:"Building Technology 3", u:3}, {c:"BT4", t:"Building Technology 4", u:3}, {c:"BT5", t:"Building Technology 5", u:3}, {c:"BU1", t:"Building Utilities 1", u:3}, {c:"BU2", t:"Building Utilities 2", u:3}, {c:"BU3", t:"Building Utilities 3", u:3}, {c:"AST", t:"Architectural Structures", u:3}, {c:"PP", t:"Professional Practice", u:3}, {c:"ATH1", t:"Architectural Thesis 1", u:3}, {c:"ATH2", t:"Architectural Thesis 2", u:3}
+        {c:"AD1", t:"Architectural Design 1", u:3}, {c:"AD2", t:"Architectural Design 2", u:3}, {c:"AD3", t:"Architectural Design 3", u:3}, {c:"AD4", t:"Architectural Design 4", u:3}, {c:"AD5", t:"Architectural Design 5", u:3}, {c:"AD6", t:"Architectural Design 6", u:3}, {c:"AD7", t:"Architectural Design 7", u:3}, {c:"AD8", t:"Architectural Design 8", u:3}, {c:"AD9", t:"Architectural Design 9", u:3}, {c:"AD10", t:"Architectural Design 10", u:3}, {c:"GRA1", t:"Graphics 1", u:3}, {c:"GRA2", t:"Graphics 2", u:3}, {c:"VT1", t:"Visual Techniques 1", u:3}, {c:"VT2", t:"Visual Techniques 2", u:3}, {c:"VT3", t:"Visual Techniques 3", u:3}, {c:"HOA1", t:"History of Architecture 1", u:3}, {c:"HOA2", t:"History of Architecture 2", u:3}, {c:"HOA3", t:"History of Architecture 3", u:3}, {c:"TOA1", t:"Theory of Architecture 1", u:3}, {c:"TOA2", t:"Theory of Architecture 2", u:3}, {c:"BT1", t:"Building Technology 1", u:3}, {c:"BT2", t:"Building Technology 2", u:3}, {c:"BT3", t:"Building Technology 3", u:3}, {c:"BT4", t:"Building Technology 4", u:3}, {c:"BT5", t:"Building Technology 5", u:3}, {c:"BU1", t:"Building Utilities 1", u:3}, {c:"BU2", t:"Building Utilities 2", u:3}, {c:"BU3", t:"Building Utilities 3", u:3}, {c:"AST", t:"Architectural Structures", u:3}, {c:"PP", t:"Professional Practice", u:3}, {c:"ATH1", t:"Architectural Thesis 1", u:3}, {c:"ATH2", t:"Architectural Thesis 2", u:3}
     ],
     "BS Nursing": [
         {c:"ANP", t:"Anatomy and Physiology", u:3}, {c:"MB", t:"Microchemistry and Biochemistry", u:3}, {c:"MP", t:"Microbiology and Parasitology", u:3}, {c:"TFN", t:"Theoretical Foundations of Nursing", u:3}, {c:"HA", t:"Health Assessment", u:3}, {c:"CHN1", t:"Community Health Nursing 1", u:3}, {c:"CHN2", t:"Community Health Nursing 2", u:3}, {c:"PHM", t:"Pharmacology", u:3}, {c:"NDT", t:"Nutrition and Diet Therapy", u:3}, {c:"CMCF", t:"Care of Mother, Child, and Family", u:3}, {c:"CAAHS", t:"Care of Adults with Altered Health States", u:3}, {c:"MHPN", t:"Mental Health and Psychiatric Nursing", u:3}, {c:"NR1", t:"Nursing Research 1", u:3}, {c:"NR2", t:"Nursing Research 2", u:3}, {c:"EDN", t:"Emergency and Disaster Nursing", u:3}, {c:"RLE", t:"Related Learning Experience (Hospital Duty)", u:6}
